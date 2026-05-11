@@ -28,9 +28,43 @@ function navegar(idDestino) {
     window.scrollTo(0, 0);
 }
 
-// Funciones simuladas
-function simularLogin() {
-    navegar('view-home');
+// Función para Iniciar Sesión (US 2)
+async function iniciarSesion() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    // Validación Front-end: ambos son requeridos
+    if (!email || !password) {
+        alert("El email y la contraseña son requeridos.");
+        return;
+    }
+
+    try {
+        const respuesta = await fetch(`${API_URL}/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ email: email, password: password })
+        });
+
+        const data = await respuesta.json();
+
+        if (respuesta.ok) {
+            alert("¡Inicio de sesión exitoso!");
+            navegar('view-home'); // Panel principal
+        } else {
+            // Manejamos los errores que nos manda el backend
+            if (Array.isArray(data.detail)) {
+                alert("Por favor, ingresá un formato de email válido.");
+            } else {
+                alert(data.detail); // "Email o contraseña incorrectos", "La cuenta no está activa aún"
+            }
+        }
+    } catch (error) {
+        console.error("Error al iniciar sesión:", error);
+        alert("No se pudo conectar con el servidor.");
+    }
 }
 
 function guardarPerfil() {

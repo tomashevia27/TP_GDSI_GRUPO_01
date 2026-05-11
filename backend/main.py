@@ -39,8 +39,16 @@ def registrar_usuario(usuario: UsuarioRegistro):
 @app.post("/login")
 def login(datos: UsuarioLogin):
     user = usuarios_db.get(datos.email)
+    
+    # 1. Si no existe o la password está mal, devolvemos error genérico
     if not user or user["password"] != datos.password:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+        
+    # 2. Verificamos si la cuenta está validada/activa (simulamos que por defecto es True si no existe la key)
+    if not user.get("activo", True):
+        raise HTTPException(status_code=403, detail="La cuenta no está activa aún")
+        
+    # 3. Éxito
     return {"mensaje": "Login exitoso", "usuario_id": user["id"]}
 
 # US 3: Editar Perfil
