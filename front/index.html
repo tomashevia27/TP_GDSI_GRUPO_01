@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TeamUp - Web App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f4f7f6; 
+            color: #212529; 
+        }
+        /* Vistas SPA */
+        .view { display: none; animation: fadeIn 0.3s ease; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Estilos Generales Web */
+        .brand-text { color: #198754; font-weight: 700; font-size: 2rem; letter-spacing: -1px; }
+        .card-form { max-width: 500px; margin: 50px auto; padding: 40px; border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.05); background: white; }
+        .btn-main { background-color: #198754; color: white; border: none; border-radius: 8px; padding: 12px; font-weight: 600; width: 100%; transition: 0.2s; }
+        .btn-main:hover { background-color: #146c43; }
+        .form-control, .form-select { border-radius: 8px; padding: 12px; background-color: #f8f9fa; border: 1px solid #dee2e6; }
+        .form-control:focus { border-color: #198754; box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25); }
+        .link-text { color: #198754; font-weight: 600; cursor: pointer; text-decoration: none; }
+        
+        /* Navbar Top */
+        .navbar-custom { background-color: white; box-shadow: 0 2px 15px rgba(0,0,0,0.05); padding: 15px 0; }
+        .nav-link { font-weight: 600; cursor: pointer; color: #6c757d; margin: 0 10px; transition: 0.2s; }
+        .nav-link:hover, .nav-link.active { color: #198754; }
+        
+        /* Perfil Web */
+        .profile-sidebar { background: white; border-radius: 16px; padding: 30px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .avatar-lg { width: 140px; height: 140px; border-radius: 50%; object-fit: cover; border: 4px solid #198754; margin-bottom: 20px; }
+        .content-card { background: white; border-radius: 16px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); min-height: 100%; }
+        .match-placeholder { border: 2px dashed #dee2e6; border-radius: 12px; padding: 50px 20px; text-align: center; color: #adb5bd; background-color: #f8f9fa; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-custom" id="main-navbar" style="display: none;">
+    <div class="container">
+        <a class="navbar-brand brand-text m-0" onclick="navegar('view-home')" style="cursor: pointer;">TeamUp ⚽</a>
+        
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <div class="navbar-nav align-items-center">
+                <a class="nav-link" id="nav-home" onclick="navegar('view-home')">Inicio</a>
+                <a class="nav-link" id="nav-profile" onclick="navegar('view-profile')">Mi Perfil</a>
+                <a class="nav-link position-relative me-3" title="Notificaciones" style="cursor: pointer;">
+                    <i class="bi bi-bell-fill fs-5"></i>
+                    <span class="position-absolute top-25 start-75 translate-middle p-1 bg-danger border border-light rounded-circle"></span>
+                </a>
+                <button class="btn btn-outline-danger btn-sm px-4 fw-bold rounded-pill" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="container pb-5">
+
+    <div id="view-login" class="view active">
+        <div class="card-form">
+            <div class="text-center mb-4">
+                <div class="brand-text mb-2">TeamUp</div>
+                <p class="text-muted">Gestioná tus partidos y torneos</p>
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label fw-bold small">Email</label>
+                <input type="email" id="login-email" class="form-control" placeholder="usuario@ejemplo.com">
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold small">Contraseña</label>
+                <input type="password" id="login-password" class="form-control" placeholder="••••••••">
+            </div>
+            
+            <button class="btn-main" onclick="simularLogin()">Ingresar a la plataforma</button>
+            
+            <div class="text-center mt-4 text-muted small">
+                ¿No tenés cuenta? <span class="link-text" onclick="navegar('view-registro')">Registrate acá</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-registro" class="view">
+        <div class="card-form" style="max-width: 600px;">
+            <div class="text-center mb-4">
+                <div class="brand-text fs-3 mb-2">Crear Cuenta</div>
+                <p class="text-muted">Sumate a la comunidad</p>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Nombre</label>
+                    <input type="text" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Apellido</label>
+                    <input type="text" class="form-control">
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Email</label>
+                    <input type="email" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold small">Contraseña</label>
+                    <input type="password" class="form-control">
+                </div>
+            </div>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small">Edad</label>
+                    <input type="number" class="form-control">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small">Género</label>
+                    <select class="form-select">
+                        <option>Masculino</option>
+                        <option>Femenino</option>
+                        <option>Otro</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small">Zona</label>
+                    <input type="text" class="form-control" placeholder="Ej: Palermo">
+                </div>
+            </div>
+            
+            <button class="btn-main" onclick="navegar('view-login')">Registrarme</button>
+            
+            <div class="text-center mt-4 text-muted small">
+                ¿Ya tenés cuenta? <span class="link-text" onclick="navegar('view-login')">Iniciá sesión</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-home" class="view mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold m-0">Dashboard de Inicio</h2>
+            <button class="btn btn-success fw-bold"><i class="bi bi-plus-lg me-2"></i>Nuevo Partido</button>
+        </div>
+        
+        <div class="content-card">
+            <h5 class="fw-bold text-success mb-3"><i class="bi bi-calendar-event me-2"></i>Próximos eventos disponibles</h5>
+            <div class="match-placeholder">
+                <i class="bi bi-search fs-1 mb-3 d-block"></i>
+                <h5 class="fw-bold text-dark">No hay partidos cerca tuyo por ahora</h5>
+                <p>Usá el buscador o creá un nuevo partido para invitar jugadores.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-profile" class="view mt-4">
+        <div class="row g-4">
+            <div class="col-lg-4">
+                <div class="profile-sidebar">
+                    <img src="https://ui-avatars.com/api/?name=Usuario+Demo&background=198754&color=fff&size=200" alt="Avatar" class="avatar-lg">
+                    <h4 class="fw-bold mb-1">Usuario Demo</h4>
+                    <p class="text-muted mb-3"><i class="bi bi-geo-alt-fill text-success me-1"></i> CABA, Argentina</p>
+                    
+                    <div class="d-flex justify-content-center gap-4 mb-4">
+                        <div><h5 class="fw-bold text-dark m-0">12</h5><small class="text-muted">Partidos</small></div>
+                        <div><h5 class="fw-bold text-dark m-0">4.8</h5><small class="text-muted">Rating</small></div>
+                    </div>
+                    
+                    <p class="small text-start bg-light p-3 rounded">
+                        <strong>Sobre mí:</strong><br>
+                        Delantero por derecha. Buscando equipo para jugar los fines de semana.
+                    </p>
+                    
+                    <button class="btn btn-outline-success w-100 fw-bold mt-2" onclick="navegar('view-edit-profile')">
+                        <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+                    </button>
+                </div>
+            </div>
+            
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <h3 class="fw-bold mb-4 border-bottom pb-2">Mis Partidos</h3>
+                    
+                    <div class="match-placeholder mt-4">
+                        <i class="bi bi-trophy fs-1 mb-3 d-block text-secondary"></i>
+                        <h4 class="fw-bold text-dark">Todavía no jugaste ningún partido</h4>
+                        <p class="text-muted">Acá vas a ver tu historial de encuentros, estadísticas y resultados de los torneos en los que participes.</p>
+                        <button class="btn btn-success mt-2" onclick="navegar('view-home')">Buscar partidos</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="view-edit-profile" class="view mt-4">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="content-card">
+                    <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                        <button class="btn btn-light me-3" onclick="navegar('view-profile')"><i class="bi bi-arrow-left"></i> Volver</button>
+                        <h3 class="fw-bold m-0">Configuración del Perfil</h3>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-8">
+                            <h5 class="fw-bold mb-3">Datos Personales</h5>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Nombre</label>
+                                    <input type="text" class="form-control" value="Usuario">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Apellido</label>
+                                    <input type="text" class="form-control" value="Demo">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small">Zona de juego</label>
+                                <input type="text" class="form-control" value="CABA">
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-bold small">Actualizar Contraseña</label>
+                                <input type="password" class="form-control" placeholder="Escribí una nueva contraseña...">
+                            </div>
+                            
+                            <h5 class="fw-bold mb-3 border-top pt-4">Preferencias de Notificación</h5>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="notif-partidos" checked>
+                                <label class="form-check-label" for="notif-partidos">Recibir alertas de nuevos partidos en mi zona</label>
+                            </div>
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" role="switch" id="notif-mensajes" checked>
+                                <label class="form-check-label" for="notif-mensajes">Avisarme cuando me inviten a un equipo</label>
+                            </div>
+
+                            <button class="btn btn-success fw-bold px-5 py-2" onclick="guardarPerfil()">Guardar Cambios</button>
+                        </div>
+                        
+                        <div class="col-md-4 text-center border-start">
+                            <h5 class="fw-bold mb-3">Foto de Perfil</h5>
+                            <img src="https://ui-avatars.com/api/?name=Usuario+Demo&background=198754&color=fff&size=150" alt="Avatar" class="rounded-circle mb-3 border" style="width: 150px; height: 150px;">
+                            <button class="btn btn-outline-secondary btn-sm w-100 mb-2"><i class="bi bi-upload me-2"></i>Subir nueva foto</button>
+                            <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-trash me-2"></i>Eliminar actual</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Sistema de navegación SPA
+    function navegar(idDestino) {
+        // 1. Ocultar todas las vistas
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        // 2. Mostrar la vista destino
+        document.getElementById(idDestino).classList.add('active');
+
+        // 3. Lógica de la Navbar Top
+        const navbar = document.getElementById('main-navbar');
+        if (idDestino === 'view-login' || idDestino === 'view-registro') {
+            navbar.style.display = 'none'; // Ocultar navbar en login/registro
+        } else {
+            navbar.style.display = 'flex'; // Mostrar navbar en la app
+            
+            // Actualizar links activos
+            document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active', 'fw-bold'));
+            
+            if (idDestino === 'view-home') {
+                document.getElementById('nav-home').classList.add('active', 'fw-bold');
+            } else if (idDestino === 'view-profile' || idDestino === 'view-edit-profile') {
+                document.getElementById('nav-profile').classList.add('active', 'fw-bold');
+            }
+        }
+        
+        // Volver arriba al cambiar de página
+        window.scrollTo(0, 0);
+    }
+
+    // Funciones simuladas
+    function simularLogin() {
+        navegar('view-home');
+    }
+
+    function guardarPerfil() {
+        navegar('view-profile');
+    }
+
+    function cerrarSesion() {
+        navegar('view-login');
+        // Limpiar inputs si fuera necesario
+        document.getElementById('login-email').value = '';
+        document.getElementById('login-password').value = '';
+    }
+</script>
+
+</body>
+</html>
