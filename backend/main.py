@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import UsuarioRegistro, UsuarioLogin, UsuarioEdicion, UsuarioRespuesta
+from .schemas import UsuarioRegistro, UsuarioLogin, UsuarioEdicion, UsuarioRespuesta
 
 app = FastAPI(title="Team UP API")
 
