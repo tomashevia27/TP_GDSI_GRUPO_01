@@ -20,6 +20,11 @@ usuarios_db = {}
 def read_root():
     return {"mensaje": "El backend esta vivo"}
 
+# Ruta extra de prueba para ver la base de datos
+@app.get("/usuarios")
+def obtener_usuarios():
+    return usuarios_db
+
 # US 1: Registro de Usuario
 @app.post("/registro", response_model=UsuarioRespuesta)
 def registrar_usuario(usuario: UsuarioRegistro):
