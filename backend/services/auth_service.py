@@ -21,7 +21,7 @@ def login(db: Session, datos: UsuarioLogin) -> dict:
     """Valida credenciales y devuelve el ID del usuario."""
     usuario = usuario_repository.obtener_por_email(db, datos.email)
     if not usuario or usuario.password != datos.password:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
+        raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
     return {"mensaje": "Login exitoso", "usuario_id": usuario.id}
 
 

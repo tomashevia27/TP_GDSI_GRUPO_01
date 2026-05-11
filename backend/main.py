@@ -39,7 +39,6 @@ def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
     """Valida credenciales e inicia sesión."""
     return auth_service.login(db, datos)
 
-
 # US 3: Editar Perfil
 @app.put("/usuarios/{user_id}", response_model=UsuarioRespuesta)
 def editar_perfil(user_id: int, datos: UsuarioEdicion, db: Session = Depends(get_db)):
