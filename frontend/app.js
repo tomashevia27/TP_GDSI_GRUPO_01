@@ -13,17 +13,17 @@ function navegar(idDestino) {
         navbar.style.display = 'none'; // Ocultar navbar en login/registro
     } else {
         navbar.style.display = 'flex'; // Mostrar navbar en la app
-        
+
         // Actualizar links activos
         document.querySelectorAll('.nav-link').forEach(el => el.classList.remove('active', 'fw-bold'));
-        
+
         if (idDestino === 'view-home') {
             document.getElementById('nav-home').classList.add('active', 'fw-bold');
         } else if (idDestino === 'view-profile' || idDestino === 'view-edit-profile') {
             document.getElementById('nav-profile').classList.add('active', 'fw-bold');
         }
     }
-    
+
     // Volver arriba al cambiar de página
     window.scrollTo(0, 0);
 }
@@ -43,6 +43,29 @@ function cerrarSesion() {
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
 }
+// --- Configuración de Cloudinary ---
+// IMPORTANTE: Tenés que reemplazar estos valores con los de tu cuenta
+const CLOUD_NAME = "dzsrgcgq6";
+const UPLOAD_PRESET = "TeamUp_preset";
+
+// Función para subir imagen a Cloudinary
+async function subirImagenACloudinary(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    const respuesta = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+        method: "POST",
+        body: formData
+    });
+
+    if (!respuesta.ok) {
+        throw new Error("Error al subir la imagen a Cloudinary");
+    }
+
+    const data = await respuesta.json();
+    return data.secure_url; // Cloudinary nos devuelve la URL definitiva
+}
 
 // Funciones de Conexión con el Backend
 async function registrarUsuario() {
@@ -53,6 +76,7 @@ async function registrarUsuario() {
     const edad = parseInt(document.getElementById('reg-edad').value);
     const genero = document.getElementById('reg-genero').value;
     const zona = document.getElementById('reg-zona').value;
+    const fotoInput = document.getElementById('reg-foto');
 
     const datosUsuario = {
         nombre: nombre,
@@ -63,6 +87,20 @@ async function registrarUsuario() {
         genero: genero,
         zona: zona
     };
+
+    // Si el usuario seleccionó un archivo, lo subimos a Cloudinary primero
+    if (fotoInput.files && fotoInput.files[0]) {
+        const archivo = fotoInput.files[0];
+        try {
+            // Subimos a Cloudinary y guardamos la URL que nos devuelve
+            const urlImagen = await subirImagenACloudinary(archivo);
+            datosUsuario.foto_perfil = urlImagen;
+        } catch (error) {
+            console.error(error);
+            alert("Hubo un problema al subir tu foto de perfil. Por favor, intentá de nuevo.");
+            return; // Frenamos el registro para que no se cree el usuario sin la foto
+        }
+    }
 
     try {
         const respuesta = await fetch(`${API_URL}/registro`, {
@@ -84,8 +122,8 @@ async function registrarUsuario() {
                 // Recorremos la lista de errores para armar un mensaje claro y amigable
                 let mensajesError = data.detail.map(err => {
                     const campo = err.loc[err.loc.length - 1]; // "email", "nombre", etc.
-                    
-                    switch(campo) {
+
+                    switch (campo) {
                         case 'nombre':
                             return "• El nombre no puede estar vacío.";
                         case 'apellido':
