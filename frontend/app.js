@@ -1,7 +1,30 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
+const AUTH_SESSION_KEY = 'teamup_auth_user_id';
+
+function usuarioAutenticado() {
+    return sessionStorage.getItem(AUTH_SESSION_KEY) !== null;
+}
+
+function guardarSesion(usuarioId) {
+    sessionStorage.setItem(AUTH_SESSION_KEY, String(usuarioId));
+}
+
+function obtenerUsuarioId() {
+    return sessionStorage.getItem(AUTH_SESSION_KEY);
+}
+
+function limpiarSesion() {
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+}
 
 // Sistema de navegación SPA
 function navegar(idDestino) {
+    const vistasProtegidas = ['view-home', 'view-profile', 'view-edit-profile'];
+
+    if (vistasProtegidas.includes(idDestino) && !usuarioAutenticado()) {
+        idDestino = 'view-login';
+    }
+
     // 1. Ocultar todas las vistas
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     // 2. Mostrar la vista destino
@@ -26,6 +49,10 @@ function navegar(idDestino) {
 
     // Volver arriba al cambiar de página
     window.scrollTo(0, 0);
+
+    if (idDestino === 'view-profile' || idDestino === 'view-edit-profile') {
+        cargarPerfil();
+    }
 }
 
 // Función para Iniciar Sesión (US 2)
@@ -51,6 +78,7 @@ async function iniciarSesion() {
         const data = await respuesta.json();
 
         if (respuesta.ok) {
+            guardarSesion(data.usuario_id);
             alert("¡Inicio de sesión exitoso!");
             navegar('view-home'); // Panel principal
         } else {
@@ -67,11 +95,110 @@ async function iniciarSesion() {
     }
 }
 
-function guardarPerfil() {
-    navegar('view-profile');
+async function cargarPerfil() {
+    const userId = obtenerUsuarioId();
+    if (!userId) return;
+
+    try {
+        const respuesta = await fetch(`${API_URL}/usuarios/${userId}`);
+        const data = await respuesta.json();
+
+        if (respuesta.ok) {
+            // Llenar vista de perfil
+            document.getElementById('display-fullname').textContent = `${data.nombre} ${data.apellido}`;
+            document.getElementById('display-zona').textContent = data.zona;
+            document.getElementById('display-edad').textContent = data.edad;
+            document.getElementById('display-genero').textContent = data.genero;
+            
+            const avatarUrl = data.foto_perfil || `https://ui-avatars.com/api/?name=${data.nombre}+${data.apellido}&background=198754&color=fff&size=200`;
+            document.getElementById('display-avatar').src = avatarUrl;
+            document.getElementById('edit-avatar-preview').src = avatarUrl;
+
+            // Llenar inputs de edición
+            document.getElementById('edit-nombre').value = data.nombre;
+            document.getElementById('edit-apellido').value = data.apellido;
+            document.getElementById('edit-edad').value = data.edad;
+            document.getElementById('edit-genero').value = data.genero;
+            document.getElementById('edit-zona').value = data.zona;
+            document.getElementById('edit-password').value = ""; // No pre-llenar password
+
+        }
+    } catch (error) {
+        console.error("Error al cargar el perfil:", error);
+    }
+}
+
+async function guardarPerfil() {
+    const userId = obtenerUsuarioId();
+    if (!userId) return;
+
+    const nombre = document.getElementById('edit-nombre').value.trim();
+    const apellido = document.getElementById('edit-apellido').value.trim();
+    const edad = document.getElementById('edit-edad').value;
+    const genero = document.getElementById('edit-genero').value;
+    const zona = document.getElementById('edit-zona').value.trim();
+    const password = document.getElementById('edit-password').value;
+    const fotoInput = document.getElementById('edit-foto');
+
+    if (!nombre || !apellido) {
+        alert("El nombre y apellido son obligatorios y no pueden quedar en blanco.");
+        return;
+    }
+
+    if (!password) {
+        alert("Debes ingresar tu contraseña (o una nueva) para confirmar los cambios.");
+        return;
+    }
+
+    const datosUsuario = {
+        nombre: nombre,
+        apellido: apellido,
+        edad: parseInt(edad),
+        genero: genero,
+        zona: zona,
+        password: password
+    };
+
+    if (fotoInput.files && fotoInput.files[0]) {
+        try {
+            const urlImagen = await subirImagenACloudinary(fotoInput.files[0]);
+            datosUsuario.foto_perfil = urlImagen;
+        } catch (error) {
+            alert("Error al subir la nueva foto de perfil.");
+            return;
+        }
+    } else {
+        // Si no sube una nueva, mandamos la que ya tenía (la URL actual del preview)
+        const previewUrl = document.getElementById('edit-avatar-preview').src;
+        if (!previewUrl.includes('ui-avatars.com')) {
+            datosUsuario.foto_perfil = previewUrl;
+        }
+    }
+
+    try {
+        const respuesta = await fetch(`${API_URL}/usuarios/${userId}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(datosUsuario)
+        });
+
+        if (respuesta.ok) {
+            alert("¡Perfil actualizado correctamente!");
+            navegar('view-profile');
+        } else {
+            const data = await respuesta.json();
+            alert("Error al actualizar perfil: " + (data.detail || "Datos inválidos"));
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión al actualizar el perfil.");
+    }
 }
 
 function cerrarSesion() {
+    limpiarSesion();
     navegar('view-login');
     // Limpiar inputs si fuera necesario
     document.getElementById('login-email').value = '';

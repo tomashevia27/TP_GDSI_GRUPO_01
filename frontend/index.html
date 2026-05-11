@@ -140,9 +140,9 @@
         <div class="row g-4">
             <div class="col-lg-4">
                 <div class="profile-sidebar">
-                    <img src="https://ui-avatars.com/api/?name=Usuario+Demo&background=198754&color=fff&size=200" alt="Avatar" class="avatar-lg">
-                    <h4 class="fw-bold mb-1">Usuario Demo</h4>
-                    <p class="text-muted mb-3"><i class="bi bi-geo-alt-fill text-success me-1"></i> CABA, Argentina</p>
+                    <img src="" alt="Avatar" class="avatar-lg" id="display-avatar">
+                    <h4 class="fw-bold mb-1" id="display-fullname">Usuario Demo</h4>
+                    <p class="text-muted mb-3"><i class="bi bi-geo-alt-fill text-success me-1"></i> <span id="display-zona">CABA</span>, Argentina</p>
                     
                     <div class="d-flex justify-content-center gap-4 mb-4">
                         <div><h5 class="fw-bold text-dark m-0">12</h5><small class="text-muted">Partidos</small></div>
@@ -150,8 +150,8 @@
                     </div>
                     
                     <p class="small text-start bg-light p-3 rounded">
-                        <strong>Sobre mí:</strong><br>
-                        Delantero por derecha. Buscando equipo para jugar los fines de semana.
+                        <strong>Datos:</strong><br>
+                        <span id="display-edad"></span> años • <span id="display-genero"></span>
                     </p>
                     
                     <button class="btn btn-outline-success w-100 fw-bold mt-2" onclick="navegar('view-edit-profile')">
@@ -190,20 +190,34 @@
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">Nombre</label>
-                                    <input type="text" class="form-control" value="Usuario">
+                                    <input type="text" class="form-control" id="edit-nombre">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bold small">Apellido</label>
-                                    <input type="text" class="form-control" value="Demo">
+                                    <input type="text" class="form-control" id="edit-apellido">
+                                </div>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Edad</label>
+                                    <input type="number" class="form-control" id="edit-edad">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Género</label>
+                                    <select class="form-select" id="edit-genero">
+                                        <option value="Masculino">Masculino</option>
+                                        <option value="Femenino">Femenino</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label fw-bold small">Zona de juego</label>
-                                <input type="text" class="form-control" value="CABA">
+                                <input type="text" class="form-control" id="edit-zona">
                             </div>
                             <div class="mb-4">
-                                <label class="form-label fw-bold small">Actualizar Contraseña</label>
-                                <input type="password" class="form-control" placeholder="Escribí una nueva contraseña...">
+                                <label class="form-label fw-bold small">Contraseña</label>
+                                <input type="password" class="form-control" id="edit-password" placeholder="Oculta por seguridad (escribí para cambiar)">
                             </div>
                             
                             <h5 class="fw-bold mb-3 border-top pt-4">Preferencias de Notificación</h5>
@@ -221,9 +235,8 @@
                         
                         <div class="col-md-4 text-center border-start">
                             <h5 class="fw-bold mb-3">Foto de Perfil</h5>
-                            <img src="https://ui-avatars.com/api/?name=Usuario+Demo&background=198754&color=fff&size=150" alt="Avatar" class="rounded-circle mb-3 border" style="width: 150px; height: 150px;">
-                            <button class="btn btn-outline-secondary btn-sm w-100 mb-2"><i class="bi bi-upload me-2"></i>Subir nueva foto</button>
-                            <button class="btn btn-outline-danger btn-sm w-100"><i class="bi bi-trash me-2"></i>Eliminar actual</button>
+                            <img src="" alt="Avatar" class="rounded-circle mb-3 border" id="edit-avatar-preview" style="width: 150px; height: 150px; object-fit: cover;">
+                            <input type="file" id="edit-foto" class="form-control form-control-sm mb-2" accept="image/*">
                         </div>
                     </div>
                 </div>

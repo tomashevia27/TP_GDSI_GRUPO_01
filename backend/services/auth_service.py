@@ -44,4 +44,8 @@ def _usuario_a_respuesta(usuario: Usuario) -> UsuarioRespuesta:
         nombre=usuario.nombre,
         apellido=usuario.apellido,
         email=usuario.email,
+        edad=usuario.edad,
+        genero=usuario.genero,
+        zona=usuario.zona,
+        foto_perfil=usuario.foto_perfil,
     )

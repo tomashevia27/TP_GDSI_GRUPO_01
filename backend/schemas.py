@@ -41,6 +41,10 @@ class UsuarioRespuesta(BaseModel):
     nombre: str
     apellido: str
     email: EmailStr
+    edad: int
+    genero: str
+    zona: str
+    foto_perfil: Optional[str] = None
     
     class Config:
         orm_mode = True

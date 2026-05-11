@@ -45,6 +45,16 @@ def editar_perfil(user_id: int, datos: UsuarioEdicion, db: Session = Depends(get
     """Edita el perfil de un usuario."""
     return auth_service.editar_perfil(db, user_id, datos)
 
+@app.get("/usuarios/{user_id}", response_model=UsuarioRespuesta)
+def obtener_perfil(user_id: int, db: Session = Depends(get_db)):
+    """Obtiene el perfil de un usuario."""
+    from .repositories import usuario_repository
+    from .services.auth_service import _usuario_a_respuesta
+    usuario = usuario_repository.obtener_por_id(db, user_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    return _usuario_a_respuesta(usuario)
+
 
 @app.get("/canchas")
 def obtener_canchas():
