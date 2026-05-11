@@ -38,7 +38,8 @@ def editar_usuario(db: Session, user_id: int, datos: UsuarioEdicion) -> Usuario 
     usuario.apellido = datos.apellido
     usuario.edad = datos.edad
     usuario.genero = datos.genero
-    usuario.password = datos.password
+    if datos.password:
+        usuario.password = datos.password
     usuario.zona = datos.zona
     usuario.foto_perfil = datos.foto_perfil
 

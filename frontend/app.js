@@ -151,19 +151,17 @@ async function guardarPerfil() {
         return;
     }
 
-    if (!password) {
-        alert("Debes ingresar tu contraseña (o una nueva) para confirmar los cambios.");
-        return;
-    }
-
     const datosUsuario = {
         nombre: nombre,
         apellido: apellido,
         edad: parseInt(edad),
         genero: genero,
-        zona: zona,
-        password: password
+        zona: zona
     };
+    
+    if (password) {
+        datosUsuario.password = password;
+    }
 
     if (fotoInput.files && fotoInput.files[0]) {
         try {
