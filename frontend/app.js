@@ -109,10 +109,16 @@ async function cargarPerfil() {
             document.getElementById('display-zona').textContent = data.zona;
             document.getElementById('display-edad').textContent = data.edad;
             document.getElementById('display-genero').textContent = data.genero;
-            
+
             const avatarUrl = data.foto_perfil || `https://ui-avatars.com/api/?name=${data.nombre}+${data.apellido}&background=198754&color=fff&size=200`;
             document.getElementById('display-avatar').src = avatarUrl;
             document.getElementById('edit-avatar-preview').src = avatarUrl;
+
+            const navAvatar = document.getElementById('navbar-avatar');
+            if (navAvatar) {
+                navAvatar.src = avatarUrl;
+                navAvatar.style.display = 'block';
+            }
 
             // Llenar inputs de edición
             document.getElementById('edit-nombre').value = data.nombre;
@@ -204,12 +210,9 @@ function cerrarSesion() {
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
 }
-// --- Configuración de Cloudinary ---
-// IMPORTANTE: Tenés que reemplazar estos valores con los de tu cuenta
 const CLOUD_NAME = "dzsrgcgq6";
 const UPLOAD_PRESET = "TeamUp_preset";
 
-// Función para subir imagen a Cloudinary
 async function subirImagenACloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
@@ -225,8 +228,18 @@ async function subirImagenACloudinary(file) {
     }
 
     const data = await respuesta.json();
-    return data.secure_url; // Cloudinary nos devuelve la URL definitiva
+    return data.secure_url;
 }
+
+document.getElementById('edit-foto').addEventListener('change', function (event) {
+    if (event.target.files && event.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('edit-avatar-preview').src = e.target.result;
+        }
+        reader.readAsDataURL(event.target.files[0]);
+    }
+});
 
 // Funciones de Conexión con el Backend
 async function registrarUsuario() {
@@ -249,11 +262,9 @@ async function registrarUsuario() {
         zona: zona
     };
 
-    // Si el usuario seleccionó un archivo, lo subimos a Cloudinary primero
     if (fotoInput.files && fotoInput.files[0]) {
         const archivo = fotoInput.files[0];
         try {
-            // Subimos a Cloudinary y guardamos la URL que nos devuelve
             const urlImagen = await subirImagenACloudinary(archivo);
             datosUsuario.foto_perfil = urlImagen;
         } catch (error) {
