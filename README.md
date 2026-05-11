@@ -16,3 +16,25 @@ uvicorn backend.main:app --reload
 # Finally, search http://127.0.0.1:8000/ in your browser and play a little with each available endpoint.
 # You can see them at http://127.0.0.1:8000/docs and also try them with 'Try it out' button.
 ```
+
+## Run with Docker Compose
+
+Desde la raíz del proyecto:
+
+```bash
+docker compose up --build
+```
+
+Eso levanta el backend, PostgreSQL, pgAdmin y el frontend.
+
+Para detener todo y borrar los contenedores:
+
+```bash
+docker compose down
+```
+
+Si también querés borrar los volúmenes de datos:
+
+```bash
+docker compose down -v
+```
