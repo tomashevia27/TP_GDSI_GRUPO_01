@@ -1,38 +1,66 @@
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app, usuarios_db
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from backend.main import app
+from backend.db import Base, get_db
+from backend.models import Usuario
+
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
 
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def preparar_db():
-    usuarios_db.clear()
+    app.dependency_overrides[get_db] = override_get_db
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
+    
+    db = TestingSessionLocal()
     
     # Mock de un usuario validado y activo
-    usuarios_db["activo@dominio.com"] = {
-        "id": 1,
-        "nombre": "Usuario",
-        "apellido": "Activo",
-        "email": "activo@dominio.com",
-        "password": "password123",
-        "edad": 25,
-        "genero": "Masculino",
-        "zona": "CABA",
-        "activo": True
-    }
+    user_activo = Usuario(
+        nombre="Usuario",
+        apellido="Activo",
+        email="activo@dominio.com",
+        password="password123",
+        edad=25,
+        genero="Masculino",
+        zona="CABA",
+        activo=True
+    )
     
     # Mock de un usuario que todavía no validó su cuenta
-    usuarios_db["inactivo@dominio.com"] = {
-        "id": 2,
-        "nombre": "Usuario",
-        "apellido": "Inactivo",
-        "email": "inactivo@dominio.com",
-        "password": "password123",
-        "edad": 25,
-        "genero": "Masculino",
-        "zona": "CABA",
-        "activo": False
-    }
+    user_inactivo = Usuario(
+        nombre="Usuario",
+        apellido="Inactivo",
+        email="inactivo@dominio.com",
+        password="password123",
+        edad=25,
+        genero="Masculino",
+        zona="CABA",
+        activo=False
+    )
+    
+    db.add(user_activo)
+    db.add(user_inactivo)
+    db.commit()
+    db.close()
 
 def test_login_exitoso():
     """Criterio: Si las credenciales son correctas, el usuario accede a su panel principal."""

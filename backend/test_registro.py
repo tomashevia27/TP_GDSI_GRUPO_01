@@ -1,19 +1,36 @@
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-# Importamos tu app y la base de datos simulada
-from backend.main import app, usuarios_db
+from backend.main import app
+from backend.db import Base, get_db
 
-# TestClient nos permite simular peticiones al backend sin necesidad de tener el servidor corriendo
+# Usamos SQLite en memoria para no ensuciar PostgreSQL durante los tests
+SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def override_get_db():
+    try:
+        db = TestingSessionLocal()
+        yield db
+    finally:
+        db.close()
+
 client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def limpiar_db():
-    """
-    Esta función se ejecuta automáticamente antes de cada test.
-    Limpia la base de datos simulada para que los tests no se interfieran entre sí.
-    """
-    usuarios_db.clear()
+    """Recrea la base de datos vacía antes de cada test."""
+    app.dependency_overrides[get_db] = override_get_db
+    Base.metadata.drop_all(bind=engine)
+    Base.metadata.create_all(bind=engine)
 
 def test_registro_exitoso_sin_foto():
     """

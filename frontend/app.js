@@ -1,26 +1,7 @@
-const API_URL = `${window.location.protocol}//${window.location.hostname}:8000`;
-const AUTH_SESSION_KEY = 'teamup_auth_user_id';
-
-function usuarioAutenticado() {
-    return sessionStorage.getItem(AUTH_SESSION_KEY) !== null;
-}
-
-function guardarSesion(usuarioId) {
-    sessionStorage.setItem(AUTH_SESSION_KEY, String(usuarioId));
-}
-
-function limpiarSesion() {
-    sessionStorage.removeItem(AUTH_SESSION_KEY);
-}
+const API_URL = "http://127.0.0.1:8000";
 
 // Sistema de navegación SPA
 function navegar(idDestino) {
-    const vistasProtegidas = ['view-home', 'view-profile', 'view-edit-profile'];
-
-    if (vistasProtegidas.includes(idDestino) && !usuarioAutenticado()) {
-        idDestino = 'view-login';
-    }
-
     // 1. Ocultar todas las vistas
     document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
     // 2. Mostrar la vista destino
@@ -70,7 +51,6 @@ async function iniciarSesion() {
         const data = await respuesta.json();
 
         if (respuesta.ok) {
-            guardarSesion(data.usuario_id);
             alert("¡Inicio de sesión exitoso!");
             navegar('view-home'); // Panel principal
         } else {
@@ -92,7 +72,6 @@ function guardarPerfil() {
 }
 
 function cerrarSesion() {
-    limpiarSesion();
     navegar('view-login');
     // Limpiar inputs si fuera necesario
     document.getElementById('login-email').value = '';

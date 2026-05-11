@@ -22,6 +22,10 @@ def login(db: Session, datos: UsuarioLogin) -> dict:
     usuario = usuario_repository.obtener_por_email(db, datos.email)
     if not usuario or usuario.password != datos.password:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
+        
+    if not usuario.activo:
+        raise HTTPException(status_code=403, detail="La cuenta no está activa aún")
+        
     return {"mensaje": "Login exitoso", "usuario_id": usuario.id}
 
 
