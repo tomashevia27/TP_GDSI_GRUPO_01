@@ -1,6 +1,13 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+from .db import engine, Base, get_db
 from .schemas import UsuarioRegistro, UsuarioLogin, UsuarioEdicion, UsuarioRespuesta
+from .services import auth_service
+
+# Crear tablas
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Team UP API")
 
@@ -13,46 +20,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Base de datos simulada (solo para el MVP)
-usuarios_db = {}
 
 @app.get("/")
 def read_root():
     return {"mensaje": "El backend esta vivo"}
 
-# Ruta extra de prueba para ver la base de datos
-@app.get("/usuarios")
-def obtener_usuarios():
-    return usuarios_db
 
 # US 1: Registro de Usuario
 @app.post("/registro", response_model=UsuarioRespuesta)
-def registrar_usuario(usuario: UsuarioRegistro):
-    if usuario.email in usuarios_db:
-        raise HTTPException(status_code=400, detail="El email ya está registrado")
-    
-    nuevo_id = len(usuarios_db) + 1
-    usuarios_db[usuario.email] = {**usuario.dict(), "id": nuevo_id}
-    return usuarios_db[usuario.email]
+def registrar_usuario(usuario: UsuarioRegistro, db: Session = Depends(get_db)):
+    """Registra un nuevo usuario."""
+    return auth_service.registrar(db, usuario)
+
 
 # US 2: Inicio de Sesión
 @app.post("/login")
-def login(datos: UsuarioLogin):
-    user = usuarios_db.get(datos.email)
-    if not user or user["password"] != datos.password:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-    return {"mensaje": "Login exitoso", "usuario_id": user["id"]}
+def login(datos: UsuarioLogin, db: Session = Depends(get_db)):
+    """Valida credenciales e inicia sesión."""
+    return auth_service.login(db, datos)
+
 
 # US 3: Editar Perfil
 @app.put("/usuarios/{user_id}", response_model=UsuarioRespuesta)
-def editar_perfil(user_id: int, datos: UsuarioEdicion):
-    # Buscamos al usuario por ID en nuestra DB simulada
-    for email, user in usuarios_db.items():
-        if user["id"] == user_id:
-            usuarios_db[email].update(datos.dict())
-            return usuarios_db[email]
-    
-    raise HTTPException(status_code=404, detail="Usuario no encontrado")
+def editar_perfil(user_id: int, datos: UsuarioEdicion, db: Session = Depends(get_db)):
+    """Edita el perfil de un usuario."""
+    return auth_service.editar_perfil(db, user_id, datos)
+
 
 @app.get("/canchas")
 def obtener_canchas():
