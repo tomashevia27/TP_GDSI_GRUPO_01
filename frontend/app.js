@@ -79,7 +79,36 @@ async function registrarUsuario() {
             alert(`¡Registro exitoso! Hola ${data.nombre}`);
             navegar('view-login');
         } else {
-            alert("Error al registrarse: " + data.detail);
+            // Si FastAPI detectó datos inválidos, devuelve una lista de errores en "data.detail"
+            if (Array.isArray(data.detail)) {
+                // Recorremos la lista de errores para armar un mensaje claro y amigable
+                let mensajesError = data.detail.map(err => {
+                    const campo = err.loc[err.loc.length - 1]; // "email", "nombre", etc.
+                    
+                    switch(campo) {
+                        case 'nombre':
+                            return "• El nombre no puede estar vacío.";
+                        case 'apellido':
+                            return "• El apellido no puede estar vacío.";
+                        case 'password':
+                            return "• La contraseña debe tener como mínimo 8 caracteres.";
+                        case 'email':
+                            return "• El email ingresado no es válido (ej: usuario@correo.com).";
+                        case 'edad':
+                            return "• La edad debe ser un número válido.";
+                        case 'genero':
+                            return "• Tenés que seleccionar una opción de género.";
+                        case 'zona':
+                            return "• La zona de juego no puede estar vacía.";
+                        default:
+                            return `• Por favor, revisá el campo: ${campo}.`;
+                    }
+                });
+                alert("Revisá los datos ingresados:\n\n" + mensajesError.join('\n'));
+            } else {
+                // Errores generales (ej: "El email ya existe")
+                alert("Error al registrarse: " + data.detail);
+            }
         }
     } catch (error) {
         console.error("Error de conexión:", error);

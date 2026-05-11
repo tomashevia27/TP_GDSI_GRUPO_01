@@ -10,8 +10,8 @@ class UsuarioRegistro(BaseModel):
     email: EmailStr # valida el formato usuario@dominio.com automáticamente
     password: str = Field(..., min_length=8, description="La contraseña debe tener al menos 8 caracteres")
     edad: int
-    genero: str
-    zona: str
+    genero: str = Field(..., min_length=1, description="El género no puede estar vacío")
+    zona: str = Field(..., min_length=1, description="La zona no puede estar vacía")
     foto_perfil: Optional[str] = None
 
 # -----------------------------------------
@@ -28,9 +28,9 @@ class UsuarioEdicion(BaseModel):
     nombre: str = Field(..., min_length=1)
     apellido: str = Field(..., min_length=1)
     edad: int
-    genero: str
+    genero: str = Field(..., min_length=1)
     password: str = Field(..., min_length=8)
-    zona: str
+    zona: str = Field(..., min_length=1)
     foto_perfil: Optional[str] = None
 
 # -----------------------------------------
