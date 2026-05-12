@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -27,10 +27,31 @@ def read_root():
 
 
 # US 1: Registro de Usuario
-@app.post("/registro", response_model=UsuarioRespuesta)
+@app.post("/registro")
 def registrar_usuario(usuario: UsuarioRegistro, db: Session = Depends(get_db)):
-    """Registra un nuevo usuario."""
+    """Registra un nuevo usuario y envía código de confirmación por email."""
     return auth_service.registrar(db, usuario)
+
+
+# US 1b: Confirmar email
+@app.post("/confirmar-email")
+def confirmar_email(payload: dict, db: Session = Depends(get_db)):
+    """Recibe JSON {"email":"...", "code":"..."} y confirma el email."""
+    email = payload.get("email")
+    code = payload.get("code")
+    if not email or not code:
+        raise HTTPException(status_code=422, detail="email y code son requeridos")
+    return auth_service.confirmar_email(db, email, code)
+
+
+# Reenviar código de confirmación
+@app.post("/reenviar-codigo")
+def reenviar_codigo(payload: dict, db: Session = Depends(get_db)):
+    """Recibe JSON {"email":"..."} y reenvía el código de confirmación."""
+    email = payload.get("email")
+    if not email:
+        raise HTTPException(status_code=422, detail="email es requerido")
+    return auth_service.reenviar_codigo(db, email)
 
 
 # US 2: Inicio de Sesión

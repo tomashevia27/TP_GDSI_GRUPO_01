@@ -66,8 +66,8 @@ export default function RegisterPage() {
       }
 
       const data = await registerUser(userData)
-      alert(`¡Registro exitoso! Hola ${data.nombre}`)
-      router.push("/login")
+      // Redirigir a la página de confirmación con el email para prefilar el campo
+      router.push(`/confirm?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
       alert(error instanceof Error ? error.message : "No se pudo conectar con el servidor.")
     } finally {

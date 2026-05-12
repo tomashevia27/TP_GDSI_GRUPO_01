@@ -120,6 +120,30 @@ export async function getUserProfile(userId: string): Promise<UserProfile> {
   return data
 }
 
+export async function confirmEmail(email: string, code: string): Promise<{ mensaje: string }>{
+  const response = await fetch(`${API_URL}/confirmar-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, code }),
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || data.mensaje || "Error al confirmar email")
+  return data
+}
+
+export async function resendCode(email: string): Promise<{ mensaje: string }>{
+  const response = await fetch(`${API_URL}/reenviar-codigo`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  })
+
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || data.mensaje || "Error al reenviar código")
+  return data
+}
+
 export async function updateUserProfile(
   userId: string,
   userData: Partial<UserData>
