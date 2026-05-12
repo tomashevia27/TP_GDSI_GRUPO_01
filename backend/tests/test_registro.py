@@ -36,11 +36,12 @@ def test_registro_exitoso_sin_foto():
     """
     US 1 - Criterio 1 y 6: El formulario solicita campos obligatorios y la foto es opcional.
     Si el registro se completa, el usuario queda registrado.
-    
+
     Cómo funciona:
     - Se envía un payload POST con todos los campos obligatorios válidos, omitiendo 'foto_perfil'.
     - Verifica que la respuesta HTTP sea 200 OK.
-    - Verifica que el JSON devuelto contenga el email y un ID asignado.
+    - Verifica que el JSON devuelto contenga un mensaje de éxito (el registro no devuelve datos
+      del usuario; el siguiente paso es confirmar el email).
     """
     datos = {
         "nombre": "Tomas",
@@ -52,15 +53,14 @@ def test_registro_exitoso_sin_foto():
         "zona": "CABA"
     }
     response = client.post("/registro", json=datos)
-    
+
     assert response.status_code == 200
-    assert response.json()["email"] == "tomas@dominio.com"
-    assert "id" in response.json()
+    assert "mensaje" in response.json()
 
 def test_registro_exitoso_con_foto():
     """
-    US 1 - Criterio 1: La foto de perfil es procesada correctamente si se provee.
-    
+    US 1 - Criterio 1: La foto de perfil es opcional y el registro puede completarse con ella.
+
     Cómo funciona:
     - Se envía un payload POST igual al anterior pero añadiendo el campo 'foto_perfil' (ej. URL de Cloudinary).
     - Verifica que la respuesta HTTP sea 200 OK y que el backend haya aceptado el payload.
@@ -76,9 +76,9 @@ def test_registro_exitoso_con_foto():
         "foto_perfil": "https://res.cloudinary.com/demo/image.jpg"
     }
     response = client.post("/registro", json=datos)
-    
+
     assert response.status_code == 200
-    assert response.json()["email"] == "tomas_foto@dominio.com"
+    assert "mensaje" in response.json()
 
 def test_registro_falla_campo_faltante():
     """
@@ -179,13 +179,17 @@ def test_registro_falla_email_repetido():
 
 def test_registro_luego_login_exitoso():
     """
-    US 1 - Criterio 6: Si el registro se completa, el usuario puede iniciar sesión.
-    
+    US 1 - Criterio 6: Si el registro se completa, el usuario puede iniciar sesión con sus credenciales.
+
     Cómo funciona:
     - Crea un usuario nuevo vía POST /registro.
-    - Realiza una petición POST /login con las credenciales recién creadas.
-    - Verifica que el login sea exitoso (HTTP 200) y devuelva el usuario_id.
+    - Simula la confirmación de email: recupera el código generado directamente desde la base
+      de datos de test (ya que el email real no llega en entorno de pruebas) y llama a
+      POST /confirmar-email. Esto refleja el flujo real que el usuario completaría.
+    - Realiza POST /login y verifica que el acceso sea exitoso (HTTP 200) con usuario_id.
     """
+    from backend.models import Usuario as UsuarioModel
+
     datos_registro = {
         "nombre": "Tomas",
         "apellido": "Hevia",
@@ -197,12 +201,21 @@ def test_registro_luego_login_exitoso():
     }
     client.post("/registro", json=datos_registro)
 
+    # Recuperamos el código de confirmación desde la DB de test para simular el flujo de email
+    db = TestingSessionLocal()
+    usuario = db.query(UsuarioModel).filter_by(email="tomas_nuevo@dominio.com").first()
+    codigo = usuario.confirmation_code
+    db.close()
+
+    response_confirmacion = client.post("/confirmar-email", json={"email": "tomas_nuevo@dominio.com", "code": codigo})
+    assert response_confirmacion.status_code == 200
+
     datos_login = {
         "email": "tomas_nuevo@dominio.com",
         "password": "miclavesegura123"
     }
     response_login = client.post("/login", json=datos_login)
-    
+
     assert response_login.status_code == 200
     assert response_login.json()["mensaje"] == "Login exitoso"
     assert "usuario_id" in response_login.json()

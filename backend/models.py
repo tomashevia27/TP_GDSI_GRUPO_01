@@ -15,6 +15,5 @@ class Usuario(Base):
     genero = Column(String(50), nullable=False)
     zona = Column(String(100), nullable=False)
     foto_perfil = Column(Text, nullable=True)
-    activo = Column(Boolean, default=True)
     email_confirmado = Column(Boolean, default=False)
     confirmation_code = Column(String(20), nullable=True)

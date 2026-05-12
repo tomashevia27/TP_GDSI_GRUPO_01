@@ -39,12 +39,9 @@ def login(db: Session, datos: UsuarioLogin) -> dict:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
     
     if not usuario.email_confirmado:
-        raise HTTPException(status_code=403, detail="Debes confirmar tu email antes de iniciar sesión")
+        raise HTTPException(status_code=403, detail="La cuenta no está activa aún")
 
     return {"mensaje": "Login exitoso", "usuario_id": usuario.id}
-
-
-
 
 
 def confirmar_email(db: Session, email: str, code: str) -> dict:
