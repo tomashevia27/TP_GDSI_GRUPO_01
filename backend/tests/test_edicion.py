@@ -45,7 +45,6 @@ def preparar_db():
         edad=20,
         genero="Femenino",
         zona="Norte",
-        activo=True
     )
     
     db.add(user)

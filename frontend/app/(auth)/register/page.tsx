@@ -73,16 +73,9 @@ export default function RegisterPage() {
       }
   
       const data = await registerUser(userData)
-  
-      // Alerta de éxito con el nombre del usuario
-      await Swal.fire({
-        title: "¡Bienvenido a TeamUp!",
-        text: `Registro exitoso. ¡Hola ${data.nombre}!`,
-        icon: "success",
-        confirmButtonColor: "#00c2cb",
-      })
-  
-      router.push("/login")
+      // Redirigir a la página de confirmación con el email para prefilar el campo
+      router.push(`/confirm?email=${encodeURIComponent(formData.email)}`)
+
     } catch (error) {
       // Alerta de error (por ejemplo, si el email ya existe)
       Swal.fire({

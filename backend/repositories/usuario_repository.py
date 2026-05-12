@@ -13,6 +13,11 @@ def obtener_por_id(db: Session, user_id: int) -> Usuario | None:
     return db.get(Usuario, user_id)
 
 
+def obtener_por_codigo(db: Session, code: str) -> Usuario | None:
+    """Busca un usuario por código de confirmación."""
+    return db.query(Usuario).filter(Usuario.confirmation_code == code).first()
+
+
 def crear_usuario(db: Session, usuario: Usuario) -> Usuario:
     """Crea un nuevo usuario en la BD."""
     db.add(usuario)

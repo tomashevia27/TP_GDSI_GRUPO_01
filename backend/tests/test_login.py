@@ -45,7 +45,7 @@ def preparar_db():
         edad=25,
         genero="Masculino",
         zona="CABA",
-        activo=True
+        email_confirmado=True,
     )
     
     user_inactivo = Usuario(
@@ -56,7 +56,7 @@ def preparar_db():
         edad=25,
         genero="Masculino",
         zona="CABA",
-        activo=False
+        email_confirmado=False,
     )
     
     db.add(user_activo)
