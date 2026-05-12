@@ -10,6 +10,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { useAuthContext } from "@/components/auth-provider"
 import { loginUser } from "@/hooks/use-api"
 
+import Swal from 'sweetalert2'
+import 'sweetalert2/dist/sweetalert2.min.css'
+
 export default function LoginPage() {
   const router = useRouter()
   const { login } = useAuthContext()
@@ -19,21 +22,41 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-
+  
     if (!email || !password) {
-      alert("El email y la contraseña son requeridos.")
+      Swal.fire({
+        title: "Atención",
+        text: "El email y la contraseña son requeridos.",
+        icon: "warning",
+        confirmButtonColor: "#00c2cb",
+      })
       return
     }
-
+  
     setIsLoading(true)
-
+  
     try {
       const data = await loginUser(email, password)
+      
       login(String(data.usuario_id))
-      alert("¡Inicio de sesión exitoso!")
+      
+      await Swal.fire({
+        title: "¡Bienvenido!",
+        text: "Inicio de sesión exitoso.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      })
+  
       router.push("/home")
+      
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo conectar con el servidor.")
+      Swal.fire({
+        title: "Error de acceso",
+        text: error instanceof Error ? error.message : "No se pudo conectar con el servidor.",
+        icon: "error",
+        confirmButtonColor: "#00c2cb",
+      })
     } finally {
       setIsLoading(false)
     }

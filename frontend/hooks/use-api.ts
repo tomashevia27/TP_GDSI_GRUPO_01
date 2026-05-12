@@ -2,7 +2,7 @@
 
 const API_URL = typeof window !== "undefined" 
   ? `${window.location.protocol}//${window.location.hostname}:8000`
-  : "https://6a0267f20d92f63dd253a56c.mockapi.io/"
+  : "http://localhost:8000"
 
 const CLOUD_NAME = "dzsrgcgq6"
 const UPLOAD_PRESET = "TeamUp_preset"
@@ -55,12 +55,17 @@ export async function loginUser(
     body: JSON.stringify({ email, password }),
   })
 
+  // Leemos el JSON una sola vez aquí
   const data = await response.json()
 
   if (!response.ok) {
+    // Si FastAPI devuelve errores de validación (Pydantic), data.detail es un Array
     if (Array.isArray(data.detail)) {
       throw new Error("Por favor, ingresá un formato de email válido.")
     }
+    
+    // Aquí es donde atrapamos el "Email o contraseña incorrectos" del backend
+    // Lanzamos el error para que el 'catch' del LoginPage lo capture
     throw new Error(data.detail || "Error al iniciar sesión")
   }
 
@@ -83,25 +88,18 @@ export async function registerUser(userData: UserData): Promise<UserProfile> {
       const messages = data.detail.map((err: { loc: string[] }) => {
         const campo = err.loc[err.loc.length - 1]
         switch (campo) {
-          case "nombre":
-            return "• El nombre no puede estar vacío."
-          case "apellido":
-            return "• El apellido no puede estar vacío."
-          case "password":
-            return "• La contraseña debe tener como mínimo 8 caracteres."
-          case "email":
-            return "• El email ingresado no es válido (ej: usuario@correo.com)."
-          case "edad":
-            return "• La edad debe ser un número válido."
-          case "genero":
-            return "• Tenés que seleccionar una opción de género."
-          case "zona":
-            return "• La zona de juego no puede estar vacía."
-          default:
-            return `• Por favor, revisá el campo: ${campo}.`
+          case "nombre": return "• El nombre no puede estar vacío."
+          case "apellido": return "• El apellido no puede estar vacío."
+          case "password": return "• La contraseña debe tener como mínimo 8 caracteres."
+          case "email": return "• El email ingresado no es válido."
+          case "edad": return "• La edad debe ser un número válido."
+          case "genero": return "• Tenés que seleccionar una opción de género."
+          case "zona": return "• La zona de juego no puede estar vacía."
+          default: return `• Por favor, revisá el campo: ${campo}.`
         }
       })
-      throw new Error("Revisá los datos ingresados:\n\n" + messages.join("\n"))
+      
+      throw new Error("<b>Revisá los datos ingresados:</b><br /><br />" + messages.join("<br />"))
     }
     throw new Error(data.detail || "Error al registrarse")
   }
