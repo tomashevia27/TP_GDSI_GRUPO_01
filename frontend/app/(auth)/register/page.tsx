@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { registerUser, uploadImageToCloudinary } from "@/hooks/use-api"
+import Swal from 'sweetalert2'
 
 export default function RegisterPage() {
   const router = useRouter()
@@ -40,20 +41,26 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsLoading(true)
-
+  
     try {
       let fotoUrl: string | undefined
-
+  
       if (foto) {
         try {
           fotoUrl = await uploadImageToCloudinary(foto)
         } catch {
-          alert("Hubo un problema al subir tu foto de perfil. Por favor, intentá de nuevo.")
+          // Alerta si falla la subida de imagen
+          Swal.fire({
+            title: "Error de imagen",
+            text: "Hubo un problema al subir tu foto de perfil. Por favor, intentá de nuevo.",
+            icon: "error",
+            confirmButtonColor: "#00c2cb",
+          })
           setIsLoading(false)
           return
         }
       }
-
+  
       const userData = {
         nombre: formData.nombre,
         apellido: formData.apellido,
@@ -64,12 +71,19 @@ export default function RegisterPage() {
         zona: formData.zona,
         foto_perfil: fotoUrl,
       }
-
+  
       const data = await registerUser(userData)
       // Redirigir a la página de confirmación con el email para prefilar el campo
       router.push(`/confirm?email=${encodeURIComponent(formData.email)}`)
+
     } catch (error) {
-      alert(error instanceof Error ? error.message : "No se pudo conectar con el servidor.")
+      // Alerta de error (por ejemplo, si el email ya existe)
+      Swal.fire({
+        title: "No se pudo registrar",
+        text: error instanceof Error ? error.message : "No se pudo conectar con el servidor.",
+        icon: "error",
+        confirmButtonColor: "#00c2cb",
+      })
     } finally {
       setIsLoading(false)
     }
