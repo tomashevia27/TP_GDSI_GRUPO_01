@@ -33,9 +33,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "3000:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html
+      - "3000:3000"
 
   pgadmin:
     image: dpage/pgadmin4:7.5

@@ -1,9 +1,27 @@
-FROM nginx:1.27-alpine
+# Build stage
+FROM node:20-alpine AS builder
 
-WORKDIR /usr/share/nginx/html
+WORKDIR /app
 
-COPY . /usr/share/nginx/html
+COPY package*.json pnpm-lock.yaml* ./
 
-EXPOSE 80
+RUN npm install -g pnpm && pnpm install
 
-CMD ["nginx", "-g", "daemon off;"]
+COPY . .
+
+RUN pnpm run build
+
+# Production stage
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/public ./public
+
+RUN npm install -g pnpm && pnpm install --prod
+
+EXPOSE 3000
+
+CMD ["pnpm", "start"]
