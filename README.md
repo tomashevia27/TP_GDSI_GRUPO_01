@@ -72,3 +72,4 @@ Esto levanta npm para el front, tiene que estar el back en el puerto 8000 (si ha
 ```bash
 pnpm dev
 ```
+chequeo algo
