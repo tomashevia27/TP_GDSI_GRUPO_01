@@ -27,13 +27,16 @@ client = TestClient(app)
 
 @pytest.fixture(autouse=True)
 def preparar_db():
+    """
+    Prepara la base de datos en memoria para cada test de login.
+    Inserta dos usuarios mock: uno activo y uno inactivo.
+    """
     app.dependency_overrides[get_db] = override_get_db
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     
     db = TestingSessionLocal()
     
-    # Mock de un usuario validado y activo
     user_activo = Usuario(
         nombre="Usuario",
         apellido="Activo",
@@ -45,7 +48,6 @@ def preparar_db():
         activo=True
     )
     
-    # Mock de un usuario que todavía no validó su cuenta
     user_inactivo = Usuario(
         nombre="Usuario",
         apellido="Inactivo",
@@ -63,33 +65,66 @@ def preparar_db():
     db.close()
 
 def test_login_exitoso():
-    """Criterio: Si las credenciales son correctas, el usuario accede a su panel principal."""
+    """
+    US 2 - Criterio 2: Si las credenciales son correctas, el usuario accede a su panel.
+    
+    Cómo funciona:
+    - Envía credenciales correctas ('activo@dominio.com', 'password123') de un usuario insertado en el mock.
+    - Verifica que la respuesta sea HTTP 200 OK y contenga un mensaje de éxito.
+    """
     response = client.post("/login", json={"email": "activo@dominio.com", "password": "password123"})
     assert response.status_code == 200
     assert response.json()["mensaje"] == "Login exitoso"
 
 def test_login_faltan_datos():
-    """Criterio: Para iniciar sesión se deben ingresar email y contraseña."""
-    # Enviamos solo email, sin la password (falla Pydantic en FastAPI)
+    """
+    US 2 - Criterio 1: Se deben ingresar email y contraseña.
+    
+    Cómo funciona:
+    - Envía un payload POST incompleto (solo email, sin password).
+    - Verifica que el sistema (Pydantic) responda con HTTP 422 Unprocessable Entity.
+    - Comprueba que el error indique específicamente la falta del campo 'password'.
+    """
     response = client.post("/login", json={"email": "activo@dominio.com"})
     assert response.status_code == 422
     errores = response.json()["detail"]
     assert any(err["loc"] == ["body", "password"] for err in errores)
 
 def test_login_credenciales_incorrectas():
-    """Criterio: Si la contraseña es incorrecta, muestra un mensaje de error genérico."""
+    """
+    US 2 - Criterio 3: Contraseña incorrecta devuelve mensaje genérico.
+    
+    Cómo funciona:
+    - Envía un email válido con una contraseña errónea ('clave_equivocada').
+    - Verifica que la respuesta sea HTTP 401 Unauthorized.
+    - Comprueba que el mensaje sea exactamente "Email o contraseña incorrectos" para no filtrar datos sensibles.
+    """
     response = client.post("/login", json={"email": "activo@dominio.com", "password": "clave_equivocada"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Email o contraseña incorrectos"
 
 def test_login_usuario_no_registrado():
-    """Criterio: Si el usuario no existe, muestra el mismo mensaje de error genérico."""
+    """
+    US 2 - Criterio 4: Si el usuario no existe, devuelve el mismo mensaje genérico.
+    
+    Cómo funciona:
+    - Envía un email que no está en la base de datos ('fantasma@dominio.com').
+    - Verifica que devuelva HTTP 401 Unauthorized.
+    - Asegura que el mensaje devuelto sea idéntico al de contraseña incorrecta ("Email o contraseña incorrectos").
+    """
     response = client.post("/login", json={"email": "fantasma@dominio.com", "password": "password123"})
     assert response.status_code == 401
     assert response.json()["detail"] == "Email o contraseña incorrectos"
 
 def test_login_cuenta_no_activa():
-    """Criterio: Si el usuario no completó la validación, informar que la cuenta no está activa aún."""
+    """
+    US 2 - Criterio 5: Si el usuario no completó validación, informar que no está activo.
+    
+    Cómo funciona:
+    - Envía credenciales correctas de un usuario cuya bandera 'activo' está en False.
+    - Verifica que la respuesta sea HTTP 403 Forbidden.
+    - Comprueba que el mensaje de error indique que la cuenta no está activa aún.
+    """
     response = client.post("/login", json={"email": "inactivo@dominio.com", "password": "password123"})
     assert response.status_code == 403
     assert response.json()["detail"] == "La cuenta no está activa aún"

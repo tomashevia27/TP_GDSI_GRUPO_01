@@ -29,7 +29,7 @@ class UsuarioEdicion(BaseModel):
     apellido: str = Field(..., min_length=1)
     edad: int
     genero: str = Field(..., min_length=1)
-    password: str = Field(..., min_length=8)
+    password: Optional[str] = Field(None, min_length=8)
     zona: str = Field(..., min_length=1)
     foto_perfil: Optional[str] = None
 
