@@ -1,8 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 import secrets
-import os
-from typing import Optional
 
 from ..models import Usuario
 from ..repositories import usuario_repository
@@ -25,14 +23,9 @@ def registrar(db: Session, usuario: UsuarioRegistro) -> UsuarioRespuesta:
     nuevo_usuario = Usuario(**usuario.dict(), confirmation_code=code, email_confirmado=False)
     usuario_repository.guardar(db, nuevo_usuario)
 
-    # Enviar email con Resend (si está configurado)
+    # El helper envía por SMTP según la configuración.
     try:
-        api_key = os.getenv("RESEND_API_KEY")
-        if api_key:
-            email_service.send_confirmation_email(nuevo_usuario.email, code)
-        else:
-            # en desarrollo, dejamos que el código sea visible en logs
-            print("RESEND_API_KEY no configurada; código:", code)
+        email_service.send_confirmation_email(nuevo_usuario.email, code)
     except Exception as e:
         print("Error enviando email de confirmación:", e)
 
@@ -86,11 +79,7 @@ def reenviar_codigo(db: Session, email: str) -> dict:
     usuario_repository.guardar(db, usuario)
 
     try:
-        api_key = os.getenv("RESEND_API_KEY")
-        if api_key:
-            email_service.send_confirmation_email(usuario.email, code)
-        else:
-            print("RESEND_API_KEY no configurada; código:", code)
+        email_service.send_confirmation_email(usuario.email, code)
     except Exception as e:
         print("Error reenviando email:", e)
 

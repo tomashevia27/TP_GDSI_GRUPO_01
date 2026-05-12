@@ -1,28 +1,39 @@
 import os
-import requests
+import smtplib
+import ssl
+from email.message import EmailMessage
 
 
 def send_confirmation_email(to_email: str, code: str) -> None:
-    """Envía el código de confirmación usando la API de Resend.
+    """Envía el código de confirmación usando SMTP."""
 
-    Requiere la variable de entorno RESEND_API_KEY con la API key.
-    """
-    api_key = os.getenv("RESEND_API_KEY")
-    if not api_key:
-        raise RuntimeError("RESEND_API_KEY no configurada")
+    smtp_host = os.getenv("SMTP_HOST")
+    if not smtp_host:
+        raise RuntimeError("SMTP_HOST no está configurado")
 
-    url = "https://api.resend.com/emails"
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-    }
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_username = os.getenv("SMTP_USERNAME")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+    smtp_from = os.getenv("SMTP_FROM_EMAIL")
+    use_tls = os.getenv("SMTP_USE_TLS", "true").strip().lower() in {"1", "true", "yes", "on"}
 
-    payload = {
-        "from": "onboarding@resend.dev",
-        "to": [to_email],
-        "subject": "Confirma tu cuenta en Team UP",
-        "html": f"<p>Tu código de confirmación es: <strong>{code}</strong></p>",
-    }
+    message = EmailMessage()
+    message["Subject"] = "Confirma tu cuenta en Team UP"
+    message["From"] = smtp_from
+    message["To"] = to_email
+    message.set_content(
+        f"Tu código de confirmación es: {code}\n\n"
+        "Si no solicitaste este registro, podés ignorar este mensaje."
+    )
+    message.add_alternative(
+        f"<p>Tu código de confirmación es: <strong>{code}</strong></p>",
+        subtype="html",
+    )
 
-    resp = requests.post(url, json=payload, headers=headers, timeout=10)
-    resp.raise_for_status()
+    context = ssl.create_default_context()
+    with smtplib.SMTP(smtp_host, smtp_port, timeout=10) as server:
+        if use_tls:
+            server.starttls(context=context)
+        if smtp_username:
+            server.login(smtp_username, smtp_password)
+        server.send_message(message)
