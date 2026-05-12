@@ -4,11 +4,11 @@ import secrets
 
 from ..models import Usuario
 from ..repositories import usuario_repository
-from ..schemas import UsuarioRegistro, UsuarioLogin, UsuarioEdicion, UsuarioRespuesta
+from ..schemas import UsuarioRegistro, UsuarioLogin
 from ..utils import email_service
 
 
-def registrar(db: Session, usuario: UsuarioRegistro) -> UsuarioRespuesta:
+def registrar(db: Session, usuario: UsuarioRegistro) -> dict:
     """Registra un nuevo usuario, genera código de confirmación y lo envía por email.
 
     Retorna dict con mensaje.
@@ -44,12 +44,7 @@ def login(db: Session, datos: UsuarioLogin) -> dict:
     return {"mensaje": "Login exitoso", "usuario_id": usuario.id}
 
 
-def editar_perfil(db: Session, user_id: int, datos: UsuarioEdicion) -> UsuarioRespuesta:
-    """Edita el perfil de un usuario."""
-    usuario = usuario_repository.editar_usuario(db, user_id, datos)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    return _usuario_a_respuesta(usuario)
+
 
 
 def confirmar_email(db: Session, email: str, code: str) -> dict:
@@ -86,15 +81,4 @@ def reenviar_codigo(db: Session, email: str) -> dict:
     return {"mensaje": "Código reenviado (revisa tu email)."}
 
 
-def _usuario_a_respuesta(usuario: Usuario) -> UsuarioRespuesta:
-    """Convierte un modelo Usuario a UsuarioRespuesta."""
-    return UsuarioRespuesta(
-        id=usuario.id,
-        nombre=usuario.nombre,
-        apellido=usuario.apellido,
-        email=usuario.email,
-        edad=usuario.edad,
-        genero=usuario.genero,
-        zona=usuario.zona,
-        foto_perfil=usuario.foto_perfil,
-    )
+
