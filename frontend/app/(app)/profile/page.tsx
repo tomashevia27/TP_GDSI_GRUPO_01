@@ -78,7 +78,7 @@ export default function ProfilePage() {
               <div className="bg-secondary rounded-lg p-4 text-left text-sm mb-4">
                 <p className="font-bold mb-1">Datos:</p>
                 <p className="text-muted-foreground">
-                  {profile?.edad} años • {profile?.genero}
+                  {profile?.edad} años • {profile?.genero} • tipo de cuenta: {profile?.rol}
                 </p>
               </div>
 

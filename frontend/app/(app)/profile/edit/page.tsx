@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
+import Swal from 'sweetalert2'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -92,12 +93,22 @@ export default function EditProfilePage() {
     e.preventDefault()
 
     if (!formData.nombre.trim() || !formData.apellido.trim()) {
-      alert("El nombre y apellido son obligatorios y no pueden quedar en blanco.")
+      Swal.fire({
+        title: "Atención",
+        text: "El nombre y apellido son obligatorios y no pueden quedar en blanco.",
+        icon: "warning",
+        confirmButtonColor: "#00c2cb",
+      })
       return
     }
 
     if (!formData.password) {
-      alert("Debes ingresar tu contraseña (o una nueva) para confirmar los cambios.")
+      Swal.fire({
+        title: "Atención",
+        text: "Debes ingresar tu contraseña (o una nueva) para confirmar los cambios.",
+        icon: "warning",
+        confirmButtonColor: "#00c2cb",
+      })
       return
     }
 
@@ -112,7 +123,12 @@ export default function EditProfilePage() {
         try {
           fotoUrl = await uploadImageToCloudinary(foto)
         } catch {
-          alert("Error al subir la nueva foto de perfil.")
+          Swal.fire({
+            title: "Error de imagen",
+            text: "Hubo un problema al subir tu foto de perfil. Por favor, intentá de nuevo.",
+            icon: "error",
+            confirmButtonColor: "#00c2cb",
+          })
           setIsSaving(false)
           return
         }
@@ -130,14 +146,21 @@ export default function EditProfilePage() {
         foto_perfil: fotoUrl,
       })
 
-      alert("¡Perfil actualizado correctamente!")
+      await Swal.fire({
+        title: "¡Listo!",
+        text: "Perfil actualizado correctamente.",
+        icon: "success",
+        timer: 1500,
+        showConfirmButton: false,
+      })
       router.push("/profile")
     } catch (error) {
-      alert(
-        error instanceof Error
-          ? error.message
-          : "Error de conexión al actualizar el perfil."
-      )
+      Swal.fire({
+        title: "No se pudo actualizar",
+        text: error instanceof Error ? error.message : "Error de conexión al actualizar el perfil.",
+        icon: "error",
+        confirmButtonColor: "#00c2cb",
+      })
     } finally {
       setIsSaving(false)
     }

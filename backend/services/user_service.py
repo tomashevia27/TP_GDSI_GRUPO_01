@@ -16,6 +16,7 @@ def _usuario_a_respuesta(usuario: Usuario) -> UsuarioRespuesta:
         edad=usuario.edad,
         genero=usuario.genero,
         zona=usuario.zona,
+        rol=usuario.rol,
         foto_perfil=usuario.foto_perfil,
     )
 
