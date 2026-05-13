@@ -1,6 +1,8 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
 
+from .models import RolUsuario
+
 # -----------------------------------------
 # US 1: Registro de Usuario
 # -----------------------------------------
@@ -12,6 +14,7 @@ class UsuarioRegistro(BaseModel):
     edad: int
     genero: str = Field(..., min_length=1, description="El género no puede estar vacío")
     zona: str = Field(..., min_length=1, description="La zona no puede estar vacía")
+    rol: RolUsuario = RolUsuario.jugador
     foto_perfil: Optional[str] = None
 
 # -----------------------------------------
@@ -44,6 +47,7 @@ class UsuarioRespuesta(BaseModel):
     edad: int
     genero: str
     zona: str
+    rol: RolUsuario
     foto_perfil: Optional[str] = None
     
     class Config:
