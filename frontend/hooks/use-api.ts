@@ -15,6 +15,7 @@ export interface UserData {
   edad: number
   genero: string
   zona: string
+  rol: string
   foto_perfil?: string
 }
 
@@ -95,11 +96,12 @@ export async function registerUser(userData: UserData): Promise<UserProfile> {
           case "edad": return "• La edad debe ser un número válido."
           case "genero": return "• Tenés que seleccionar una opción de género."
           case "zona": return "• La zona de juego no puede estar vacía."
+          case "rol": return "• Debe seleccionarse un rol."
           default: return `• Por favor, revisá el campo: ${campo}.`
         }
       })
       
-      throw new Error("<b>Revisá los datos ingresados:</b><br /><br />" + messages.join("<br />"))
+      throw new Error("Revisá los datos ingresados: " + messages.join("\n"))
     }
     throw new Error(data.detail || "Error al registrarse")
   }

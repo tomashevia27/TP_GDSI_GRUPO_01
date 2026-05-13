@@ -28,6 +28,7 @@ export default function RegisterPage() {
     edad: "",
     genero: "Masculino",
     zona: "",
+    rol: "Jugador",
   })
   const [foto, setFoto] = useState<File | null>(null)
 
@@ -69,6 +70,7 @@ export default function RegisterPage() {
         edad: parseInt(formData.edad),
         genero: formData.genero,
         zona: formData.zona,
+        rol: formData.rol,
         foto_perfil: fotoUrl,
       }
   
@@ -204,7 +206,26 @@ export default function RegisterPage() {
                   className="bg-secondary border-border"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="rol" className="font-bold text-sm">
+                  Rol
+                </Label>
+                <Select
+                  value={formData.rol}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, rol: value }))
+                  }
+                >
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Jugador">Jugador</SelectItem>
+                    <SelectItem value="Administrador">Administrador</SelectItem>
+                  </SelectContent>
+                </Select>
             </div>
+          </div>  
 
             <div className="space-y-2">
               <Label htmlFor="foto" className="font-bold text-sm">
