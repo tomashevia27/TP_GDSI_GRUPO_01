@@ -28,7 +28,7 @@ export default function RegisterPage() {
     edad: "",
     genero: "Masculino",
     zona: "",
-    rol: "Jugador",
+    rol: "jugador",
   })
   const [foto, setFoto] = useState<File | null>(null)
 
@@ -220,8 +220,8 @@ export default function RegisterPage() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Jugador">Jugador</SelectItem>
-                    <SelectItem value="Administrador">Administrador</SelectItem>
+                    <SelectItem value="jugador">Jugador</SelectItem>
+                    <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
