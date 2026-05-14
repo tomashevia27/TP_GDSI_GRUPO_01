@@ -164,3 +164,39 @@ export async function updateUserProfile(
 
   return data
 }
+
+export interface CanchaData {
+  nombre: string
+  tipo_superficie: string
+  tamano: number
+  iluminacion: boolean
+  zona: string
+  direccion: string
+  precio_por_turno: number
+  dias_operativos: string
+  hora_apertura: string
+  hora_cierre: string
+  fotos?: string
+  propietario_id: number
+}
+
+export async function crearCancha(canchaData: CanchaData) {
+  const response = await fetch(`${API_URL}/canchas`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(canchaData),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al crear la cancha")
+  }
+
+  return data
+}

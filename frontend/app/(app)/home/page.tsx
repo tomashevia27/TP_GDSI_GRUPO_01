@@ -1,6 +1,7 @@
 "use client"
 
-import { Plus, Calendar, Search } from "lucide-react"
+import Link from "next/link"
+import { Plus, Calendar, Search, MapPin } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -9,10 +10,18 @@ export default function HomePage() {
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">Dashboard de Inicio</h1>
-        <Button className="font-bold">
-          <Plus className="mr-2 h-4 w-4" />
-          Nuevo Partido
-        </Button>
+        <div className="flex gap-4">
+          <Button variant="outline" className="font-bold" asChild>
+            <Link href="/canchas/nueva">
+              <MapPin className="mr-2 h-4 w-4" />
+              Crear Cancha
+            </Link>
+          </Button>
+          <Button className="font-bold">
+            <Plus className="mr-2 h-4 w-4" />
+            Nuevo Partido
+          </Button>
+        </div>
       </div>
 
       <Card>

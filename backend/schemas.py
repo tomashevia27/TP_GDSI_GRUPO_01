@@ -52,3 +52,39 @@ class UsuarioRespuesta(BaseModel):
     
     class Config:
         orm_mode = True
+
+# -----------------------------------------
+# US 4: Crear Cancha
+# -----------------------------------------
+class CanchaCreate(BaseModel):
+    nombre: str = Field(..., min_length=1)
+    tipo_superficie: str = Field(..., min_length=1)
+    tamano: int = Field(..., gt=0)
+    iluminacion: bool
+    zona: str = Field(..., min_length=1)
+    direccion: str = Field(..., min_length=1)
+    precio_por_turno: float = Field(..., gt=0, description="El precio debe ser mayor a cero")
+    dias_operativos: int = Field(..., description="Bitmask de días operativos (ej: 31 = Lun-Vie)")
+    hora_apertura: str = Field(..., min_length=1)
+    hora_cierre: str = Field(..., min_length=1)
+    fotos: Optional[str] = None
+    propietario_id: int
+
+class CanchaRespuesta(BaseModel):
+    id: int
+    nombre: str
+    tipo_superficie: str
+    tamano: int
+    iluminacion: bool
+    zona: str
+    direccion: str
+    precio_por_turno: float
+    dias_operativos: int
+    hora_apertura: str
+    hora_cierre: str
+    fotos: Optional[str] = None
+    activa: bool
+    propietario_id: int
+
+    class Config:
+        orm_mode = True
