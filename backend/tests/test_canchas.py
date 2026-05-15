@@ -6,13 +6,17 @@ from sqlalchemy.pool import StaticPool
 from backend.main import app
 from backend.db import Base, get_db
 from backend.models import Usuario, RolUsuario
+
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
+
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 def override_get_db():
     try:
         db = TestingSessionLocal()
@@ -20,6 +24,7 @@ def override_get_db():
     finally:
         db.close()
 client = TestClient(app)
+
 @pytest.fixture(autouse=True)
 def limpiar_db():
     """Limpia la base de datos antes de cada test."""
@@ -43,9 +48,12 @@ def limpiar_db():
     db.commit()
     db.refresh(usuario)
     db.close()
+
+
 # ==========================================
 # TESTS - CREAR CANCHA (US 4)
 # ==========================================
+
 def test_crear_cancha_exitosa():
     """
     CA-1: Se crea la cancha con todos los campos obligatorios.
@@ -70,6 +78,7 @@ def test_crear_cancha_exitosa():
     assert res_json["mensaje"] == "Cancha creada exitosamente"
     assert res_json["cancha"]["activa"] is True
     assert res_json["cancha"]["nombre"] == "Cancha El 10"
+
 def test_crear_cancha_con_foto_opcional():
     """
     CA-1: Las fotos son opcionales.
@@ -91,6 +100,7 @@ def test_crear_cancha_con_foto_opcional():
     response = client.post("/canchas", json=datos)
     assert response.status_code == 200
     assert response.json()["cancha"]["fotos"] == "https://cloudinary.com/imagen.jpg"
+
 def test_crear_cancha_faltan_campos():
     """
     CA-2: Si falta un campo obligatorio, indica error y no crea la cancha.
@@ -112,6 +122,7 @@ def test_crear_cancha_faltan_campos():
     assert response.status_code == 422
     errores = response.json()["detail"]
     assert any(err["loc"] == ["body", "tipo_superficie"] for err in errores)
+
 def test_crear_cancha_precio_cero():
     """
     CA-3: El precio debe ser mayor a cero.
@@ -133,6 +144,7 @@ def test_crear_cancha_precio_cero():
     assert response.status_code == 422
     errores = response.json()["detail"]
     assert any(err["loc"] == ["body", "precio_por_turno"] for err in errores)
+
 def test_crear_cancha_precio_negativo():
     """
     CA-3: El precio debe ser mayor a cero (negativo也不行).
@@ -152,6 +164,7 @@ def test_crear_cancha_precio_negativo():
     }
     response = client.post("/canchas", json=datos)
     assert response.status_code == 422
+
 def test_crear_cancha_horario_cierre_antes_apertura():
     """
     CA-3: El horario de cierre debe ser posterior al de apertura.
@@ -172,6 +185,7 @@ def test_crear_cancha_horario_cierre_antes_apertura():
     response = client.post("/canchas", json=datos)
     assert response.status_code == 400
     assert response.json()["detail"] == "La hora de cierre debe ser posterior a la de apertura"
+
 def test_crear_cancha_horario_igual():
     """
     CA-3: El horario de cierre no puede ser igual al de apertura.
@@ -191,6 +205,7 @@ def test_crear_cancha_horario_igual():
     }
     response = client.post("/canchas", json=datos)
     assert response.status_code == 400
+
 def test_crear_cancha_duplicada():
     """
     CA-4: No pueden existir dos canchas con el mismo nombre y dirección del mismo propietario.
@@ -215,6 +230,7 @@ def test_crear_cancha_duplicada():
     res2 = client.post("/canchas", json=datos)
     assert res2.status_code == 400
     assert "Ya existe una cancha con este nombre y dirección" in res2.json()["detail"]
+
 def test_crear_cancha_mismo_nombre_diferente_direccion():
     """
     CA-4: Diferentes direcciones = diferentes canchas (no es duplicado).
@@ -249,6 +265,7 @@ def test_crear_cancha_mismo_nombre_diferente_direccion():
     assert res1.status_code == 200
     res2 = client.post("/canchas", json=datos2)
     assert res2.status_code == 200
+
 def test_crear_cancha_jugador_no_puede():
     """
     CA-1: Solo los admins (dueños de canchas) pueden crear canchas.
@@ -287,9 +304,12 @@ def test_crear_cancha_jugador_no_puede():
     response = client.post("/canchas", json=datos)
     assert response.status_code == 403
     assert response.json()["detail"] == "Solo los dueños de cancha pueden crear canchas"
+
+
 # ==========================================
 # TESTS - LISTAR CANCHAS (CA-5: Visibles para jugadores)
 # ==========================================
+
 def test_obtener_todas_las_canchas():
     """
     CA-5: GET /canchas devuelve todas las canchas (admin).
@@ -313,6 +333,7 @@ def test_obtener_todas_las_canchas():
     assert response.status_code == 200
     canchas = response.json()
     assert len(canchas) == 1
+
 def test_obtener_canchas_disponibles_solo_activas():
     """
     CA-5: GET /canchas/disponibles devuelve solo las canchas activas.
@@ -338,6 +359,7 @@ def test_obtener_canchas_disponibles_solo_activas():
     assert len(canchas) == 1
     assert canchas[0]["activa"] is True
     assert canchas[0]["nombre"] == "Cancha Activa"
+
 def test_obtener_canchas_disponibles_vacio():
     """
     CA-5: GET /canchas/disponibles devuelve array vacío si no hay canchas.
@@ -346,6 +368,7 @@ def test_obtener_canchas_disponibles_vacio():
     assert response.status_code == 200
     canchas = response.json()
     assert canchas == []
+
 def test_dias_operativos_texto_lunes_viernes():
     """
     CA-5: dias_operativos_texto formateado correctamente (31 = Lun-Vie).
@@ -367,6 +390,7 @@ def test_dias_operativos_texto_lunes_viernes():
     response = client.get("/canchas/disponibles")
     assert response.status_code == 200
     assert response.json()[0]["dias_operativos_texto"] == "Lunes a Viernes"
+
 def test_dias_operativos_texto_fines_semana():
     """
     CA-5: dias_operativos_texto formateado (96 = Sáb-Dom).
@@ -388,6 +412,7 @@ def test_dias_operativos_texto_fines_semana():
     response = client.get("/canchas/disponibles")
     assert response.status_code == 200
     assert response.json()[0]["dias_operativos_texto"] == "Fines de semana"
+
 def test_dias_operativos_texto_todos_los_dias():
     """
     CA-5: dias_operativos_texto formateado (127 = todos).
@@ -409,9 +434,12 @@ def test_dias_operativos_texto_todos_los_dias():
     response = client.get("/canchas/disponibles")
     assert response.status_code == 200
     assert response.json()[0]["dias_operativos_texto"] == "Todos los días"
+
+
 # ==========================================
 # TESTS - DETALLE DE CANCHA (CA-5)
 # ==========================================
+
 def test_obtener_cancha_por_id_existe():
     """
     CA-5: GET /canchas/{id} devuelve la cancha cuando existe.
@@ -439,6 +467,7 @@ def test_obtener_cancha_por_id_existe():
     assert res_json["iluminacion"] is False
     assert res_json["zona"] == "Nuñez"
     assert res_json["precio_por_turno"] == 12000
+
 def test_obtener_cancha_por_id_no_existe():
     """
     CA-5: GET /canchas/{id} devuelve 404 cuando no existe.
@@ -446,6 +475,7 @@ def test_obtener_cancha_por_id_no_existe():
     response = client.get("/canchas/999")
     assert response.status_code == 404
     assert response.json()["detail"] == "Cancha no encontrada"
+
 def test_obtener_cancha_por_id_incluye_dias_texto():
     """
     CA-5: El detalle incluye dias_operativos_texto.
