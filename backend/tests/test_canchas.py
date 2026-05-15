@@ -6,7 +6,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.main import app
 from backend.db import Base, get_db
-from backend.models import Usuario
+from backend.models import Usuario, RolUsuario
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
@@ -41,6 +41,7 @@ def limpiar_db():
         edad=30,
         genero="Masculino",
         zona="CABA",
+        rol=RolUsuario.admin,
         email_confirmado=True
     )
     db.add(usuario)
@@ -106,14 +107,13 @@ def test_crear_cancha_horario_invalido():
         "zona": "Palermo",
         "direccion": "Av. Libertador 1234",
         "precio_por_turno": 10000,
-        "dias_operativos": "Lunes a Viernes",
-        #"dias_operativos": 31,
+        #"dias_operativos": "Lunes a Viernes",
+        "dias_operativos": 31,
         "hora_apertura": "23:00",
         "hora_cierre": "08:00",
         "propietario_id": 1
     }
     response = client.post("/canchas", json=datos)
-    print(response.json())
     # Falla la lógica del servicio con 400
     assert response.status_code == 400
     assert response.json()["detail"] == "La hora de cierre debe ser posterior a la de apertura"
@@ -163,3 +163,43 @@ def test_crear_cancha_duplicada():
     res2 = client.post("/canchas", json=datos)
     assert res2.status_code == 400
     assert "Ya existe una cancha con este nombre y dirección" in res2.json()["detail"]
+
+
+def test_crear_cancha_jugador_no_puede():
+    """US 4: Un usuario con rol 'jugador' no puede crear canchas."""
+    # Crear un usuario jugador
+    db = TestingSessionLocal()
+    jugador = Usuario(
+        nombre="Jugador",
+        apellido="Test",
+        email="jugador@test.com",
+        password="password123",
+        edad=25,
+        genero="Masculino",
+        zona="CABA",
+        rol=RolUsuario.jugador,
+        email_confirmado=True
+    )
+    db.add(jugador)
+    db.commit()
+    db.refresh(jugador)
+    jugador_id = jugador.id
+    db.close()
+
+    datos = {
+        "nombre": "Cancha El 10",
+        "tipo_superficie": "Sintético",
+        "tamano": 5,
+        "iluminacion": True,
+        "zona": "Palermo",
+        "direccion": "Av. Libertador 1234",
+        "precio_por_turno": 15000.0,
+        "dias_operativos": 31,
+        "hora_apertura": "08:00",
+        "hora_cierre": "23:00",
+        "propietario_id": jugador_id
+    }
+    response = client.post("/canchas", json=datos)
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Solo los dueños de cancha pueden crear canchas"
+

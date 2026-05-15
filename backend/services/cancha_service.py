@@ -2,7 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from ..models import Cancha
+from ..models import Cancha, Usuario, RolUsuario
 from ..repositories import cancha_repository
 from ..schemas import CanchaCreate
 
@@ -16,7 +16,12 @@ def parse_time(time_str: str):
 
 def crear_cancha(db: Session, datos: CanchaCreate) -> dict:
     """Valida y crea una nueva cancha."""
-    
+
+    # 0. Validar que el propietario exista y sea un dueño de cancha (admin)
+    propietario = db.query(Usuario).filter(Usuario.id == datos.propietario_id).first()
+    if not propietario or propietario.rol != RolUsuario.admin:
+        raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden crear canchas")
+
     # 1. Validar que la hora de cierre sea posterior a la de apertura
     hora_apertura = parse_time(datos.hora_apertura)
     hora_cierre = parse_time(datos.hora_cierre)
