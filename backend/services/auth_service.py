@@ -41,7 +41,7 @@ def login(db: Session, datos: UsuarioLogin) -> dict:
     if not usuario.email_confirmado:
         raise HTTPException(status_code=403, detail="La cuenta no está activa aún")
 
-    return {"mensaje": "Login exitoso", "usuario_id": usuario.id}
+    return {"mensaje": "Login exitoso", "usuario_id": usuario.id, "rol": usuario.rol}
 
 
 def confirmar_email(db: Session, email: str, code: str) -> dict:

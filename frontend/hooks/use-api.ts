@@ -47,7 +47,7 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
 export async function loginUser(
   email: string,
   password: string
-): Promise<{ usuario_id: number }> {
+): Promise<{ usuario_id: number; rol: string }> {
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: {

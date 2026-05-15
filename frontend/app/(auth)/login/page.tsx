@@ -38,7 +38,7 @@ export default function LoginPage() {
     try {
       const data = await loginUser(email, password)
       
-      login(String(data.usuario_id))
+      login(String(data.usuario_id), data.rol)
       
       await Swal.fire({
         title: "¡Bienvenido!",
