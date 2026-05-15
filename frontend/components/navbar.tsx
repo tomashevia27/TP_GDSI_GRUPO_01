@@ -17,8 +17,8 @@ export function Navbar({ onLogout }: NavbarProps) {
     <nav className="bg-card shadow-sm border-b border-border sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <Link 
-            href="/home" 
+          <Link
+            href="/home"
             className="text-2xl font-bold text-primary tracking-tight"
           >
             TeamUp ⚽
@@ -29,8 +29,8 @@ export function Navbar({ onLogout }: NavbarProps) {
               href="/home"
               className={cn(
                 "font-semibold transition-colors hover:text-primary",
-                pathname === "/home" 
-                  ? "text-primary" 
+                pathname === "/home"
+                  ? "text-primary"
                   : "text-muted-foreground"
               )}
             >
