@@ -59,7 +59,8 @@ def test_crear_cancha_exitosa():
         "zona": "Palermo",
         "direccion": "Av. Libertador 1234",
         "precio_por_turno": 15000.0,
-        "dias_operativos": "Lunes a Viernes",
+        #"dias_operativos": "Lunes a Viernes",
+        "dias_operativos": 31,
         "hora_apertura": "08:00",
         "hora_cierre": "23:00",
         "propietario_id": 1
@@ -82,7 +83,8 @@ def test_crear_cancha_precio_invalido():
         "zona": "Palermo",
         "direccion": "Av. Libertador 1234",
         "precio_por_turno": 0,
-        "dias_operativos": "Lunes a Viernes",
+        #"dias_operativos": "Lunes a Viernes",
+        "dias_operativos": 31,
         "hora_apertura": "08:00",
         "hora_cierre": "23:00",
         "propietario_id": 1
@@ -105,11 +107,13 @@ def test_crear_cancha_horario_invalido():
         "direccion": "Av. Libertador 1234",
         "precio_por_turno": 10000,
         "dias_operativos": "Lunes a Viernes",
+        #"dias_operativos": 31,
         "hora_apertura": "23:00",
         "hora_cierre": "08:00",
         "propietario_id": 1
     }
     response = client.post("/canchas", json=datos)
+    print(response.json())
     # Falla la lógica del servicio con 400
     assert response.status_code == 400
     assert response.json()["detail"] == "La hora de cierre debe ser posterior a la de apertura"
@@ -125,7 +129,7 @@ def test_crear_cancha_faltan_campos():
         "zona": "Palermo",
         "direccion": "Av. Libertador 1234",
         "precio_por_turno": 10000,
-        "dias_operativos": "Lunes a Viernes",
+        "dias_operativos": 31,
         "hora_apertura": "08:00",
         "hora_cierre": "23:00",
         "propietario_id": 1
@@ -146,7 +150,7 @@ def test_crear_cancha_duplicada():
         "zona": "Palermo",
         "direccion": "Calle Falsa 123",
         "precio_por_turno": 15000.0,
-        "dias_operativos": "Lunes a Viernes",
+        "dias_operativos": 31,
         "hora_apertura": "08:00",
         "hora_cierre": "23:00",
         "propietario_id": 1
