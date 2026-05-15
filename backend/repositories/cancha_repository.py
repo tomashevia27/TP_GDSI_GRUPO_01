@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from ..models import Cancha
-
+from fastapi import HTTPException
 
 def guardar_cancha(db: Session, cancha: Cancha) -> Cancha:
     """Guarda una cancha en la base de datos."""
@@ -22,3 +22,15 @@ def obtener_por_nombre_direccion_propietario(db: Session, nombre: str, direccion
 def obtener_todas(db: Session):
     """Devuelve todas las canchas registradas."""
     return db.query(Cancha).all()
+
+
+def obtener_activas(db: Session):
+    """Devuelve solo las canchas activas."""
+    return db.query(Cancha).filter(Cancha.activa == True).all()
+
+
+def obtener_por_id(db: Session, cancha_id: int):
+    cancha = db.query(Cancha).filter(Cancha.id == cancha_id).first()
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    return cancha

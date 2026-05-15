@@ -6,7 +6,6 @@ from ..models import Cancha, Usuario, RolUsuario
 from ..repositories import cancha_repository
 from ..schemas import CanchaCreate
 
-
 def parse_time(time_str: str):
     try:
         return datetime.strptime(time_str, "%H:%M").time()
@@ -46,6 +45,11 @@ def crear_cancha(db: Session, datos: CanchaCreate) -> dict:
 
     return {"mensaje": "Cancha creada exitosamente", "cancha": cancha_guardada}
 
-
 def obtener_todas(db: Session):
     return cancha_repository.obtener_todas(db)
+
+def obtener_activas(db: Session):
+    return cancha_repository.obtener_activas(db)
+
+def obtener_por_id(db: Session, cancha_id: int):
+    return cancha_repository.obtener_por_id(db, cancha_id)

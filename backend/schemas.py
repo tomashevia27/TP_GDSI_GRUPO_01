@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional
 
 from .models import RolUsuario
@@ -80,6 +80,7 @@ class CanchaRespuesta(BaseModel):
     direccion: str
     precio_por_turno: float
     dias_operativos: int
+    dias_operativos_texto: Optional[str] = None
     hora_apertura: str
     hora_cierre: str
     fotos: Optional[str] = None
@@ -88,3 +89,19 @@ class CanchaRespuesta(BaseModel):
 
     class Config:
         orm_mode = True
+    
+    @validator('dias_operativos_texto', always=True)
+    def calcular_dias_texto(cls, v, values):
+        bitmask = values.get('dias_operativos', 0)
+        dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        activos = [dias[i] for i in range(7) if (bitmask >> i) & 1]
+        
+        if not activos:
+            return "Sin días operativos"
+        if len(activos) == 7:
+            return "Todos los días"
+        if activos == dias[:5]:
+            return "Lunes a Viernes"
+        if activos == dias[5:]:
+            return "Fines de semana"
+        return ", ".join(activos)
