@@ -34,3 +34,22 @@ def obtener_por_id(db: Session, cancha_id: int):
     if not cancha:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
     return cancha
+
+
+def tiene_reservas_activas(db: Session, cancha_id: int) -> bool:
+    """Verifica si una cancha tiene reservas activas."""
+    # Aquí se debe implementar la lógica para verificar reservas activas
+    # Por ejemplo, buscar en la tabla de reservas si hay alguna con estado activo para esta cancha
+    reservas_activas = db.query(Reserva).filter(Reserva.cancha_id == cancha_id, Reserva.estado == "activa").count()
+    return reservas_activas > 0
+
+
+def eliminar_cancha(db: Session, cancha: Cancha):
+    """Elimina o desactiva una cancha."""
+    db.delete(cancha)
+    db.commit()
+
+
+def obtener_por_admin(db: Session, admin_id: int):
+    """Obtiene todas las canchas de un administrador."""
+    return db.query(Cancha).filter(Cancha.propietario_id == admin_id).all()

@@ -79,3 +79,40 @@ def editar_cancha(db: Session, cancha_id: int, datos: CanchaCreate):
     db.commit()
     db.refresh(cancha)
     return {"mensaje": "Cancha actualizada exitosamente", "cancha": cancha}
+
+def eliminar_cancha(db: Session, cancha_id: int):
+    """Elimina una cancha si no tiene reservas activas."""
+    cancha = cancha_repository.obtener_por_id(db, cancha_id)
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+
+    # Validar si la cancha tiene reservas activas
+    if cancha_repository.tiene_reservas_activas(db, cancha_id):
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha tiene reservas activas. No se puede eliminar hasta que se cancelen o reprogramen."
+        )
+
+    # Eliminar o desactivar la cancha
+    cancha_repository.eliminar_cancha(db, cancha)
+    return {"mensaje": "Cancha eliminada exitosamente"}
+
+def eliminar_canchas_por_admin(db: Session, admin_id: int):
+    """Elimina todas las canchas asociadas a un administrador."""
+    administrador = db.query(Usuario).filter(Usuario.id == admin_id, Usuario.rol == RolUsuario.admin).first()
+    if not administrador:
+        raise HTTPException(status_code=404, detail="Administrador no encontrado")
+
+    canchas = cancha_repository.obtener_por_admin(db, admin_id)
+    if not canchas:
+        return {"mensaje": "El administrador no tiene canchas registradas"}
+
+    for cancha in canchas:
+        if cancha_repository.tiene_reservas_activas(db, cancha.id):
+            raise HTTPException(
+                status_code=400,
+                detail=f"La cancha con ID {cancha.id} tiene reservas activas y no puede ser eliminada"
+            )
+        cancha_repository.eliminar_cancha(db, cancha)
+
+    return {"mensaje": "Todas las canchas del administrador han sido eliminadas"}

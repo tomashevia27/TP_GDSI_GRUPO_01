@@ -32,3 +32,13 @@ def obtener_cancha_por_id(cancha_id: int, db: Session = Depends(get_db)):
 def editar_cancha(cancha_id: int, datos: CanchaUpdate, db: Session = Depends(get_db)):
     """Edita parcialmente las características de una cancha existente."""
     return cancha_service.editar_cancha(db, cancha_id, datos)
+
+@router.delete("/{cancha_id}")
+def eliminar_cancha(cancha_id: int, db: Session = Depends(get_db)):
+    """Elimina una cancha si no tiene reservas activas."""
+    return cancha_service.eliminar_cancha(db, cancha_id)
+
+@router.delete("/admin/{admin_id}")
+def eliminar_canchas_por_admin(admin_id: int, db: Session = Depends(get_db)):
+    """Elimina todas las canchas de un administrador."""
+    return cancha_service.eliminar_canchas_por_admin(db, admin_id)
