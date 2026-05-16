@@ -1,8 +1,9 @@
+from .routers import auth, canchas
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import engine, Base
-from .routers import auth, users, canchas
+from .routers import users
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)

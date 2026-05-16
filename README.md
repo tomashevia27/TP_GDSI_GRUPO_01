@@ -20,6 +20,14 @@ Si también querés borrar los volúmenes de datos:
 
 ```bash
 docker compose down -v
+
+```
+
+otro comando para borrar los volúmenes de datos:
+
+```bash
+docker-compose down -v --rmi all --remove-orphans
+
 ```
 
 ## Dependences 

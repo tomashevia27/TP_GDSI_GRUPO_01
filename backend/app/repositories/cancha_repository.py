@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from ..models import Cancha
+from ..models.cancha_model import Cancha
 from fastapi import HTTPException
 
 def guardar_cancha(db: Session, cancha: Cancha) -> Cancha:

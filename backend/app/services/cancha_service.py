@@ -2,9 +2,10 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from ..models import Cancha, Usuario, RolUsuario
+from ..models.usuario_model import Usuario, RolUsuario
+from ..models.cancha_model import Cancha
 from ..repositories import cancha_repository
-from ..schemas import CanchaCreate
+from ..schemas.cancha_schemas import CanchaCreate
 
 def parse_time(time_str: str):
     try:

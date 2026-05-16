@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..db import get_db
-from ..schemas import CanchaCreate, CanchaRespuesta
+from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta
 from ..services import cancha_service
 
 router = APIRouter(prefix="/canchas", tags=["Canchas"])

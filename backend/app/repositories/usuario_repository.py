@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from ..models import Usuario
-from ..schemas import UsuarioEdicion
+from ..models.usuario_model import Usuario
+from ..schemas.usuario_schemas import UsuarioEdicion
 
 
 def obtener_por_email(db: Session, email: str) -> Usuario | None:

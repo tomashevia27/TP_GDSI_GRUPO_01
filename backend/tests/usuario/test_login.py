@@ -4,9 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.main import app
-from backend.db import Base, get_db
-from backend.models import Usuario
+from backend.app.main import app
+from backend.app.db import Base, get_db
+from backend.app.models.usuario_model import Usuario
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(

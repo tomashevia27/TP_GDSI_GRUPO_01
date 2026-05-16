@@ -1,9 +1,9 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from ..models import Usuario
+from ..models.usuario_model import Usuario
 from ..repositories import usuario_repository
-from ..schemas import UsuarioEdicion, UsuarioRespuesta
+from ..schemas.usuario_schemas import UsuarioEdicion, UsuarioRespuesta
 
 
 def _usuario_a_respuesta(usuario: Usuario) -> UsuarioRespuesta:

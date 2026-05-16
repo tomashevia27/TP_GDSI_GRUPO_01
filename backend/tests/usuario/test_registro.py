@@ -4,8 +4,8 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.main import app
-from backend.db import Base, get_db
+from backend.app.main import app
+from backend.app.db import Base, get_db
 
 # Usamos SQLite en memoria para no ensuciar PostgreSQL durante los tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -188,7 +188,7 @@ def test_registro_luego_login_exitoso():
       POST /confirmar-email. Esto refleja el flujo real que el usuario completaría.
     - Realiza POST /login y verifica que el acceso sea exitoso (HTTP 200) con usuario_id.
     """
-    from backend.models import Usuario as UsuarioModel
+    from backend.app.models.usuario_model import Usuario as UsuarioModel
 
     datos_registro = {
         "nombre": "Tomas",

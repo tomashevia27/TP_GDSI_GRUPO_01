@@ -2,10 +2,10 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 import secrets
 
-from ..models import Usuario
+from ..models.usuario_model import Usuario
 from ..repositories import usuario_repository
-from ..schemas import UsuarioRegistro, UsuarioLogin
-from ..utils import email_service
+from ..schemas.usuario_schemas import UsuarioRegistro, UsuarioLogin
+from . import email_service
 
 
 def registrar(db: Session, usuario: UsuarioRegistro) -> dict:
