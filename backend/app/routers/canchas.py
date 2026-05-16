@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..db import get_db
-from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta
+from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta, CanchaUpdate
 from ..services import cancha_service
 
 router = APIRouter(prefix="/canchas", tags=["Canchas"])
@@ -27,3 +27,8 @@ def obtener_canchas_disponibles(db: Session = Depends(get_db)):
 def obtener_cancha_por_id(cancha_id: int, db: Session = Depends(get_db)):
     """Obtiene una cancha por ID."""
     return cancha_service.obtener_por_id(db, cancha_id)
+
+@router.patch("/{cancha_id}")
+def editar_cancha(cancha_id: int, datos: CanchaUpdate, db: Session = Depends(get_db)):
+    """Edita parcialmente las características de una cancha existente."""
+    return cancha_service.editar_cancha(db, cancha_id, datos)

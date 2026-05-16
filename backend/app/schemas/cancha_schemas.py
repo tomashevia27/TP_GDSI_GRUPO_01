@@ -53,3 +53,20 @@ class CanchaRespuesta(BaseModel):
         if activos == dias[5:]:
             return "Fines de semana"
         return ", ".join(activos)
+
+# -----------------------------------------
+# US 4: Editar Cancha
+# -----------------------------------------
+class CanchaUpdate(BaseModel):
+    nombre: Optional[str] = Field(None, min_length=1)
+    tipo_superficie: Optional[str] = Field(None, min_length=1)
+    tamano: Optional[int] = Field(None, gt=0)
+    iluminacion: Optional[bool] = None
+    zona: Optional[str] = Field(None, min_length=1)
+    direccion: Optional[str] = Field(None, min_length=1)
+    precio_por_turno: Optional[float] = Field(None, gt=0)
+    dias_operativos: Optional[int] = None
+    hora_apertura: Optional[str] = Field(None, min_length=1)
+    hora_cierre: Optional[str] = Field(None, min_length=1)
+    fotos: Optional[str] = None
+    propietario_id: Optional[int] = None

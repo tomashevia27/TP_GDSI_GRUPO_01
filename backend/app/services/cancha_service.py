@@ -54,3 +54,28 @@ def obtener_activas(db: Session):
 
 def obtener_por_id(db: Session, cancha_id: int):
     return cancha_repository.obtener_por_id(db, cancha_id)
+
+def editar_cancha(db: Session, cancha_id: int, datos: CanchaCreate):
+    """Edita una cancha existente."""
+    cancha = cancha_repository.obtener_por_id(db, cancha_id)
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+
+    # Validar que el propietario exista y sea un dueño de cancha
+    propietario = db.query(Usuario).filter(Usuario.id == datos.propietario_id).first()
+    if not propietario or propietario.rol != RolUsuario.admin:
+        raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden editar canchas")
+
+    # Validar que la hora de cierre sea posterior a la de apertura
+    hora_apertura = parse_time(datos.hora_apertura)
+    hora_cierre = parse_time(datos.hora_cierre)
+    if hora_cierre <= hora_apertura:
+        raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
+
+    # Actualizar los datos de la cancha
+    for key, value in datos.dict(exclude_unset=True).items():
+        setattr(cancha, key, value)
+
+    db.commit()
+    db.refresh(cancha)
+    return {"mensaje": "Cancha actualizada exitosamente", "cancha": cancha}
