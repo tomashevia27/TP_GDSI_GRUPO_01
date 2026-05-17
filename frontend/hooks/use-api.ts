@@ -173,7 +173,7 @@ export interface CanchaData {
   zona: string
   direccion: string
   precio_por_turno: number
-  dias_operativos: string
+  dias_operativos: number
   hora_apertura: string
   hora_cierre: string
   fotos?: string
@@ -196,6 +196,41 @@ export async function crearCancha(canchaData: CanchaData) {
       throw new Error("Revisá los datos ingresados.")
     }
     throw new Error(data.detail || "Error al crear la cancha")
+  }
+
+  return data
+}
+
+export async function actualizarCancha(canchaId: number | string, canchaData: Partial<CanchaData>) {
+  const response = await fetch(`${API_URL}/canchas/${canchaId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(canchaData),
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al actualizar la cancha")
+  }
+
+  return data
+}
+
+export async function eliminarCancha(canchaId: number | string) {
+  const response = await fetch(`${API_URL}/canchas/${canchaId}`, {
+    method: "DELETE",
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al eliminar la cancha")
   }
 
   return data
