@@ -57,18 +57,19 @@ export default function HomePage() {
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">Canchas Disponibles</h1>
         <div className="flex gap-4">
-          {role === "admin" && (
-            <Button variant="outline" className="font-bold" asChild>
+          {role === "admin" ? (
+            <Button className="font-bold" asChild>
               <Link href="/canchas/nueva">
-                <MapPin className="mr-2 h-4 w-4" />
+                <Plus className="mr-2 h-4 w-4" />
                 Crear Cancha
               </Link>
             </Button>
+          ) : (
+            <Button className="font-bold">
+              <Plus className="mr-2 h-4 w-4" />
+              Nuevo Partido
+            </Button>
           )}
-          <Button className="font-bold">
-            <Plus className="mr-2 h-4 w-4" />
-            Nuevo Partido
-          </Button>
         </div>
 
       </div>
