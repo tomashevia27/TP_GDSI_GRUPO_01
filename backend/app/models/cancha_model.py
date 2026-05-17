@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, ForeignKey
+from sqlalchemy.orm import relationship
 
 from ..db import Base
 
@@ -19,3 +20,4 @@ class Cancha(Base):
     fotos = Column(Text, nullable=True)
     activa = Column(Boolean, default=True)
     propietario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    partidos = relationship("Partido", back_populates="cancha")

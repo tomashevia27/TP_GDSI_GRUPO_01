@@ -1,6 +1,7 @@
 import enum
 
 from sqlalchemy import Column, Integer, String, Text, Boolean, Enum
+from sqlalchemy.orm import relationship
 
 from ..db import Base
 
@@ -23,3 +24,6 @@ class Usuario(Base):
     foto_perfil = Column(Text, nullable=True)
     email_confirmado = Column(Boolean, default=False)
     confirmation_code = Column(String(20), nullable=True)
+
+    partidos_organizados = relationship("Partido", back_populates="organizador")
+    #partidos_inscritos = relationship("Partido", secondary="partido_jugadores", back_populates="jugadores")

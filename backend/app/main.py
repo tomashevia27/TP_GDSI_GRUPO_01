@@ -1,9 +1,9 @@
-from .routers import auth, canchas
+
+from app.routers import auth, canchas, users, partidos
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .db import engine, Base
-from .routers import users
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)
@@ -27,3 +27,4 @@ def read_root():
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(canchas.router)
+app.include_router(partidos.router)
