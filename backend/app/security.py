@@ -9,8 +9,7 @@ from .db import get_db
 from .models.usuario_model import Usuario
 from .repositories import usuario_repository
 
-# Leer secret key desde variables de entorno o usar una por defecto
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-key")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24 horas
 

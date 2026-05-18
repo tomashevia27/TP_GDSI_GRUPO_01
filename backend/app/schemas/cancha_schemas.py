@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Optional
 
 # -----------------------------------------
@@ -18,6 +18,8 @@ class CanchaCreate(BaseModel):
     fotos: Optional[str] = None
 
 class CanchaRespuesta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str
     tipo_superficie: str
@@ -34,24 +36,26 @@ class CanchaRespuesta(BaseModel):
     activa: bool
     propietario_id: int
 
-    class Config:
-        orm_mode = True
-
-    @validator('dias_operativos_texto', always=True)
-    def calcular_dias_texto(cls, v, values):
-        bitmask = values.get('dias_operativos', 0)
+    @model_validator(mode="after")
+    def calcular_dias_texto(self):
+        bitmask = self.dias_operativos or 0
         dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
         activos = [dias[i] for i in range(7) if (bitmask >> i) & 1]
 
         if not activos:
-            return "Sin días operativos"
+            self.dias_operativos_texto = "Sin días operativos"
+            return self
         if len(activos) == 7:
-            return "Todos los días"
+            self.dias_operativos_texto = "Todos los días"
+            return self
         if activos == dias[:5]:
-            return "Lunes a Viernes"
+            self.dias_operativos_texto = "Lunes a Viernes"
+            return self
         if activos == dias[5:]:
-            return "Fines de semana"
-        return ", ".join(activos)
+            self.dias_operativos_texto = "Fines de semana"
+            return self
+        self.dias_operativos_texto = ", ".join(activos)
+        return self
 
 # -----------------------------------------
 # US 4: Editar Cancha

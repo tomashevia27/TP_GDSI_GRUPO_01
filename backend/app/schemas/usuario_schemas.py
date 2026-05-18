@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import Optional
 
 from ..models.usuario_model import RolUsuario
@@ -40,6 +40,8 @@ class UsuarioEdicion(BaseModel):
 # Esquema de Respuesta (Lo que le devolvemos al frontend)
 # -----------------------------------------
 class UsuarioRespuesta(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     nombre: str
     apellido: str
@@ -49,6 +51,3 @@ class UsuarioRespuesta(BaseModel):
     zona: str
     rol: RolUsuario
     foto_perfil: Optional[str] = None
-
-    class Config:
-        orm_mode = True

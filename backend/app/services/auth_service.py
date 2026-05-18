@@ -21,7 +21,7 @@ def registrar(db: Session, usuario: UsuarioRegistro) -> dict:
     # Generar código de 6 dígitos
     code = f"{secrets.randbelow(10**6):06d}"
 
-    nuevo_usuario = Usuario(**usuario.dict(), confirmation_code=code, email_confirmado=False)
+    nuevo_usuario = Usuario(**usuario.model_dump(), confirmation_code=code, email_confirmado=False)
     usuario_repository.guardar(db, nuevo_usuario)
 
     # El helper envía por SMTP según la configuración.

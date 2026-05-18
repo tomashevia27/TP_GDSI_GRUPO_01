@@ -42,7 +42,7 @@ def crear_cancha(db: Session, current_user: Usuario, datos: CanchaCreate) -> dic
         raise HTTPException(status_code=400, detail="Ya existe una cancha con este nombre y dirección para este propietario")
 
     # 4. Crear instancia y guardar (queda activa=True por defecto según el modelo)
-    cancha_data = datos.dict(exclude={"propietario_id"})
+    cancha_data = datos.model_dump(exclude={"propietario_id"})
     nueva_cancha = Cancha(**cancha_data, activa=True, propietario_id=propietario_id)
     cancha_guardada = cancha_repository.guardar_cancha(db, nueva_cancha)
 
@@ -74,7 +74,7 @@ def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: Can
         raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
 
     # Actualizar los datos de la cancha
-    for key, value in datos.dict(exclude={"propietario_id"}, exclude_unset=True).items():
+    for key, value in datos.model_dump(exclude={"propietario_id"}, exclude_unset=True).items():
         setattr(cancha, key, value)
 
     cancha_repository.guardar_cancha(db, cancha)

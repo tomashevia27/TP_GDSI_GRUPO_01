@@ -6,6 +6,7 @@ from sqlalchemy.pool import StaticPool
 from backend.app.main import app
 from backend.app.db import Base, get_db
 from backend.app.models.usuario_model import Usuario, RolUsuario
+from backend.app.security import get_current_user
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -48,6 +49,7 @@ def limpiar_db():
     db.commit()
     db.refresh(usuario)
     db.close()
+    app.dependency_overrides[get_current_user] = lambda: usuario
 
 
 # ==========================================
@@ -288,6 +290,7 @@ def test_crear_cancha_jugador_no_puede():
     db.refresh(jugador)
     db_id = jugador.id
     db.close()
+    app.dependency_overrides[get_current_user] = lambda: jugador
     datos = {
         "nombre": "Cancha Jugador",
         "tipo_superficie": "Sintético",

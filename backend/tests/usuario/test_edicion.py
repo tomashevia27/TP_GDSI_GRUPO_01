@@ -7,6 +7,7 @@ from sqlalchemy.pool import StaticPool
 from backend.app.main import app
 from backend.app.db import Base, get_db
 from backend.app.models.usuario_model import Usuario
+from backend.app.security import get_current_user
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 engine = create_engine(
@@ -51,6 +52,7 @@ def preparar_db():
     db.commit()
     db.refresh(user)
     db.close()
+    app.dependency_overrides[get_current_user] = lambda: user
 
 def test_edicion_exitosa():
     """
@@ -58,7 +60,7 @@ def test_edicion_exitosa():
     Los cambios se guardan y devuelven inmediatamente.
     
     Cómo funciona:
-    - Realiza una petición PUT a /usuarios/1 con todos los campos editables cambiados.
+    - Realiza una petición PUT a /usuarios/me con todos los campos editables cambiados.
     - Verifica respuesta HTTP 200 OK.
     - Extrae el JSON devuelto y comprueba que TODOS los campos (nombre, apellido, edad, genero, zona, foto_perfil) coincidan con el nuevo payload.
     - Verifica que el email permanezca inmutable en la respuesta.
@@ -73,7 +75,7 @@ def test_edicion_exitosa():
         "foto_perfil": "https://url.com/nueva_foto.jpg"
     }
     
-    response = client.put("/usuarios/1", json=datos)
+    response = client.put("/usuarios/me", json=datos)
     
     assert response.status_code == 200
     res_json = response.json()
@@ -102,7 +104,7 @@ def test_edicion_exitosa_sin_password():
         # Sin campo password
     }
     
-    response = client.put("/usuarios/1", json=datos)
+    response = client.put("/usuarios/me", json=datos)
     
     assert response.status_code == 200
     res_json = response.json()
@@ -127,11 +129,11 @@ def test_edicion_ignora_email():
     }
     
     # La API debería responder OK porque simplemente ignora el campo extra (comportamiento por defecto de pydantic config)
-    response = client.put("/usuarios/1", json=datos)
+    response = client.put("/usuarios/me", json=datos)
     assert response.status_code == 200
     
     # Validamos que en la BD el email sigue siendo el original
-    get_response = client.get("/usuarios/1")
+    get_response = client.get("/usuarios/me")
     assert get_response.json()["email"] == "test_edit@dominio.com"
     assert get_response.json()["email"] != "INTENTO_HACKEO@dominio.com"
 
@@ -153,13 +155,13 @@ def test_edicion_falla_por_campo_vacio():
         "zona": "Sur"
     }
     
-    response = client.put("/usuarios/1", json=datos)
+    response = client.put("/usuarios/me", json=datos)
     
     assert response.status_code == 422
     errores = response.json()["detail"]
     assert any(err["loc"] == ["body", "nombre"] for err in errores)
     
     # Comprobamos que no se guardó parcialmente
-    get_response = client.get("/usuarios/1")
+    get_response = client.get("/usuarios/me")
     assert get_response.json()["nombre"] == "NombreOriginal"
     assert get_response.json()["apellido"] == "ApellidoOriginal"

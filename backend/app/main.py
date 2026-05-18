@@ -1,8 +1,8 @@
 
-from app.routers import auth, canchas, users, partidos
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from .routers import auth, canchas, users, partidos
 from .db import engine, Base
 
 # Crear tablas
