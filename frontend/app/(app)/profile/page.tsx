@@ -22,7 +22,7 @@ export default function ProfilePage() {
       if (!userId) return
 
       try {
-        const data = await getUserProfile(userId)
+        const data = await getUserProfile()
         setProfile(data)
 
         if (data.rol === "admin") {
@@ -32,7 +32,7 @@ export default function ProfilePage() {
              setCanchas(canchasData.filter((c: any) => String(c.propietario_id) === String(userId)))
            }
         } else if (data.rol === "jugador") {
-           const partidosData = await getMisPartidos(userId)
+           const partidosData = await getMisPartidos()
            setMisPartidos(partidosData)
         }
       } catch (error) {

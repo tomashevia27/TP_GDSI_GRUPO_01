@@ -21,17 +21,14 @@ def _usuario_a_respuesta(usuario: Usuario) -> UsuarioRespuesta:
     )
 
 
-def obtener_perfil(db: Session, user_id: int) -> UsuarioRespuesta:
-    """Obtiene el perfil de un usuario."""
-    usuario = usuario_repository.obtener_por_id(db, user_id)
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+def obtener_mi_perfil(usuario: Usuario) -> UsuarioRespuesta:
+    """Obtiene el perfil del usuario autenticado."""
     return _usuario_a_respuesta(usuario)
 
 
-def editar_perfil(db: Session, user_id: int, datos: UsuarioEdicion) -> UsuarioRespuesta:
-    """Edita el perfil de un usuario."""
-    usuario = usuario_repository.editar_usuario(db, user_id, datos)
+def editar_mi_perfil(db: Session, usuario: Usuario, datos: UsuarioEdicion) -> UsuarioRespuesta:
+    """Edita el perfil del usuario autenticado."""
+    usuario = usuario_repository.editar_usuario(db, usuario.id, datos)
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return _usuario_a_respuesta(usuario)

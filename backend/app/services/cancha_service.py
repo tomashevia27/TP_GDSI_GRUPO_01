@@ -14,13 +14,14 @@ def parse_time(time_str: str):
         raise HTTPException(status_code=400, detail="El formato de hora debe ser HH:MM")
 
 
-def crear_cancha(db: Session, datos: CanchaCreate) -> dict:
+def crear_cancha(db: Session, current_user: Usuario, datos: CanchaCreate) -> dict:
     """Valida y crea una nueva cancha."""
 
-    # 0. Validar que el propietario exista y sea un dueño de cancha (admin)
-    propietario = db.query(Usuario).filter(Usuario.id == datos.propietario_id).first()
-    if not propietario or propietario.rol != RolUsuario.admin:
+    # 0. Validar que el usuario autenticado sea un dueño de cancha (admin)
+    if current_user.rol != RolUsuario.admin:
         raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden crear canchas")
+
+    propietario_id = current_user.id
 
     # 1. Validar que la hora de cierre sea posterior a la de apertura
     hora_apertura = parse_time(datos.hora_apertura)
@@ -35,13 +36,14 @@ def crear_cancha(db: Session, datos: CanchaCreate) -> dict:
 
     # 3. Validar duplicados
     cancha_existente = cancha_repository.obtener_por_nombre_direccion_propietario(
-        db, datos.nombre, datos.direccion, datos.propietario_id
+        db, datos.nombre, datos.direccion, propietario_id
     )
     if cancha_existente:
         raise HTTPException(status_code=400, detail="Ya existe una cancha con este nombre y dirección para este propietario")
 
     # 4. Crear instancia y guardar (queda activa=True por defecto según el modelo)
-    nueva_cancha = Cancha(**datos.dict(), activa=True)
+    cancha_data = datos.dict(exclude={"propietario_id"})
+    nueva_cancha = Cancha(**cancha_data, activa=True, propietario_id=propietario_id)
     cancha_guardada = cancha_repository.guardar_cancha(db, nueva_cancha)
 
     return {"mensaje": "Cancha creada exitosamente", "cancha": cancha_guardada}
@@ -55,15 +57,14 @@ def obtener_activas(db: Session):
 def obtener_por_id(db: Session, cancha_id: int):
     return cancha_repository.obtener_por_id(db, cancha_id)
 
-def editar_cancha(db: Session, cancha_id: int, datos: CanchaUpdate):
+def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: CanchaUpdate):
     """Edita una cancha existente."""
     cancha = cancha_repository.obtener_por_id(db, cancha_id)
     if not cancha:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
 
-    # Validar que el propietario exista y sea un dueño de cancha
-    propietario = db.query(Usuario).filter(Usuario.id == datos.propietario_id).first()
-    if not propietario or propietario.rol != RolUsuario.admin:
+    # Validar que el usuario autenticado sea el propietario de la cancha
+    if current_user.rol != RolUsuario.admin or cancha.propietario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden editar canchas")
 
     # Validar que la hora de cierre sea posterior a la de apertura
@@ -73,18 +74,21 @@ def editar_cancha(db: Session, cancha_id: int, datos: CanchaUpdate):
         raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
 
     # Actualizar los datos de la cancha
-    for key, value in datos.dict(exclude_unset=True).items():
+    for key, value in datos.dict(exclude={"propietario_id"}, exclude_unset=True).items():
         setattr(cancha, key, value)
 
     db.commit()
     db.refresh(cancha)
     return {"mensaje": "Cancha actualizada exitosamente", "cancha": cancha}
 
-def eliminar_cancha(db: Session, cancha_id: int):
+def eliminar_cancha(db: Session, current_user: Usuario, cancha_id: int):
     """Elimina una cancha si no tiene reservas activas."""
     cancha = cancha_repository.obtener_por_id(db, cancha_id)
     if not cancha:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
+
+    if current_user.rol != RolUsuario.admin or cancha.propietario_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden eliminar sus canchas")
 
     # Validar si la cancha tiene reservas activas
     if cancha_repository.tiene_reservas_activas(db, cancha_id):
@@ -97,13 +101,16 @@ def eliminar_cancha(db: Session, cancha_id: int):
     cancha_repository.eliminar_cancha(db, cancha)
     return {"mensaje": "Cancha eliminada exitosamente"}
 
-def eliminar_canchas_por_admin(db: Session, admin_id: int):
+def eliminar_canchas_por_admin(db: Session, current_user: Usuario):
     """Elimina todas las canchas asociadas a un administrador."""
-    administrador = db.query(Usuario).filter(Usuario.id == admin_id, Usuario.rol == RolUsuario.admin).first()
+    if current_user.rol != RolUsuario.admin:
+        raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden eliminar sus canchas")
+
+    administrador = db.query(Usuario).filter(Usuario.id == current_user.id, Usuario.rol == RolUsuario.admin).first()
     if not administrador:
         raise HTTPException(status_code=404, detail="Administrador no encontrado")
 
-    canchas = cancha_repository.obtener_por_admin(db, admin_id)
+    canchas = cancha_repository.obtener_por_admin(db, current_user.id)
     if not canchas:
         return {"mensaje": "El administrador no tiene canchas registradas"}
 

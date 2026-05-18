@@ -16,7 +16,6 @@ class CanchaCreate(BaseModel):
     hora_apertura: str = Field(..., min_length=1)
     hora_cierre: str = Field(..., min_length=1)
     fotos: Optional[str] = None
-    propietario_id: int
 
 class CanchaRespuesta(BaseModel):
     id: int
@@ -69,4 +68,3 @@ class CanchaUpdate(BaseModel):
     hora_apertura: str = Field(..., min_length=1)
     hora_cierre: str = Field(..., min_length=1)
     fotos: Optional[str] = None
-    propietario_id: int

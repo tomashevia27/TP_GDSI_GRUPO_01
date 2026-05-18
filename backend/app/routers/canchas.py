@@ -3,8 +3,10 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from ..db import get_db
+from ..models.usuario_model import Usuario
 from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta, CanchaUpdate
 from ..services import cancha_service
+from ..security import get_current_user
 
 router = APIRouter(prefix="/canchas", tags=["Canchas"])
 
@@ -14,9 +16,13 @@ def obtener_canchas(db: Session = Depends(get_db)):
     return cancha_service.obtener_todas(db)
 
 @router.post("")
-def crear_cancha(datos: CanchaCreate, db: Session = Depends(get_db)):
+def crear_cancha(
+    datos: CanchaCreate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
     """Crea una nueva cancha."""
-    return cancha_service.crear_cancha(db, datos)
+    return cancha_service.crear_cancha(db, current_user, datos)
 
 @router.get("/disponibles", response_model=List[CanchaRespuesta])
 def obtener_canchas_disponibles(db: Session = Depends(get_db)):
@@ -29,16 +35,28 @@ def obtener_cancha_por_id(cancha_id: int, db: Session = Depends(get_db)):
     return cancha_service.obtener_por_id(db, cancha_id)
 
 @router.put("/{cancha_id}")
-def editar_cancha(cancha_id: int, datos: CanchaUpdate, db: Session = Depends(get_db)):
+def editar_cancha(
+    cancha_id: int,
+    datos: CanchaUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
     """Edita parcialmente las características de una cancha existente."""
-    return cancha_service.editar_cancha(db, cancha_id, datos)
+    return cancha_service.editar_cancha(db, current_user, cancha_id, datos)
 
 @router.delete("/{cancha_id}")
-def eliminar_cancha(cancha_id: int, db: Session = Depends(get_db)):
+def eliminar_cancha(
+    cancha_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
     """Elimina una cancha si no tiene reservas activas."""
-    return cancha_service.eliminar_cancha(db, cancha_id)
+    return cancha_service.eliminar_cancha(db, current_user, cancha_id)
 
-@router.delete("/admin/{admin_id}")
-def eliminar_canchas_por_admin(admin_id: int, db: Session = Depends(get_db)):
+@router.delete("/admin/me")
+def eliminar_canchas_por_admin(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
     """Elimina todas las canchas de un administrador."""
-    return cancha_service.eliminar_canchas_por_admin(db, admin_id)
+    return cancha_service.eliminar_canchas_por_admin(db, current_user)

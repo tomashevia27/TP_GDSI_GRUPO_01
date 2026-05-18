@@ -117,7 +117,6 @@ export default function NuevaCanchaPage() {
         hora_apertura,
         hora_cierre,
         fotos: fotoUrl,
-        propietario_id: userId ? parseInt(userId) : 1 // Fallback para pruebas
       })
 
       await Swal.fire({

@@ -6,9 +6,10 @@ import { useAuth } from "@/hooks/use-auth"
 interface AuthContextType {
   userId: string | null
   role: string | null
+  accessToken: string | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (id: string, role: string) => void
+  login: (id: string, role: string, token: string) => void
   logout: () => void
 }
 

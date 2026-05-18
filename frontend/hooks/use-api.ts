@@ -23,6 +23,14 @@ export interface UserProfile extends UserData {
   id: number
 }
 
+function getAccessToken(): string {
+  const token = sessionStorage.getItem("teamup_auth_access_token")
+  if (!token) {
+    throw new Error("No hay una sesión activa")
+  }
+  return token
+}
+
 export async function uploadImageToCloudinary(file: File): Promise<string> {
   const formData = new FormData()
   formData.append("file", file)
@@ -47,7 +55,7 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
 export async function loginUser(
   email: string,
   password: string
-): Promise<{ usuario_id: number; rol: string }> {
+): Promise<{ usuario_id: number; rol: string; access_token: string; token_type: string }> {
   const response = await fetch(`${API_URL}/login`, {
     method: "POST",
     headers: {
@@ -109,8 +117,12 @@ export async function registerUser(userData: UserData): Promise<UserProfile> {
   return data
 }
 
-export async function getUserProfile(userId: string): Promise<UserProfile> {
-  const response = await fetch(`${API_URL}/usuarios/${userId}`)
+export async function getUserProfile(): Promise<UserProfile> {
+  const response = await fetch(`${API_URL}/usuarios/me`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
   const data = await response.json()
 
   if (!response.ok) {
@@ -145,13 +157,13 @@ export async function resendCode(email: string): Promise<{ mensaje: string }>{
 }
 
 export async function updateUserProfile(
-  userId: string,
   userData: Partial<UserData>
 ): Promise<UserProfile> {
-  const response = await fetch(`${API_URL}/usuarios/${userId}`, {
+  const response = await fetch(`${API_URL}/usuarios/me`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
     },
     body: JSON.stringify(userData),
   })
@@ -177,7 +189,6 @@ export interface CanchaData {
   hora_apertura: string
   hora_cierre: string
   fotos?: string
-  propietario_id: number
 }
 
 export async function crearCancha(canchaData: CanchaData) {
@@ -185,6 +196,7 @@ export async function crearCancha(canchaData: CanchaData) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
     },
     body: JSON.stringify(canchaData),
   })
@@ -206,6 +218,7 @@ export async function actualizarCancha(canchaId: number | string, canchaData: Pa
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
     },
     body: JSON.stringify(canchaData),
   })
@@ -225,6 +238,9 @@ export async function actualizarCancha(canchaId: number | string, canchaData: Pa
 export async function eliminarCancha(canchaId: number | string) {
   const response = await fetch(`${API_URL}/canchas/${canchaId}`, {
     method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
   })
 
   const data = await response.json()
@@ -256,8 +272,12 @@ export interface PartidoData {
   estado: string;
 }
 
-export async function getMisPartidos(userId: string | number) {
-  const response = await fetch(`${API_URL}/partidos/mis-partidos?usuario_id=${userId}`)
+export async function getMisPartidos() {
+  const response = await fetch(`${API_URL}/partidos/mis-partidos`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
   const data = await response.json()
   if (!response.ok) {
     throw new Error(data.detail || "Error al cargar partidos")
@@ -277,7 +297,10 @@ export async function getPartido(partidoId: string | number): Promise<PartidoDat
 export async function crearPartido(partidoData: PartidoCreateData): Promise<PartidoData> {
   const response = await fetch(`${API_URL}/partidos`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
     body: JSON.stringify(partidoData),
   })
   const data = await response.json()

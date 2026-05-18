@@ -1,20 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from ..db import get_db
+from ..models.usuario_model import Usuario
 from ..schemas.usuario_schemas import UsuarioEdicion, UsuarioRespuesta
 from ..services import user_service
+from ..security import get_current_user
 
 router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 # US 3: Editar Perfil
-@router.put("/{user_id}", response_model=UsuarioRespuesta)
-def editar_perfil(user_id: int, datos: UsuarioEdicion, db: Session = Depends(get_db)):
-    """Edita el perfil de un usuario."""
-    return user_service.editar_perfil(db, user_id, datos)
+@router.put("/me", response_model=UsuarioRespuesta)
+def editar_perfil(
+    datos: UsuarioEdicion,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Edita el perfil del usuario autenticado."""
+    return user_service.editar_mi_perfil(db, current_user, datos)
 
 
-@router.get("/{user_id}", response_model=UsuarioRespuesta)
-def obtener_perfil(user_id: int, db: Session = Depends(get_db)):
-    """Obtiene el perfil de un usuario."""
-    return user_service.obtener_perfil(db, user_id)
+@router.get("/me", response_model=UsuarioRespuesta)
+def obtener_perfil(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Obtiene el perfil del usuario autenticado."""
+    return user_service.obtener_mi_perfil(current_user)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
@@ -24,12 +24,21 @@ import {
   uploadImageToCloudinary,
 } from "@/hooks/use-api"
 
+type ProfileFormData = {
+  nombre: string
+  apellido: string
+  edad: string
+  genero: string
+  zona: string
+  password: string
+}
+
 export default function EditProfilePage() {
   const router = useRouter()
   const { userId } = useAuthContext()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ProfileFormData>({
     nombre: "",
     apellido: "",
     edad: "",
@@ -47,7 +56,7 @@ export default function EditProfilePage() {
       if (!userId) return
 
       try {
-        const data = await getUserProfile(userId)
+        const data = await getUserProfile()
         setFormData({
           nombre: data.nombre,
           apellido: data.apellido,
@@ -70,14 +79,14 @@ export default function EditProfilePage() {
     loadProfile()
   }, [userId])
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    setFormData((prev) => ({
+  function handleChange(e: ChangeEvent<HTMLInputElement>) {
+    setFormData((prev: ProfileFormData) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }))
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
       setFoto(file)
@@ -89,23 +98,17 @@ export default function EditProfilePage() {
     }
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleGeneroChange(value: string) {
+    setFormData((prev: ProfileFormData) => ({ ...prev, genero: value }))
+  }
+
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
     if (!formData.nombre.trim() || !formData.apellido.trim()) {
       Swal.fire({
         title: "Atención",
         text: "El nombre y apellido son obligatorios y no pueden quedar en blanco.",
-        icon: "warning",
-        confirmButtonColor: "#00c2cb",
-      })
-      return
-    }
-
-    if (!formData.password) {
-      Swal.fire({
-        title: "Atención",
-        text: "Debes ingresar tu contraseña (o una nueva) para confirmar los cambios.",
         icon: "warning",
         confirmButtonColor: "#00c2cb",
       })
@@ -136,13 +139,13 @@ export default function EditProfilePage() {
         fotoUrl = avatarPreview
       }
 
-      await updateUserProfile(userId, {
+      await updateUserProfile({
         nombre: formData.nombre,
         apellido: formData.apellido,
         edad: parseInt(formData.edad),
         genero: formData.genero,
         zona: formData.zona,
-        password: formData.password,
+        password: formData.password.trim() ? formData.password : undefined,
         foto_perfil: fotoUrl,
       })
 
@@ -245,9 +248,7 @@ export default function EditProfilePage() {
                       </Label>
                       <Select
                         value={formData.genero}
-                        onValueChange={(value) =>
-                          setFormData((prev) => ({ ...prev, genero: value }))
-                        }
+                        onValueChange={handleGeneroChange}
                       >
                         <SelectTrigger className="bg-secondary border-border">
                           <SelectValue />

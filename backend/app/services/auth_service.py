@@ -6,6 +6,7 @@ from ..models.usuario_model import Usuario
 from ..repositories import usuario_repository
 from ..schemas.usuario_schemas import UsuarioRegistro, UsuarioLogin
 from . import email_service
+from ..security import create_access_token
 
 
 def registrar(db: Session, usuario: UsuarioRegistro) -> dict:
@@ -33,7 +34,7 @@ def registrar(db: Session, usuario: UsuarioRegistro) -> dict:
 
 
 def login(db: Session, datos: UsuarioLogin) -> dict:
-    """Valida credenciales y devuelve el ID del usuario."""
+    """Valida credenciales y devuelve JWT."""
     usuario = usuario_repository.obtener_por_email(db, datos.email)
     if not usuario or usuario.password != datos.password:
         raise HTTPException(status_code=401, detail="Email o contraseña incorrectos")
@@ -41,7 +42,16 @@ def login(db: Session, datos: UsuarioLogin) -> dict:
     if not usuario.email_confirmado:
         raise HTTPException(status_code=403, detail="La cuenta no está activa aún")
 
-    return {"mensaje": "Login exitoso", "usuario_id": usuario.id, "rol": usuario.rol}
+    # Generar JWT con el ID del usuario
+    token = create_access_token({"sub": str(usuario.id)})
+    
+    return {
+        "mensaje": "Login exitoso",
+        "access_token": token,
+        "token_type": "bearer",
+        "usuario_id": usuario.id,
+        "rol": usuario.rol
+    }
 
 
 def confirmar_email(db: Session, email: str, code: str) -> dict:

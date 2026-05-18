@@ -59,8 +59,8 @@ def obtener_detalle_partido(db: Session, partido_id: int):
 
 def crear_partido(
     db: Session,
+    organizador_id: int,
     datos: PartidoCreate,
-    #organizador_id: int hay que agregarlo luego cuando se implemente autenticación
 ):
     """Crea un nuevo partido validando los datos proporcionados."""
 
@@ -172,7 +172,7 @@ def crear_partido(
         cantidad_jugadores=cantidad_jugadores,
         descripcion=datos.descripcion,
         estado="pendiente",
-        organizador_id= 1 #organizador_id hay que reemplazarlo luego cuando se implemente autenticación
+        organizador_id=organizador_id
     )
 
     partido_guardado = partido_repository.guardar_partido(

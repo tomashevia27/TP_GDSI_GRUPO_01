@@ -159,7 +159,6 @@ export default function EditarCanchaPage() {
         hora_apertura,
         hora_cierre,
         fotos: fotoUrl || undefined,
-        propietario_id: userId ? parseInt(userId) : 1
       })
 
       await Swal.fire({
