@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { MapPin, Trophy, Pencil, Sun, Clock, DollarSign } from "lucide-react"
+import { MapPin, Trophy, Pencil, Sun, Clock, DollarSign, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuthContext } from "@/components/auth-provider"
-import { getUserProfile, type UserProfile } from "@/hooks/use-api"
+import { getUserProfile, getMisPartidos, type UserProfile, type PartidoData } from "@/hooks/use-api"
 
 const API_URL = "http://localhost:8000"
 
@@ -14,6 +14,7 @@ export default function ProfilePage() {
   const { userId, role } = useAuthContext()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [canchas, setCanchas] = useState<any[]>([])
+  const [misPartidos, setMisPartidos] = useState<{ organizados: PartidoData[], inscritos: PartidoData[] } | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -30,6 +31,9 @@ export default function ProfilePage() {
              const canchasData = await res.json()
              setCanchas(canchasData.filter((c: any) => String(c.propietario_id) === String(userId)))
            }
+        } else if (data.rol === "jugador") {
+           const partidosData = await getMisPartidos(userId)
+           setMisPartidos(partidosData)
         }
       } catch (error) {
         console.error("Error al cargar el perfil:", error)
@@ -49,6 +53,11 @@ export default function ProfilePage() {
     }).format(precio)
   }
 
+  const formatearFecha = (fechaStr: string) => {
+    const [year, month, day] = fechaStr.split("-")
+    return `${day}/${month}/${year}`
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -62,6 +71,30 @@ export default function ProfilePage() {
   const avatarUrl =
     profile?.foto_perfil ||
     `https://ui-avatars.com/api/?name=${profile?.nombre}+${profile?.apellido}&background=16a34a&color=fff&size=200`
+
+  // Separar y ordenar partidos si es jugador
+  let proximos: PartidoData[] = []
+  let pasados: PartidoData[] = []
+
+  if (profile?.rol === "jugador" && misPartidos) {
+    // Usamos Map para evitar duplicados si es organizador e inscrito a la vez
+    const partidosMap = new Map<number, PartidoData>()
+    misPartidos.organizados.forEach(p => partidosMap.set(p.id, p))
+    misPartidos.inscritos.forEach(p => partidosMap.set(p.id, p))
+    
+    const todosLosPartidos = Array.from(partidosMap.values())
+    const now = new Date()
+
+    proximos = todosLosPartidos.filter(p => {
+      const matchDate = new Date(`${p.fecha}T${p.horario}`)
+      return matchDate >= now
+    }).sort((a, b) => new Date(`${a.fecha}T${a.horario}`).getTime() - new Date(`${b.fecha}T${b.horario}`).getTime())
+
+    pasados = todosLosPartidos.filter(p => {
+      const matchDate = new Date(`${p.fecha}T${p.horario}`)
+      return matchDate < now
+    }).sort((a, b) => new Date(`${b.fecha}T${b.horario}`).getTime() - new Date(`${a.fecha}T${a.horario}`).getTime())
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -85,7 +118,7 @@ export default function ProfilePage() {
 
               <div className="flex justify-center gap-8 mb-6">
                 <div className="text-center">
-                  <p className="text-xl font-bold">12</p>
+                  <p className="text-xl font-bold">{proximos.length + pasados.length}</p>
                   <p className="text-sm text-muted-foreground">Partidos</p>
                 </div>
                 <div className="text-center">
@@ -175,19 +208,84 @@ export default function ProfilePage() {
                   </div>
                 )
               ) : (
-                <div className="border-2 border-dashed border-border rounded-xl p-12 text-center bg-secondary/50">
-                  <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-bold mb-2">
-                    Todavía no jugaste ningún partido
-                  </h3>
-                  <p className="text-muted-foreground mb-6">
-                    Acá vas a ver tu historial de encuentros, estadísticas y
-                    resultados de los torneos en los que participes.
-                  </p>
-                  <Button asChild>
-                    <Link href="/home">Buscar partidos</Link>
-                  </Button>
-                </div>
+                proximos.length === 0 && pasados.length === 0 ? (
+                  <div className="border-2 border-dashed border-border rounded-xl p-12 text-center bg-secondary/50">
+                    <Trophy className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                    <h3 className="text-xl font-bold mb-2">
+                      Todavía no jugaste ningún partido
+                    </h3>
+                    <p className="text-muted-foreground mb-6">
+                      Acá vas a ver tu historial de encuentros, estadísticas y
+                      resultados de los torneos en los que participes.
+                    </p>
+                    <Button asChild>
+                      <Link href="/home">Buscar canchas disponibles</Link>
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {proximos.length > 0 && (
+                      <div>
+                        <h3 className="text-xl font-bold mb-4 text-primary">Próximos Partidos</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {proximos.map(partido => (
+                            <Link key={partido.id} href={`/partidos/${partido.id}`}>
+                              <Card className="hover:shadow-md transition-shadow cursor-pointer h-full">
+                                <CardContent className="p-4">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <span className="font-bold text-lg capitalize">{partido.modalidad}</span>
+                                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                      {partido.estado}
+                                    </span>
+                                  </div>
+                                  <div className="space-y-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2">
+                                      <Calendar className="h-4 w-4" />
+                                      {formatearFecha(partido.fecha)}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="h-4 w-4" />
+                                      {partido.horario} hs
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <MapPin className="h-4 w-4" />
+                                      Cancha #{partido.cancha_id}
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {pasados.length > 0 && (
+                      <div>
+                        <h3 className="text-xl font-bold mb-4 text-muted-foreground">Partidos Pasados</h3>
+                        <div className="grid grid-cols-1 gap-4 opacity-75">
+                          {pasados.map(partido => (
+                            <Link key={partido.id} href={`/partidos/${partido.id}`}>
+                              <Card className="hover:bg-secondary/50 transition-colors cursor-pointer">
+                                <CardContent className="p-4 flex justify-between items-center">
+                                  <div>
+                                    <div className="font-bold capitalize">{partido.modalidad}</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {formatearFecha(partido.fecha)} a las {partido.horario} hs
+                                    </div>
+                                  </div>
+                                  <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded-full">
+                                    {partido.estado}
+                                  </span>
+                                </CardContent>
+                              </Card>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
               )}
             </CardContent>
           </Card>

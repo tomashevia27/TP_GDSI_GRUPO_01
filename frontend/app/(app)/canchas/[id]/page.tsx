@@ -206,9 +206,11 @@ export default function CanchaDetallePage() {
                         </CardContent>
                     </Card>
                     {role === "jugador" && (
-                        <Button className="w-full" size="lg">
-                            Reservar turno
-                        </Button>
+                        <Link href={`/partidos/nuevo?canchaId=${canchaId}`} className="w-full">
+                            <Button className="w-full" size="lg">
+                                Reservar turno
+                            </Button>
+                        </Link>
                     )}
                 </div>
             </div>

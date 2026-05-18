@@ -8,7 +8,8 @@ from ..services import partido_service
 
 router = APIRouter(prefix="/partidos", tags=["Partidos"])
 
-@router.get("/mis-partidos", response_model=List[PartidoRespuesta])
+# @router.get("/mis-partidos", response_model=List[PartidoRespuesta])
+@router.get("/mis-partidos")
 def obtener_mis_partidos(usuario_id: int, db: Session = Depends(get_db)):
     """Obtiene los partidos organizados e inscritos por el jugador."""
     return partido_service.obtener_mis_partidos(db, usuario_id)

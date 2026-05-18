@@ -65,9 +65,11 @@ export default function HomePage() {
               </Link>
             </Button>
           ) : (
-            <Button className="font-bold">
-              <Plus className="mr-2 h-4 w-4" />
-              Nuevo Partido
+            <Button className="font-bold" asChild>
+              <Link href="/partidos/nuevo">
+                <Plus className="mr-2 h-4 w-4" />
+                Nuevo Partido
+              </Link>
             </Button>
           )}
         </div>

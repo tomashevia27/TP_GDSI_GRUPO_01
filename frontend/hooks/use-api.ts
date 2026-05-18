@@ -235,3 +235,57 @@ export async function eliminarCancha(canchaId: number | string) {
 
   return data
 }
+
+export interface PartidoCreateData {
+  cancha_id: number;
+  fecha: string;
+  horario: string;
+  tipo: string;
+  descripcion?: string;
+}
+
+export interface PartidoData {
+  id: number;
+  cancha_id: number;
+  fecha: string;
+  horario: string;
+  modalidad: string;
+  tipo: string;
+  cantidad_jugadores: number;
+  descripcion?: string;
+  estado: string;
+}
+
+export async function getMisPartidos(userId: string | number) {
+  const response = await fetch(`${API_URL}/partidos/mis-partidos?usuario_id=${userId}`)
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar partidos")
+  }
+  return data
+}
+
+export async function getPartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}`)
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar el partido")
+  }
+  return data
+}
+
+export async function crearPartido(partidoData: PartidoCreateData): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(partidoData),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al crear el partido")
+  }
+  return data
+}
