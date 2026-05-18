@@ -28,7 +28,7 @@ def obtener_cancha_por_id(cancha_id: int, db: Session = Depends(get_db)):
     """Obtiene una cancha por ID."""
     return cancha_service.obtener_por_id(db, cancha_id)
 
-@router.patch("/{cancha_id}")
+@router.put("/{cancha_id}")
 def editar_cancha(cancha_id: int, datos: CanchaUpdate, db: Session = Depends(get_db)):
     """Edita parcialmente las características de una cancha existente."""
     return cancha_service.editar_cancha(db, cancha_id, datos)

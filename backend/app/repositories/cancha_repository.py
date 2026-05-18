@@ -38,9 +38,10 @@ def obtener_por_id(db: Session, cancha_id: int):
 
 def tiene_reservas_activas(db: Session, cancha_id: int) -> bool:
     """Verifica si una cancha tiene reservas activas."""
-    # Aquí se debe implementar la lógica para verificar reservas activas
-    # Por ejemplo, buscar en la tabla de reservas si hay alguna con estado activo para esta cancha
-    reservas_activas = db.query(Reserva).filter(Reserva.cancha_id == cancha_id, Reserva.estado == "activa").count()
+    from ..models.partido_model import Partido
+    # Consideramos un partido "activo" si su estado es pendiente (u otro estado que indique confirmación)
+    # si usamos tabla reservas se puede cambiar, por ahora chequeo con partidos
+    reservas_activas = db.query(Partido).filter(Partido.cancha_id == cancha_id, Partido.estado != "cancelado").count()
     return reservas_activas > 0
 
 

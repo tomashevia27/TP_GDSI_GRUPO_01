@@ -5,7 +5,7 @@ from datetime import datetime
 from ..models.usuario_model import Usuario, RolUsuario
 from ..models.cancha_model import Cancha
 from ..repositories import cancha_repository
-from ..schemas.cancha_schemas import CanchaCreate
+from ..schemas.cancha_schemas import CanchaCreate, CanchaUpdate
 
 def parse_time(time_str: str):
     try:
@@ -55,7 +55,7 @@ def obtener_activas(db: Session):
 def obtener_por_id(db: Session, cancha_id: int):
     return cancha_repository.obtener_por_id(db, cancha_id)
 
-def editar_cancha(db: Session, cancha_id: int, datos: CanchaCreate):
+def editar_cancha(db: Session, cancha_id: int, datos: CanchaUpdate):
     """Edita una cancha existente."""
     cancha = cancha_repository.obtener_por_id(db, cancha_id)
     if not cancha:
