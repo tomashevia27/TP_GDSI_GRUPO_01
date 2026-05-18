@@ -77,8 +77,7 @@ def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: Can
     for key, value in datos.dict(exclude={"propietario_id"}, exclude_unset=True).items():
         setattr(cancha, key, value)
 
-    db.commit()
-    db.refresh(cancha)
+    cancha_repository.guardar_cancha(db, cancha)
     return {"mensaje": "Cancha actualizada exitosamente", "cancha": cancha}
 
 def eliminar_cancha(db: Session, current_user: Usuario, cancha_id: int):
@@ -105,10 +104,6 @@ def eliminar_canchas_por_admin(db: Session, current_user: Usuario):
     """Elimina todas las canchas asociadas a un administrador."""
     if current_user.rol != RolUsuario.admin:
         raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden eliminar sus canchas")
-
-    administrador = db.query(Usuario).filter(Usuario.id == current_user.id, Usuario.rol == RolUsuario.admin).first()
-    if not administrador:
-        raise HTTPException(status_code=404, detail="Administrador no encontrado")
 
     canchas = cancha_repository.obtener_por_admin(db, current_user.id)
     if not canchas:
