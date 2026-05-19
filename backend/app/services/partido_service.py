@@ -95,6 +95,18 @@ def crear_partido(
     # Cantidad de jugadores automática
     cantidad_jugadores = cancha.tamano * 2
 
+    # Manejo de cupos disponibles
+    if datos.tipo == "abierto":
+        cupos_disponibles = datos.cupos_disponibles
+        if cupos_disponibles is None or cupos_disponibles < 1 or cupos_disponibles >= cantidad_jugadores:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles"
+            )
+    else:
+        cupos_disponibles = 0
+
+
     # Validar que la cancha opere ese día
     dia_semana = datos.fecha.weekday()
 
@@ -170,6 +182,7 @@ def crear_partido(
         modalidad=modalidad,
         tipo=datos.tipo,
         cantidad_jugadores=cantidad_jugadores,
+        cupos_disponibles=cupos_disponibles,
         descripcion=datos.descripcion,
         estado="pendiente",
         organizador_id=organizador_id

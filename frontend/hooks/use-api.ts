@@ -258,6 +258,7 @@ export interface PartidoCreateData {
   horario: string;
   tipo: string;
   descripcion?: string;
+  cupos_disponibles?: number;
 }
 
 export interface PartidoData {
@@ -268,8 +269,20 @@ export interface PartidoData {
   modalidad: string;
   tipo: string;
   cantidad_jugadores: number;
+  cupos_disponibles: number;
   descripcion?: string;
   estado: string;
+  cancha?: {
+    id: number;
+    nombre: string;
+    zona: string;
+    direccion: string;
+  };
+  organizador?: {
+    id: number;
+    nombre: string;
+    apellido: string;
+  };
 }
 
 export async function getMisPartidos() {

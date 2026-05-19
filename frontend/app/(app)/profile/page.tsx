@@ -246,7 +246,7 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
-                                      Cancha #{partido.cancha_id}
+                                      {partido.cancha ? partido.cancha.nombre : `Cancha #${partido.cancha_id}`}
                                     </div>
                                   </div>
                                 </CardContent>
