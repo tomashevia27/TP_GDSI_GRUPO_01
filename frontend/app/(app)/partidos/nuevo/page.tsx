@@ -26,6 +26,7 @@ function NuevoPartidoForm() {
   const [fecha, setFecha] = useState("")
   const [horario, setHorario] = useState("")
   const [tipo, setTipo] = useState("abierto")
+  const [cuposDisponibles, setCuposDisponibles] = useState("")
   const [descripcion, setDescripcion] = useState("")
 
   useEffect(() => {
@@ -78,6 +79,16 @@ function NuevoPartidoForm() {
       return
     }
 
+    const cantidadJugadoresNum = cancha?.tamano ? cancha.tamano * 2 : 0;
+    
+    if (tipo === "abierto") {
+      const cupos = Number(cuposDisponibles)
+      if (!cupos || cupos < 1 || cupos >= cantidadJugadoresNum) {
+        Swal.fire("Atención", `Para partidos abiertos, indicá cuántos lugares disponibles tenés (entre 1 y ${cantidadJugadoresNum - 1}).`, "warning")
+        return
+      }
+    }
+
     setIsSubmitting(true)
     try {
       await crearPartido({
@@ -85,7 +96,8 @@ function NuevoPartidoForm() {
         fecha,
         horario,
         tipo,
-        descripcion: descripcion || undefined
+        descripcion: descripcion || undefined,
+        cupos_disponibles: tipo === "abierto" ? Number(cuposDisponibles) : undefined
       })
 
       await Swal.fire({
@@ -227,6 +239,22 @@ function NuevoPartidoForm() {
                 <option value="cerrado">Cerrado (Solo invitados)</option>
               </select>
             </div>
+
+            {tipo === "abierto" && (
+              <div className="space-y-2">
+                <Label htmlFor="cupos">Lugares Disponibles (Cupos) *</Label>
+                <Input
+                  id="cupos"
+                  type="number"
+                  min="1"
+                  max={cancha?.tamano ? (cancha.tamano * 2) - 1 : 1}
+                  value={cuposDisponibles}
+                  onChange={(e) => setCuposDisponibles(e.target.value)}
+                  placeholder="Ej: 3 (si te faltan 3 jugadores)"
+                  required
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="descripcion">Descripción (Opcional)</Label>

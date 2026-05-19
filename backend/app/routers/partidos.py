@@ -4,14 +4,13 @@ from typing import List
 
 from ..db import get_db
 from ..models.usuario_model import Usuario
-from ..schemas.partido_schemas import PartidoCreate, PartidoRespuesta
+from ..schemas.partido_schemas import PartidoCreate, PartidoRespuesta, MisPartidosRespuesta
 from ..services import partido_service
 from ..security import get_current_user
 
 router = APIRouter(prefix="/partidos", tags=["Partidos"])
 
-# @router.get("/mis-partidos", response_model=List[PartidoRespuesta])
-@router.get("/mis-partidos")
+@router.get("/mis-partidos", response_model=MisPartidosRespuesta)
 def obtener_mis_partidos(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),

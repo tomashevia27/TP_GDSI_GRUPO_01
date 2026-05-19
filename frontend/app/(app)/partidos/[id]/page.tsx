@@ -104,8 +104,12 @@ export default function PartidoDetallePage() {
               <div className="flex items-start gap-3">
                 <Users className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <h4 className="font-semibold">Cupos / Jugadores Totales</h4>
-                  <p className="text-muted-foreground">{partido.cantidad_jugadores} Jugadores</p>
+                  <h4 className="font-semibold">Lugares Disponibles</h4>
+                  {partido.tipo === "abierto" ? (
+                    <p className="text-muted-foreground">Faltan {partido.cupos_disponibles} de {partido.cantidad_jugadores} Jugadores</p>
+                  ) : (
+                    <p className="text-muted-foreground">Partido Cerrado (Cupo Completo)</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -142,6 +146,37 @@ export default function PartidoDetallePage() {
               </div>
             </div>
           )}
+
+          <div className="mt-8 pt-6 border-t">
+            <div className="flex items-start gap-3">
+              <Users className="h-5 w-5 text-primary mt-0.5" />
+              <div className="w-full">
+                <h4 className="font-semibold mb-3">Jugadores Inscriptos</h4>
+                <div className="grid gap-2">
+                  {/* Creador del partido */}
+                  <div className="flex items-center p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <span className="font-medium text-sm text-primary">
+                      Creador: {partido.organizador ? `${partido.organizador.nombre} ${partido.organizador.apellido}` : "Organizador"}
+                    </span>
+                  </div>
+                  
+                  {/* Amigos/Invitados del creador */}
+                  {Array.from({ length: Math.max(0, partido.cantidad_jugadores - partido.cupos_disponibles - 1) }).map((_, i) => (
+                    <div key={i} className="flex items-center p-3 bg-secondary/30 rounded-lg border">
+                      <span className="text-sm text-muted-foreground">Jugador Invitado {i + 1}</span>
+                    </div>
+                  ))}
+                  
+                  {/* Lugares disponibles (solo si es abierto) */}
+                  {partido.tipo === "abierto" && Array.from({ length: partido.cupos_disponibles }).map((_, i) => (
+                    <div key={`cupo-${i}`} className="flex items-center p-3 border border-dashed rounded-lg bg-background">
+                      <span className="text-sm text-muted-foreground italic">Lugar disponible</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

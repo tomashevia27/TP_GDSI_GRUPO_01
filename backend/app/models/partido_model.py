@@ -12,6 +12,7 @@ class Partido(Base):
     modalidad = Column(String, nullable=False)
     tipo = Column(String, nullable=False)  # "abierto" o "cerrado"
     cantidad_jugadores = Column(Integer, nullable=False)
+    cupos_disponibles = Column(Integer, nullable=False, default=0)
     descripcion = Column(String, nullable=True)
     estado = Column(String, nullable=False, default="pendiente")
     organizador_id = Column(Integer, ForeignKey("usuarios.id")) # hay que agregar nullable=False luego
