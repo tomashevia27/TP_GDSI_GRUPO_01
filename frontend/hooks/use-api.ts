@@ -285,6 +285,19 @@ export async function getMisPartidos() {
   return data
 }
 
+export async function getMisCanchas() {
+  const response = await fetch(`${API_URL}/canchas/me`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar mis canchas")
+  }
+  return data
+}
+
 export async function getPartido(partidoId: string | number): Promise<PartidoData> {
   const response = await fetch(`${API_URL}/partidos/${partidoId}`)
   const data = await response.json()

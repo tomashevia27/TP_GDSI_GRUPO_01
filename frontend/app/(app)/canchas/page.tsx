@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useAuthContext } from "@/components/auth-provider"
+import { getMisCanchas } from "@/hooks/use-api"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { MapPin, Clock, Sun, DollarSign } from "lucide-react"
@@ -29,13 +31,20 @@ export default function CanchasPage() {
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
 
+    const { role } = useAuthContext()
+
     useEffect(() => {
         async function fetchCanchas() {
             try {
-                const res = await fetch(`${API_URL}/canchas/disponibles`)
-                if (res.ok) {
-                    const data = await res.json()
+                if (role === "admin") {
+                    const data = await getMisCanchas()
                     setCanchas(data)
+                } else {
+                    const res = await fetch(`${API_URL}/canchas/disponibles`)
+                    if (res.ok) {
+                        const data = await res.json()
+                        setCanchas(data)
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching canchas:", error)
@@ -44,7 +53,7 @@ export default function CanchasPage() {
             }
         }
         fetchCanchas()
-    }, [])
+    }, [role])
 
     const formatearPrecio = (precio: number) => {
         return new Intl.NumberFormat("es-AR", {

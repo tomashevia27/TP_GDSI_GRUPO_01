@@ -6,7 +6,7 @@ import { MapPin, Trophy, Pencil, Sun, Clock, DollarSign, Calendar } from "lucide
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuthContext } from "@/components/auth-provider"
-import { getUserProfile, getMisPartidos, type UserProfile, type PartidoData } from "@/hooks/use-api"
+import { getUserProfile, getMisPartidos, getMisCanchas, type UserProfile, type PartidoData } from "@/hooks/use-api"
 
 const API_URL = "http://localhost:8000"
 
@@ -25,12 +25,9 @@ export default function ProfilePage() {
         const data = await getUserProfile()
         setProfile(data)
 
-        if (data.rol === "admin") {
-           const res = await fetch(`${API_URL}/canchas`)
-           if (res.ok) {
-             const canchasData = await res.json()
-             setCanchas(canchasData.filter((c: any) => String(c.propietario_id) === String(userId)))
-           }
+          if (data.rol === "admin") {
+            const canchasData = await getMisCanchas()
+            setCanchas(canchasData)
         } else if (data.rol === "jugador") {
            const partidosData = await getMisPartidos()
            setMisPartidos(partidosData)

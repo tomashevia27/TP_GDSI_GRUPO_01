@@ -15,6 +15,14 @@ def obtener_canchas(db: Session = Depends(get_db)):
     """Obtiene todas las canchas registradas."""
     return cancha_service.obtener_todas(db)
 
+@router.get("/me", response_model=List[CanchaRespuesta])
+def obtener_mis_canchas(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Obtiene solo las canchas del usuario autenticado si es dueño de cancha."""
+    return cancha_service.obtener_mis_canchas(db, current_user)
+
 @router.post("")
 def crear_cancha(
     datos: CanchaCreate,

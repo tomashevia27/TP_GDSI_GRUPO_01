@@ -337,6 +337,117 @@ def test_obtener_todas_las_canchas():
     canchas = response.json()
     assert len(canchas) == 1
 
+def test_obtener_mis_canchas_devuelve_solo_las_propias():
+    """
+    CA-5: GET /canchas/me devuelve solo las canchas del admin autenticado.
+    """
+    db = TestingSessionLocal()
+
+    admin_otro = Usuario(
+        nombre="Otro",
+        apellido="Admin",
+        email="otroadmin@test.com",
+        password="password123",
+        edad=31,
+        genero="Masculino",
+        zona="CABA",
+        rol=RolUsuario.admin,
+        email_confirmado=True,
+    )
+    db.add(admin_otro)
+    db.commit()
+    db.refresh(admin_otro)
+
+    admin_propietario = db.query(Usuario).filter(Usuario.email == "propietario@test.com").first()
+
+    app.dependency_overrides[get_current_user] = lambda: admin_propietario
+
+    canchas_propias = [
+        {
+            "nombre": "Cancha Propia 1",
+            "tipo_superficie": "Sintético",
+            "tamano": 5,
+            "iluminacion": True,
+            "zona": "Palermo",
+            "direccion": "Dir 1",
+            "precio_por_turno": 10000,
+            "dias_operativos": 31,
+            "hora_apertura": "08:00",
+            "hora_cierre": "23:00",
+            "propietario_id": 1,
+        },
+        {
+            "nombre": "Cancha Propia 2",
+            "tipo_superficie": "Cemento",
+            "tamano": 7,
+            "iluminacion": False,
+            "zona": "Belgrano",
+            "direccion": "Dir 2",
+            "precio_por_turno": 12000,
+            "dias_operativos": 96,
+            "hora_apertura": "09:00",
+            "hora_cierre": "22:00",
+            "propietario_id": 1,
+        },
+    ]
+    for cancha in canchas_propias:
+        response = client.post("/canchas", json=cancha)
+        assert response.status_code == 200
+
+    app.dependency_overrides[get_current_user] = lambda: admin_otro
+    response = client.post(
+        "/canchas",
+        json={
+            "nombre": "Cancha Ajena",
+            "tipo_superficie": "Sintético",
+            "tamano": 5,
+            "iluminacion": True,
+            "zona": "Recoleta",
+            "direccion": "Dir 3",
+            "precio_por_turno": 15000,
+            "dias_operativos": 127,
+            "hora_apertura": "10:00",
+            "hora_cierre": "21:00",
+            "propietario_id": admin_otro.id,
+        },
+    )
+    assert response.status_code == 200
+
+    app.dependency_overrides[get_current_user] = lambda: admin_propietario
+    response = client.get("/canchas/me")
+    assert response.status_code == 200
+    canchas = response.json()
+    assert len(canchas) == 2
+    assert {cancha["nombre"] for cancha in canchas} == {"Cancha Propia 1", "Cancha Propia 2"}
+
+    db.close()
+
+def test_obtener_mis_canchas_rechaza_jugador():
+    """
+    CA-5: GET /canchas/me rechaza usuarios que no son dueños de cancha.
+    """
+    db = TestingSessionLocal()
+    jugador = Usuario(
+        nombre="Jugador",
+        apellido="Test",
+        email="jugador2@test.com",
+        password="password123",
+        edad=24,
+        genero="Masculino",
+        zona="CABA",
+        rol=RolUsuario.jugador,
+        email_confirmado=True,
+    )
+    db.add(jugador)
+    db.commit()
+    db.refresh(jugador)
+    db.close()
+
+    app.dependency_overrides[get_current_user] = lambda: jugador
+    response = client.get("/canchas/me")
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Solo los dueños de cancha pueden ver sus canchas"
+
 def test_obtener_canchas_disponibles_solo_activas():
     """
     CA-5: GET /canchas/disponibles devuelve solo las canchas activas.

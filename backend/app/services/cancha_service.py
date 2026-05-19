@@ -54,6 +54,12 @@ def obtener_todas(db: Session):
 def obtener_activas(db: Session):
     return cancha_repository.obtener_activas(db)
 
+def obtener_mis_canchas(db: Session, current_user: Usuario):
+    if current_user.rol != RolUsuario.admin:
+        raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden ver sus canchas")
+
+    return cancha_repository.obtener_por_admin(db, current_user.id)
+
 def obtener_por_id(db: Session, cancha_id: int):
     return cancha_repository.obtener_por_id(db, cancha_id)
 
