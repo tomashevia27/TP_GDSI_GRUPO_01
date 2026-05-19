@@ -5,6 +5,7 @@ import { Plus, MapPin, Clock, Sun, DollarSign } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuthContext } from "@/components/auth-provider"
+import { getMisCanchas } from "@/hooks/use-api"
 
 const API_URL = "http://localhost:8000"
 
@@ -31,10 +32,15 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchCanchas() {
       try {
-        const res = await fetch(`${API_URL}/canchas/disponibles`)
-        if (res.ok) {
-          const data = await res.json()
+        if (role === "admin") {
+          const data = await getMisCanchas()
           setCanchas(data)
+        } else {
+          const res = await fetch(`${API_URL}/canchas/disponibles`)
+          if (res.ok) {
+            const data = await res.json()
+            setCanchas(data)
+          }
         }
       } catch (error) {
         console.error("Error fetching canchas:", error)
@@ -43,7 +49,7 @@ export default function HomePage() {
       }
     }
     fetchCanchas()
-  }, [])
+  }, [role])
   const formatearPrecio = (precio: number) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -55,7 +61,7 @@ export default function HomePage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-2xl font-bold">Canchas Disponibles</h1>
+        <h1 className="text-2xl font-bold">{role === "admin" ? "Mis Canchas" : "Canchas Disponibles"}</h1>
         <div className="flex gap-4">
           {role === "admin" ? (
             <Button className="font-bold" asChild>
@@ -83,7 +89,9 @@ export default function HomePage() {
         <Card>
           <CardContent className="py-12 text-center">
             <p className="text-muted-foreground text-lg">
-              No hay canchas disponibles en este momento.
+              {role === "admin"
+                ? "Todavia no tenes canchas creadas."
+                : "No hay canchas disponibles en este momento."}
             </p>
           </CardContent>
         </Card>
