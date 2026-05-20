@@ -144,8 +144,13 @@ export default function ProfilePage() {
         {/* Main Content */}
         <div className="lg:col-span-2">
           <Card className="h-full">
-            <CardHeader className="border-b">
+            <CardHeader className="border-b flex flex-row items-center justify-between">
               <CardTitle>{profile?.rol === "admin" ? "Mis Canchas" : "Mis Partidos"}</CardTitle>
+              {profile?.rol === "admin" && (
+                <Button size="sm" asChild>
+                  <Link href="/canchas/nueva">Crear Cancha</Link>
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="py-8">
               {profile?.rol === "admin" ? (

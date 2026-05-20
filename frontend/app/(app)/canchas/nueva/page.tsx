@@ -35,6 +35,7 @@ export default function NuevaCanchaPage() {
     apertura_m: "",
     cierre_h: "",
     cierre_m: "",
+    duracion_turno: "60",
   })
   const [foto, setFoto] = useState<File | null>(null)
 
@@ -49,9 +50,9 @@ export default function NuevaCanchaPage() {
     e.preventDefault()
 
     // Validaciones
-    const { nombre, tipo_superficie, tamano, zona, direccion, precio_por_turno, dias_operativos, apertura_h, apertura_m, cierre_h, cierre_m } = formData
+    const { nombre, tipo_superficie, tamano, zona, direccion, precio_por_turno, dias_operativos, apertura_h, apertura_m, cierre_h, cierre_m, duracion_turno } = formData
 
-    if (!nombre || !tipo_superficie || !tamano || !zona || !direccion || !precio_por_turno || !dias_operativos || !apertura_h || !apertura_m || !cierre_h || !cierre_m) {
+    if (!nombre || !tipo_superficie || !tamano || !zona || !direccion || !precio_por_turno || !dias_operativos || !apertura_h || !apertura_m || !cierre_h || !cierre_m || !duracion_turno) {
       Swal.fire({
         title: "Atención",
         text: "Todos los campos obligatorios deben estar completos.",
@@ -116,6 +117,7 @@ export default function NuevaCanchaPage() {
         dias_operativos,
         hora_apertura,
         hora_cierre,
+        duracion_turno: parseInt(duracion_turno),
         fotos: fotoUrl,
       })
 
@@ -245,7 +247,7 @@ export default function NuevaCanchaPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label className="font-bold text-sm">Apertura (24hs) *</Label>
                 <div className="flex items-center space-x-2">
@@ -261,6 +263,10 @@ export default function NuevaCanchaPage() {
                   <span className="font-bold">:</span>
                   <Input name="cierre_m" type="number" min="0" max="59" placeholder="MM" value={formData.cierre_m} onChange={handleChange} className="bg-secondary border-border text-center" />
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="duracion_turno" className="font-bold text-sm">Duración turno (min) *</Label>
+                <Input id="duracion_turno" name="duracion_turno" type="number" min="30" step="30" value={formData.duracion_turno} onChange={handleChange} className="bg-secondary border-border" />
               </div>
             </div>
 

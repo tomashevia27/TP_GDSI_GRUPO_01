@@ -17,6 +17,7 @@ class Cancha(Base):
     dias_operativos = Column(Integer, nullable=False, default=31)
     hora_apertura = Column(String(10), nullable=False)
     hora_cierre = Column(String(10), nullable=False)
+    duracion_turno = Column(Integer, nullable=False, default=60)
     fotos = Column(Text, nullable=True)
     activa = Column(Boolean, default=True)
     propietario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { MapPin, Info, ArrowLeft } from "lucide-react"
+import { MapPin, Info, ArrowLeft, Clock, DollarSign, Sun } from "lucide-react"
 import Swal from "sweetalert2"
 import { crearPartido } from "@/hooks/use-api"
 
@@ -28,6 +28,36 @@ function NuevoPartidoForm() {
   const [tipo, setTipo] = useState("abierto")
   const [cuposDisponibles, setCuposDisponibles] = useState("")
   const [descripcion, setDescripcion] = useState("")
+  const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string }[]>([])
+
+  useEffect(() => {
+    if (cancha) {
+      const turnos = []
+      const [aperturaH, aperturaM] = cancha.hora_apertura.split(":").map(Number)
+      const [cierreH, cierreM] = cancha.hora_cierre.split(":").map(Number)
+      const duracion = cancha.duracion_turno || 60
+      
+      let actual = new Date()
+      actual.setHours(aperturaH, aperturaM, 0, 0)
+      
+      const fin = new Date()
+      fin.setHours(cierreH, cierreM, 0, 0)
+      
+      while (actual < fin) {
+        const inicioStr = actual.toTimeString().slice(0, 5)
+        actual.setMinutes(actual.getMinutes() + duracion)
+        const finStr = actual.toTimeString().slice(0, 5)
+        
+        if (actual <= fin) {
+          turnos.push({ inicio: inicioStr, fin: finStr })
+        }
+      }
+      setTurnosDisponibles(turnos)
+    } else {
+      setTurnosDisponibles([])
+    }
+    setHorario("")
+  }, [cancha])
 
   useEffect(() => {
     async function fetchData() {
@@ -152,7 +182,7 @@ function NuevoPartidoForm() {
         </CardHeader>
         <CardContent>
           
-          {!canchaId ? (
+          {!canchaId && (
             <div className="space-y-2 mb-6">
               <Label htmlFor="canchaSelect">Seleccioná una Cancha *</Label>
               <select
@@ -171,13 +201,41 @@ function NuevoPartidoForm() {
                 ))}
               </select>
             </div>
-          ) : cancha && (
-            <div className="bg-secondary/50 p-4 rounded-lg mb-6 border">
-              <h3 className="font-bold mb-2 flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" /> Cancha Seleccionada
+          )}
+          
+          {cancha && (
+            <div className="bg-secondary/30 p-6 rounded-xl mb-6 border border-border/50">
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-primary">
+                <MapPin className="h-5 w-5" /> {cancha.nombre}
               </h3>
-              <p className="text-sm"><strong>{cancha.nombre}</strong></p>
-              <p className="text-sm text-muted-foreground">{cancha.zona} - {cancha.direccion}</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <MapPin className="h-4 w-4" />
+                    {cancha.zona} - {cancha.direccion}
+                  </div>
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    {cancha.hora_apertura} a {cancha.hora_cierre} hs ({cancha.duracion_turno || 60} min)
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Info className="h-4 w-4" />
+                    Fútbol {cancha.tamano} • Superficie: {cancha.tipo_superficie}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Sun className="h-4 w-4" />
+                      {cancha.iluminacion ? "Con iluminación" : "Sin iluminación"}
+                    </div>
+                    <div className="font-bold text-primary flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      ${cancha.precio_por_turno}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -194,14 +252,22 @@ function NuevoPartidoForm() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="horario">Horario *</Label>
-                <Input
+                <Label htmlFor="horario">Turno *</Label>
+                <select
                   id="horario"
-                  type="time"
                   value={horario}
                   onChange={(e) => setHorario(e.target.value)}
+                  className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   required
-                />
+                  disabled={!cancha}
+                >
+                  <option value="" disabled>Seleccioná un turno</option>
+                  {turnosDisponibles.map((turno) => (
+                    <option key={turno.inicio} value={turno.inicio}>
+                      De {turno.inicio} a {turno.fin} hs
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 

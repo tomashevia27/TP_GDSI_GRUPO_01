@@ -15,6 +15,7 @@ class CanchaCreate(BaseModel):
     dias_operativos: int = Field(..., description="Bitmask de días operativos (ej: 31 = Lun-Vie)")
     hora_apertura: str = Field(..., min_length=1)
     hora_cierre: str = Field(..., min_length=1)
+    duracion_turno: int = Field(60, gt=0, description="Duración del turno en minutos")
     fotos: Optional[str] = None
 
 class CanchaRespuesta(BaseModel):
@@ -32,6 +33,7 @@ class CanchaRespuesta(BaseModel):
     dias_operativos_texto: Optional[str] = None
     hora_apertura: str
     hora_cierre: str
+    duracion_turno: int
     fotos: Optional[str] = None
     activa: bool
     propietario_id: int
@@ -71,4 +73,5 @@ class CanchaUpdate(BaseModel):
     dias_operativos: int = Field(..., description="Bitmask de días operativos (ej: 31 = Lun-Vie)")
     hora_apertura: str = Field(..., min_length=1)
     hora_cierre: str = Field(..., min_length=1)
+    duracion_turno: int = Field(60, gt=0, description="Duración del turno en minutos")
     fotos: Optional[str] = None

@@ -122,10 +122,13 @@ def crear_partido(
         "%H:%M"
     ).time()
 
-    hora_cierre = datetime.strptime(
-        cancha.hora_cierre,
-        "%H:%M"
-    ).time()
+    if cancha.hora_cierre == "24:00":
+        hora_cierre = datetime.strptime("23:59", "%H:%M").time()
+    else:
+        hora_cierre = datetime.strptime(
+            cancha.hora_cierre,
+            "%H:%M"
+        ).time()
 
     hora_partido = datos.horario.replace(tzinfo=None)
 
@@ -143,7 +146,8 @@ def crear_partido(
         db,
         datos.cancha_id,
         datos.fecha,
-        datos.horario
+        datos.horario,
+        cancha.duracion_turno
     )
 
     if not cancha_disponible:
