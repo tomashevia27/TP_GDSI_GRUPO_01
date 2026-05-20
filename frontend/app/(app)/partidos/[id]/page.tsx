@@ -60,6 +60,17 @@ export default function PartidoDetallePage() {
     return `${day}/${month}/${year}`
   }
 
+  const formatearHorarioTurno = (horarioStr: string, duracionMinutos: number = 60) => {
+    const [h, m] = horarioStr.split(":");
+    const date = new Date();
+    date.setHours(parseInt(h), parseInt(m), 0);
+    const startStr = `${h}:${m}hs`;
+    date.setMinutes(date.getMinutes() + duracionMinutos);
+    const endH = date.getHours().toString().padStart(2, '0');
+    const endM = date.getMinutes().toString().padStart(2, '0');
+    return `de ${startStr} a ${endH}:${endM}hs`;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <Button variant="ghost" onClick={() => router.back()} className="mb-6">
@@ -98,7 +109,7 @@ export default function PartidoDetallePage() {
                 <Clock className="h-5 w-5 text-primary mt-0.5" />
                 <div>
                   <h4 className="font-semibold">Horario</h4>
-                  <p className="text-muted-foreground">{partido.horario} hs</p>
+                  <p className="text-muted-foreground">{formatearHorarioTurno(partido.horario, cancha?.duracion_turno)}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">

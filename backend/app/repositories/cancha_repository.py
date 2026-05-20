@@ -44,6 +44,17 @@ def tiene_reservas_activas(db: Session, cancha_id: int) -> bool:
     reservas_activas = db.query(Partido).filter(Partido.cancha_id == cancha_id, Partido.estado != "cancelado").count()
     return reservas_activas > 0
 
+def tiene_reservas_activas_futuras(db: Session, cancha_id: int) -> bool:
+    """Verifica si una cancha tiene reservas activas a partir de hoy."""
+    from ..models.partido_model import Partido
+    from datetime import date
+    reservas_activas = db.query(Partido).filter(
+        Partido.cancha_id == cancha_id, 
+        Partido.estado != "cancelado",
+        Partido.fecha >= date.today()
+    ).count()
+    return reservas_activas > 0
+
 
 def eliminar_cancha(db: Session, cancha: Cancha):
     """Elimina o desactiva una cancha."""

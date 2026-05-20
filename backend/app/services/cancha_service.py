@@ -79,6 +79,20 @@ def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: Can
     if hora_cierre <= hora_apertura:
         raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
 
+    # Verificar si intenta cambiar horarios y tiene reservas futuras
+    cambia_horarios = (
+        datos.hora_apertura != cancha.hora_apertura or
+        datos.hora_cierre != cancha.hora_cierre or
+        datos.duracion_turno != cancha.duracion_turno or
+        datos.dias_operativos != cancha.dias_operativos
+    )
+
+    if cambia_horarios and cancha_repository.tiene_reservas_activas_futuras(db, cancha_id):
+        raise HTTPException(
+            status_code=400, 
+            detail="No se pueden modificar los horarios ni la duración de los turnos porque la cancha tiene reservas activas a futuro."
+        )
+
     # Actualizar los datos de la cancha
     for key, value in datos.model_dump(exclude={"propietario_id"}, exclude_unset=True).items():
         setattr(cancha, key, value)

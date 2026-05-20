@@ -9,6 +9,7 @@ class CanchaBasica(BaseModel):
     nombre: str
     zona: str
     direccion: str
+    duracion_turno: int
     model_config = ConfigDict(from_attributes=True)
 
 class PartidoCreate(BaseModel):

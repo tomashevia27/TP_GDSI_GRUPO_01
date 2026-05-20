@@ -55,6 +55,17 @@ export default function ProfilePage() {
     return `${day}/${month}/${year}`
   }
 
+  const formatearHorarioTurno = (horarioStr: string, duracionMinutos: number = 60) => {
+    const [h, m] = horarioStr.split(":");
+    const date = new Date();
+    date.setHours(parseInt(h), parseInt(m), 0);
+    const startStr = `${h}:${m}hs`;
+    date.setMinutes(date.getMinutes() + duracionMinutos);
+    const endH = date.getHours().toString().padStart(2, '0');
+    const endM = date.getMinutes().toString().padStart(2, '0');
+    return `de ${startStr} a ${endH}:${endM}hs`;
+  }
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -196,7 +207,7 @@ export default function ProfilePage() {
                               </div>
                               <div className="flex items-center gap-2 text-muted-foreground">
                                 <Clock className="h-4 w-4" />
-                                {cancha.hora_apertura} - {cancha.hora_cierre}
+                                {cancha.hora_apertura} - {cancha.hora_cierre} ({cancha.duracion_turno} min)
                               </div>
                               <div className="flex items-center gap-2 font-semibold text-primary pt-2">
                                 <DollarSign className="h-4 w-4" />
@@ -247,7 +258,7 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <Clock className="h-4 w-4" />
-                                      {partido.horario} hs
+                                      {formatearHorarioTurno(partido.horario, partido.cancha?.duracion_turno)}
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <MapPin className="h-4 w-4" />
@@ -273,7 +284,7 @@ export default function ProfilePage() {
                                   <div>
                                     <div className="font-bold capitalize">{partido.modalidad}</div>
                                     <div className="text-sm text-muted-foreground">
-                                      {formatearFecha(partido.fecha)} a las {partido.horario} hs
+                                      {formatearFecha(partido.fecha)} - {formatearHorarioTurno(partido.horario, partido.cancha?.duracion_turno)}
                                     </div>
                                   </div>
                                   <span className="text-xs font-semibold px-2 py-1 bg-secondary rounded-full">

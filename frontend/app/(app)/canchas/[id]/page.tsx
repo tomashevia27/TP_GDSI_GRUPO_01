@@ -24,6 +24,7 @@ interface Cancha {
     dias_operativos_texto: string
     hora_apertura: string
     hora_cierre: string
+    duracion_turno: number
     fotos: string | null
     activa: boolean
     propietario_id: number
@@ -191,7 +192,7 @@ export default function CanchaDetallePage() {
                                     <Clock className="h-4 w-4" />
                                     <span>Horario</span>
                                 </div>
-                                <p className="font-medium">{cancha.hora_apertura} - {cancha.hora_cierre}</p>
+                                <p className="font-medium">{cancha.hora_apertura} - {cancha.hora_cierre} ({cancha.duracion_turno} min/turno)</p>
                                 <p className="text-sm text-muted-foreground">{cancha.dias_operativos_texto}</p>
                             </div>
                             <div className="border-t pt-4">
