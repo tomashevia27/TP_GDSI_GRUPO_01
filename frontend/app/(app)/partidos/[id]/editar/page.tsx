@@ -18,6 +18,7 @@ function EditarPartidoForm() {
 
   const [partido, setPartido] = useState<PartidoData | null>(null)
   const [cancha, setCancha] = useState<any>(null)
+  const [originalTamano, setOriginalTamano] = useState<number | null>(null)
   const [todasCanchas, setTodasCanchas] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -45,7 +46,9 @@ function EditarPartidoForm() {
 
         const resCancha = await fetch(`${API_URL}/canchas/${data.cancha_id}`)
         if (resCancha.ok) {
-          setCancha(await resCancha.json())
+          const canchaData = await resCancha.json()
+          setCancha(canchaData)
+          setOriginalTamano(canchaData.tamano)
         }
 
         const resTodasCanchas = await fetch(`${API_URL}/canchas`)
@@ -182,9 +185,11 @@ function EditarPartidoForm() {
               required
             >
               <option value="" disabled>Elegí una cancha disponible</option>
-              {todasCanchas.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre} - {c.zona}</option>
-              ))}
+              {todasCanchas
+                .filter(c => originalTamano === null || c.tamano === originalTamano)
+                .map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre} - {c.zona}</option>
+                ))}
             </select>
           </div>
           

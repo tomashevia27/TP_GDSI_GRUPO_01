@@ -295,6 +295,12 @@ def editar_partido(
         
     cantidad_jugadores = cancha.tamano * 2
 
+    if cantidad_jugadores != partido.cantidad_jugadores:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede cambiar la modalidad del partido. Si deseas jugar en otra modalidad, cancelá el partido y creá uno nuevo."
+        )
+
     # Tipo y cupos
     nuevo_tipo = datos.tipo if datos.tipo is not None else partido.tipo
     if nuevo_tipo not in ["abierto", "cerrado"]:
