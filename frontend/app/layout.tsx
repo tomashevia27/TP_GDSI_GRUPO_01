@@ -1,17 +1,24 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/components/auth-provider'
 import './globals.css'
 
 const inter = Inter({ 
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-sans"
+})
+
+const geistMono = Geist_Mono({ 
+  subsets: ["latin"],
+  variable: "--font-mono"
 })
 
 export const metadata: Metadata = {
-  title: 'TeamUp - Web App',
-  description: 'Gestioná tus partidos y torneos',
+  title: 'TeamUp - Armá tu partido',
+  description: 'La app para organizar partidos de fútbol con amigos. Encontrá jugadores, reservá canchas y armá tu equipo.',
+  keywords: ['fútbol', 'partidos', 'amigos', 'canchas', 'deportes', 'equipo'],
+  authors: [{ name: 'TeamUp' }],
   icons: {
     icon: [
       {
@@ -32,7 +39,12 @@ export const metadata: Metadata = {
 }
 
 export const viewport: Viewport = {
-  themeColor: '#16a34a',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#FDF8F4' },
+    { media: '(prefers-color-scheme: dark)', color: '#1A1614' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({
@@ -41,8 +53,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className="bg-background">
-      <body className={`${inter.variable} font-sans antialiased`}>
+    <html lang="es" className={`${inter.variable} ${geistMono.variable} bg-background`}>
+      <body className="font-sans antialiased min-h-screen">
         <AuthProvider>
           {children}
         </AuthProvider>

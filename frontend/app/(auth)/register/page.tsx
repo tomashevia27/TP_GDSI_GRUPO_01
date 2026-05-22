@@ -55,7 +55,7 @@ export default function RegisterPage() {
             title: "Error de imagen",
             text: "Hubo un problema al subir tu foto de perfil. Por favor, intentá de nuevo.",
             icon: "error",
-            confirmButtonColor: "#00c2cb",
+            confirmButtonColor: "#FF6B4A",
           })
           setIsLoading(false)
           return
@@ -84,7 +84,7 @@ export default function RegisterPage() {
         title: "No se pudo registrar",
         text: error instanceof Error ? error.message : "No se pudo conectar con el servidor.",
         icon: "error",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
     } finally {
       setIsLoading(false)
@@ -93,19 +93,24 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8">
-      <Card className="w-full max-w-xl shadow-lg border-0">
+      <Card className="w-full max-w-xl shadow-2xl shadow-primary/5 border border-border rounded-2xl">
         <CardContent className="p-10">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-primary tracking-tight mb-2">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">T</span>
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">
               Crear Cuenta
             </h1>
-            <p className="text-muted-foreground">Sumate a la comunidad</p>
+            <p className="text-muted-foreground text-sm">Sumate a la comunidad de TeamUp</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nombre" className="font-bold text-sm">
+                <Label htmlFor="nombre" className="font-medium text-sm">
                   Nombre
                 </Label>
                 <Input
@@ -113,11 +118,11 @@ export default function RegisterPage() {
                   name="nombre"
                   value={formData.nombre}
                   onChange={handleChange}
-                  className="bg-secondary border-border"
+                  className="bg-input border-0 h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="apellido" className="font-bold text-sm">
+                <Label htmlFor="apellido" className="font-medium text-sm">
                   Apellido
                 </Label>
                 <Input
@@ -125,14 +130,14 @@ export default function RegisterPage() {
                   name="apellido"
                   value={formData.apellido}
                   onChange={handleChange}
-                  className="bg-secondary border-border"
+                  className="bg-input border-0 h-11"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="font-bold text-sm">
+                <Label htmlFor="email" className="font-medium text-sm">
                   Email
                 </Label>
                 <Input
@@ -141,11 +146,11 @@ export default function RegisterPage() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="bg-secondary border-border"
+                  className="bg-input border-0 h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="font-bold text-sm">
+                <Label htmlFor="password" className="font-medium text-sm">
                   Contraseña
                 </Label>
                 <Input
@@ -154,14 +159,14 @@ export default function RegisterPage() {
                   type="password"
                   value={formData.password}
                   onChange={handleChange}
-                  className="bg-secondary border-border"
+                  className="bg-input border-0 h-11"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="edad" className="font-bold text-sm">
+                <Label htmlFor="edad" className="font-medium text-sm">
                   Edad
                 </Label>
                 <Input
@@ -170,11 +175,11 @@ export default function RegisterPage() {
                   type="number"
                   value={formData.edad}
                   onChange={handleChange}
-                  className="bg-secondary border-border"
+                  className="bg-input border-0 h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="genero" className="font-bold text-sm">
+                <Label htmlFor="genero" className="font-medium text-sm">
                   Género
                 </Label>
                 <Select
@@ -183,7 +188,7 @@ export default function RegisterPage() {
                     setFormData((prev) => ({ ...prev, genero: value }))
                   }
                 >
-                  <SelectTrigger className="bg-secondary border-border">
+                  <SelectTrigger className="bg-input border-0 h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -194,7 +199,7 @@ export default function RegisterPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="zona" className="font-bold text-sm">
+                <Label htmlFor="zona" className="font-medium text-sm">
                   Zona
                 </Label>
                 <Input
@@ -203,11 +208,11 @@ export default function RegisterPage() {
                   placeholder="Ej: Palermo"
                   value={formData.zona}
                   onChange={handleChange}
-                  className="bg-secondary border-border"
+                  className="bg-input border-0 h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="rol" className="font-bold text-sm">
+                <Label htmlFor="rol" className="font-medium text-sm">
                   Rol
                 </Label>
                 <Select
@@ -216,7 +221,7 @@ export default function RegisterPage() {
                     setFormData((prev) => ({ ...prev, rol: value }))
                   }
                 >
-                  <SelectTrigger className="bg-secondary border-border">
+                  <SelectTrigger className="bg-input border-0 h-11">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -228,7 +233,7 @@ export default function RegisterPage() {
           </div>  
 
             <div className="space-y-2">
-              <Label htmlFor="foto" className="font-bold text-sm">
+              <Label htmlFor="foto" className="font-medium text-sm">
                 Foto de Perfil (Opcional)
               </Label>
               <Input
@@ -236,13 +241,13 @@ export default function RegisterPage() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setFoto(e.target.files?.[0] || null)}
-                className="bg-secondary border-border"
+                className="bg-input border-0"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full font-semibold"
+              className="w-full font-semibold h-11"
               disabled={isLoading}
             >
               {isLoading ? "Registrando..." : "Registrarme"}

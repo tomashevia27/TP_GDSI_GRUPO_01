@@ -28,7 +28,7 @@ export default function LoginPage() {
         title: "Atención",
         text: "El email y la contraseña son requeridos.",
         icon: "warning",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
       return
     }
@@ -55,7 +55,7 @@ export default function LoginPage() {
         title: "Error de acceso",
         text: error instanceof Error ? error.message : "No se pudo conectar con el servidor.",
         icon: "error",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
     } finally {
       setIsLoading(false)
@@ -64,20 +64,25 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
+      <Card className="w-full max-w-md shadow-2xl shadow-primary/5 border border-border rounded-2xl">
         <CardContent className="p-10">
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-primary tracking-tight mb-2">
-              TeamUp
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-lg">T</span>
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight mb-1">
+              Bienvenido a TeamUp
             </h1>
-            <p className="text-muted-foreground">
-              Gestioná tus partidos y torneos
+            <p className="text-muted-foreground text-sm">
+              Ingresá para organizar tus partidos
             </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email" className="font-bold text-sm">
+              <Label htmlFor="email" className="font-medium text-sm">
                 Email
               </Label>
               <Input
@@ -86,12 +91,12 @@ export default function LoginPage() {
                 placeholder="usuario@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary border-border"
+                className="bg-input border-0 h-11"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="font-bold text-sm">
+              <Label htmlFor="password" className="font-medium text-sm">
                 Contraseña
               </Label>
               <Input
@@ -100,16 +105,16 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-secondary border-border"
+                className="bg-input border-0 h-11"
               />
             </div>
 
             <Button
               type="submit"
-              className="w-full font-semibold"
+              className="w-full font-semibold h-11"
               disabled={isLoading}
             >
-              {isLoading ? "Ingresando..." : "Ingresar a la plataforma"}
+              {isLoading ? "Ingresando..." : "Ingresar"}
             </Button>
           </form>
 

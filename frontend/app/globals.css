@@ -3,80 +3,110 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* TeamUp Rebrand - Coral Warm Palette */
 :root {
-  --background: oklch(0.97 0.005 150);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  /* Core brand colors */
+  --background: oklch(0.98 0.01 60);          /* Warm cream #FDF8F4 */
+  --foreground: oklch(0.15 0.02 40);          /* Warm black #1A1614 */
+  
+  /* Card and surfaces */
+  --card: oklch(1 0 0);                        /* Pure white for cards */
+  --card-foreground: oklch(0.15 0.02 40);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.55 0.17 145);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.96 0.01 150);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.45 0.02 250);
-  --accent: oklch(0.97 0.01 150);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
+  --popover-foreground: oklch(0.15 0.02 40);
+  
+  /* Primary - Coral energético */
+  --primary: oklch(0.65 0.2 25);               /* Coral #FF6B4A */
+  --primary-foreground: oklch(1 0 0);          /* White text on coral */
+  
+  /* Secondary - Beige muted */
+  --secondary: oklch(0.92 0.02 60);            /* Warm beige #E8DED6 */
+  --secondary-foreground: oklch(0.15 0.02 40);
+  
+  /* Muted elements */
+  --muted: oklch(0.95 0.01 60);                /* Light cream */
+  --muted-foreground: oklch(0.45 0.02 40);     /* Muted text */
+  
+  /* Accent - Verde menta para success */
+  --accent: oklch(0.75 0.15 165);              /* Mint green #2DD4A3 */
+  --accent-foreground: oklch(0.15 0.02 40);
+  
+  /* Destructive */
+  --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.88 0.01 150);
-  --input: oklch(0.88 0.01 150);
-  --ring: oklch(0.55 0.17 145);
-  --chart-1: oklch(0.55 0.17 145);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.55 0.17 145);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.55 0.17 145);
+  
+  /* Borders and inputs */
+  --border: oklch(0.90 0.02 60);               /* Warm border */
+  --input: oklch(0.95 0.01 60);
+  --ring: oklch(0.65 0.2 25);                  /* Coral ring */
+  
+  /* Charts */
+  --chart-1: oklch(0.65 0.2 25);               /* Coral */
+  --chart-2: oklch(0.75 0.15 165);             /* Mint */
+  --chart-3: oklch(0.70 0.15 80);              /* Warm yellow */
+  --chart-4: oklch(0.55 0.15 250);             /* Blue accent */
+  --chart-5: oklch(0.60 0.18 340);             /* Pink accent */
+  
+  --radius: 0.75rem;
+  
+  /* Sidebar */
+  --sidebar: oklch(0.98 0.01 60);
+  --sidebar-foreground: oklch(0.15 0.02 40);
+  --sidebar-primary: oklch(0.65 0.2 25);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.95 0.01 60);
+  --sidebar-accent-foreground: oklch(0.15 0.02 40);
+  --sidebar-border: oklch(0.90 0.02 60);
+  --sidebar-ring: oklch(0.65 0.2 25);
 }
 
 .dark {
-  --background: oklch(0.145 0.01 150);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.18 0.01 150);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.18 0.01 150);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.6 0.17 145);
-  --primary-foreground: oklch(0.145 0 0);
-  --secondary: oklch(0.25 0.02 150);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.25 0.02 150);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.5 0.2 25);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.3 0.02 150);
-  --input: oklch(0.3 0.02 150);
-  --ring: oklch(0.6 0.17 145);
-  --chart-1: oklch(0.6 0.17 145);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0.01 150);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.6 0.17 145);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.3 0.02 150);
-  --sidebar-ring: oklch(0.6 0.17 145);
+  --background: oklch(0.12 0.02 40);           /* Deep warm black */
+  --foreground: oklch(0.96 0.01 60);           /* Warm white */
+  
+  --card: oklch(0.18 0.02 40);
+  --card-foreground: oklch(0.96 0.01 60);
+  --popover: oklch(0.18 0.02 40);
+  --popover-foreground: oklch(0.96 0.01 60);
+  
+  --primary: oklch(0.70 0.2 25);               /* Brighter coral for dark */
+  --primary-foreground: oklch(0.12 0.02 40);
+  
+  --secondary: oklch(0.25 0.02 40);
+  --secondary-foreground: oklch(0.96 0.01 60);
+  
+  --muted: oklch(0.25 0.02 40);
+  --muted-foreground: oklch(0.65 0.02 60);
+  
+  --accent: oklch(0.70 0.15 165);
+  --accent-foreground: oklch(0.12 0.02 40);
+  
+  --destructive: oklch(0.50 0.2 25);
+  --destructive-foreground: oklch(0.96 0.01 60);
+  
+  --border: oklch(0.28 0.02 40);
+  --input: oklch(0.25 0.02 40);
+  --ring: oklch(0.70 0.2 25);
+  
+  --chart-1: oklch(0.70 0.2 25);
+  --chart-2: oklch(0.70 0.15 165);
+  --chart-3: oklch(0.75 0.15 80);
+  --chart-4: oklch(0.60 0.15 250);
+  --chart-5: oklch(0.65 0.18 340);
+  
+  --sidebar: oklch(0.15 0.02 40);
+  --sidebar-foreground: oklch(0.96 0.01 60);
+  --sidebar-primary: oklch(0.70 0.2 25);
+  --sidebar-primary-foreground: oklch(0.12 0.02 40);
+  --sidebar-accent: oklch(0.25 0.02 40);
+  --sidebar-accent-foreground: oklch(0.96 0.01 60);
+  --sidebar-border: oklch(0.28 0.02 40);
+  --sidebar-ring: oklch(0.70 0.2 25);
 }
 
 @theme inline {
-  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: 'Inter', 'Geist', 'Geist Fallback', system-ui, sans-serif;
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -121,5 +151,15 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* Custom utility classes for brand */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  .text-pretty {
+    text-wrap: pretty;
   }
 }

@@ -8,7 +8,6 @@ import Swal from 'sweetalert2'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import {
   Select,
@@ -67,10 +66,10 @@ export default function EditProfilePage() {
         })
         const avatarUrl =
           data.foto_perfil ||
-          `https://ui-avatars.com/api/?name=${data.nombre}+${data.apellido}&background=16a34a&color=fff&size=200`
+          `https://ui-avatars.com/api/?name=${data.nombre}+${data.apellido}&background=FF6B4A&color=fff&size=200`
         setAvatarPreview(avatarUrl)
       } catch (error) {
-        console.error("Error al cargar el perfil:", error)
+        console.warn("Error al cargar el perfil:", error)
       } finally {
         setIsLoading(false)
       }
@@ -110,7 +109,7 @@ export default function EditProfilePage() {
         title: "Atención",
         text: "El nombre y apellido son obligatorios y no pueden quedar en blanco.",
         icon: "warning",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
       return
     }
@@ -130,7 +129,7 @@ export default function EditProfilePage() {
             title: "Error de imagen",
             text: "Hubo un problema al subir tu foto de perfil. Por favor, intentá de nuevo.",
             icon: "error",
-            confirmButtonColor: "#00c2cb",
+            confirmButtonColor: "#FF6B4A",
           })
           setIsSaving(false)
           return
@@ -162,7 +161,7 @@ export default function EditProfilePage() {
         title: "No se pudo actualizar",
         text: error instanceof Error ? error.message : "Error de conexión al actualizar el perfil.",
         icon: "error",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
     } finally {
       setIsSaving(false)
@@ -171,7 +170,7 @@ export default function EditProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
@@ -180,172 +179,165 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto">
-        <Card>
-          <CardHeader className="border-b">
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/profile">
-                  <ArrowLeft className="h-4 w-4 mr-1" />
-                  Volver
-                </Link>
-              </Button>
-              <CardTitle>Configuración del Perfil</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="py-8">
-            <form onSubmit={handleSubmit}>
-              <div className="grid md:grid-cols-3 gap-8">
-                {/* Form Fields */}
-                <div className="md:col-span-2 space-y-6">
-                  <h3 className="font-bold text-lg">Datos Personales</h3>
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
+      <Link href="/profile" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
+        <ArrowLeft className="w-5 h-5" />
+        <span className="text-sm font-medium">Volver</span>
+      </Link>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="nombre" className="font-bold text-sm">
-                        Nombre
-                      </Label>
-                      <Input
-                        id="nombre"
-                        name="nombre"
-                        value={formData.nombre}
-                        onChange={handleChange}
-                        className="bg-secondary border-border"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="apellido" className="font-bold text-sm">
-                        Apellido
-                      </Label>
-                      <Input
-                        id="apellido"
-                        name="apellido"
-                        value={formData.apellido}
-                        onChange={handleChange}
-                        className="bg-secondary border-border"
-                      />
-                    </div>
-                  </div>
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="p-8">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Configuración del Perfil</h1>
+          <p className="text-muted-foreground mb-8">Actualizá tu información personal</p>
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edad" className="font-bold text-sm">
-                        Edad
-                      </Label>
-                      <Input
-                        id="edad"
-                        name="edad"
-                        type="number"
-                        value={formData.edad}
-                        onChange={handleChange}
-                        className="bg-secondary border-border"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="genero" className="font-bold text-sm">
-                        Género
-                      </Label>
-                      <Select
-                        value={formData.genero}
-                        onValueChange={handleGeneroChange}
-                      >
-                        <SelectTrigger className="bg-secondary border-border">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Masculino">Masculino</SelectItem>
-                          <SelectItem value="Femenino">Femenino</SelectItem>
-                          <SelectItem value="Otro">Otro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
+          <form onSubmit={handleSubmit}>
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Form Fields */}
+              <div className="flex-1 space-y-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="zona" className="font-bold text-sm">
-                      Zona de juego
+                    <Label htmlFor="nombre" className="font-medium text-sm">
+                      Nombre
                     </Label>
                     <Input
-                      id="zona"
-                      name="zona"
-                      value={formData.zona}
+                      id="nombre"
+                      name="nombre"
+                      value={formData.nombre}
                       onChange={handleChange}
-                      className="bg-secondary border-border"
+                      className="bg-input border-0 h-11"
                     />
                   </div>
-
                   <div className="space-y-2">
-                    <Label htmlFor="password" className="font-bold text-sm">
-                      Contraseña
+                    <Label htmlFor="apellido" className="font-medium text-sm">
+                      Apellido
                     </Label>
                     <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      placeholder="Oculta por seguridad (escribí para cambiar)"
-                      value={formData.password}
+                      id="apellido"
+                      name="apellido"
+                      value={formData.apellido}
                       onChange={handleChange}
-                      className="bg-secondary border-border"
+                      className="bg-input border-0 h-11"
                     />
                   </div>
-
-                  <div className="border-t pt-6 space-y-4">
-                    <h3 className="font-bold text-lg">
-                      Preferencias de Notificación
-                    </h3>
-
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="notif-partidos" className="cursor-pointer">
-                        Recibir alertas de nuevos partidos en mi zona
-                      </Label>
-                      <Switch
-                        id="notif-partidos"
-                        checked={notifPartidos}
-                        onCheckedChange={setNotifPartidos}
-                      />
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="notif-mensajes" className="cursor-pointer">
-                        Avisarme cuando me inviten a un equipo
-                      </Label>
-                      <Switch
-                        id="notif-mensajes"
-                        checked={notifMensajes}
-                        onCheckedChange={setNotifMensajes}
-                      />
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    className="font-bold px-8"
-                    disabled={isSaving}
-                  >
-                    {isSaving ? "Guardando..." : "Guardar Cambios"}
-                  </Button>
                 </div>
 
-                {/* Avatar Section */}
-                <div className="text-center border-l pl-8">
-                  <h3 className="font-bold text-lg mb-4">Foto de Perfil</h3>
-                  <img
-                    src={avatarPreview}
-                    alt="Avatar"
-                    className="w-36 h-36 rounded-full object-cover border mx-auto mb-4"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edad" className="font-medium text-sm">
+                      Edad
+                    </Label>
+                    <Input
+                      id="edad"
+                      name="edad"
+                      type="number"
+                      value={formData.edad}
+                      onChange={handleChange}
+                      className="bg-input border-0 h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="genero" className="font-medium text-sm">
+                      Género
+                    </Label>
+                    <Select
+                      value={formData.genero}
+                      onValueChange={handleGeneroChange}
+                    >
+                      <SelectTrigger className="bg-input border-0 h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Masculino">Masculino</SelectItem>
+                        <SelectItem value="Femenino">Femenino</SelectItem>
+                        <SelectItem value="Otro">Otro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="zona" className="font-medium text-sm">
+                    Zona de juego
+                  </Label>
                   <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="text-sm"
+                    id="zona"
+                    name="zona"
+                    value={formData.zona}
+                    onChange={handleChange}
+                    className="bg-input border-0 h-11"
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="font-medium text-sm">
+                    Contraseña
+                  </Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Oculta por seguridad (escribí para cambiar)"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="bg-input border-0 h-11"
+                  />
+                </div>
+
+                <div className="border-t border-border pt-6 space-y-4">
+                  <h3 className="font-semibold text-foreground">
+                    Preferencias de Notificación
+                  </h3>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="notif-partidos" className="cursor-pointer text-sm">
+                      Recibir alertas de nuevos partidos en mi zona
+                    </Label>
+                    <Switch
+                      id="notif-partidos"
+                      checked={notifPartidos}
+                      onCheckedChange={setNotifPartidos}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="notif-mensajes" className="cursor-pointer text-sm">
+                      Avisarme cuando me inviten a un equipo
+                    </Label>
+                    <Switch
+                      id="notif-mensajes"
+                      checked={notifMensajes}
+                      onCheckedChange={setNotifMensajes}
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  className="font-semibold px-8 h-11"
+                  disabled={isSaving}
+                >
+                  {isSaving ? "Guardando..." : "Guardar Cambios"}
+                </Button>
               </div>
-            </form>
-          </CardContent>
-        </Card>
+
+              {/* Avatar Section */}
+              <div className="text-center md:border-l md:pl-8 md:w-44 flex-shrink-0">
+                <h3 className="font-semibold text-foreground text-sm mb-4">Foto de Perfil</h3>
+                <img
+                  src={avatarPreview}
+                  alt="Avatar"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-primary/20 mx-auto mb-4"
+                />
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   )

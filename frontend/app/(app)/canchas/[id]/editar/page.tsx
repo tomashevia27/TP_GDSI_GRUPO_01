@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import {
   Select,
@@ -41,7 +41,6 @@ export default function EditarCanchaPage() {
     apertura_m: "",
     cierre_h: "",
     cierre_m: "",
-    duracion_turno: "60",
   })
   const [foto, setFoto] = useState<File | null>(null)
 
@@ -74,14 +73,13 @@ export default function EditarCanchaPage() {
             apertura_m,
             cierre_h,
             cierre_m,
-            duracion_turno: String(data.duracion_turno || 60),
           })
           setFotoActual(data.fotos)
         } else {
           router.push("/canchas")
         }
       } catch (error) {
-        console.error("Error fetching cancha:", error)
+        console.warn("Error fetching cancha:", error)
         router.push("/canchas")
       } finally {
         setIsFetching(false)
@@ -103,14 +101,14 @@ export default function EditarCanchaPage() {
     e.preventDefault()
 
     // Validaciones
-    const { nombre, tipo_superficie, tamano, zona, direccion, precio_por_turno, dias_operativos, apertura_h, apertura_m, cierre_h, cierre_m, duracion_turno } = formData
+    const { nombre, tipo_superficie, tamano, zona, direccion, precio_por_turno, dias_operativos, apertura_h, apertura_m, cierre_h, cierre_m } = formData
 
-    if (!nombre || !tipo_superficie || !tamano || !zona || !direccion || !precio_por_turno || !dias_operativos || !apertura_h || !apertura_m || !cierre_h || !cierre_m || !duracion_turno) {
+    if (!nombre || !tipo_superficie || !tamano || !zona || !direccion || !precio_por_turno || !dias_operativos || !apertura_h || !apertura_m || !cierre_h || !cierre_m) {
       Swal.fire({
         title: "Atención",
         text: "Todos los campos obligatorios deben estar completos.",
         icon: "warning",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
       return
     }
@@ -121,7 +119,7 @@ export default function EditarCanchaPage() {
         title: "Atención",
         text: "El precio por turno debe ser mayor a cero.",
         icon: "warning",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
       return
     }
@@ -142,7 +140,7 @@ export default function EditarCanchaPage() {
             title: "Error de imagen",
             text: "Hubo un problema al subir la foto de la cancha. Por favor, intentá de nuevo.",
             icon: "error",
-            confirmButtonColor: "#00c2cb",
+            confirmButtonColor: "#FF6B4A",
           })
           setIsLoading(false)
           return
@@ -160,7 +158,6 @@ export default function EditarCanchaPage() {
         dias_operativos,
         hora_apertura,
         hora_cierre,
-        duracion_turno: parseInt(duracion_turno),
         fotos: fotoUrl || undefined,
       })
 
@@ -179,7 +176,7 @@ export default function EditarCanchaPage() {
         title: "No se pudo actualizar",
         text: error instanceof Error ? error.message : "Error al procesar la solicitud.",
         icon: "error",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
     } finally {
       setIsLoading(false)
@@ -188,7 +185,7 @@ export default function EditarCanchaPage() {
 
   if (isFetching) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
@@ -197,14 +194,16 @@ export default function EditarCanchaPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
-      <Button variant="ghost" onClick={() => router.back()} className="mb-4">
-        &larr; Volver
-      </Button>
-      <Card className="shadow-lg border-0">
-        <CardContent className="p-8">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+      <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
+        <ArrowLeft className="w-5 h-5" />
+        <span className="text-sm font-medium">Volver</span>
+      </button>
+
+      <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+        <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-primary mb-2">
+            <h1 className="text-2xl font-bold text-foreground mb-1">
               Editar Cancha
             </h1>
             <p className="text-muted-foreground">Mantené la información de tu cancha al día</p>
@@ -213,13 +212,13 @@ export default function EditarCanchaPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nombre" className="font-bold text-sm">Nombre de la cancha *</Label>
-                <Input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className="bg-secondary border-border" />
+                <Label htmlFor="nombre" className="font-medium text-sm">Nombre de la cancha *</Label>
+                <Input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className="bg-input border-0 h-11" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tipo_superficie" className="font-bold text-sm">Tipo de superficie *</Label>
+                <Label htmlFor="tipo_superficie" className="font-medium text-sm">Tipo de superficie *</Label>
                 <Select value={formData.tipo_superficie} onValueChange={(v) => setFormData(p => ({ ...p, tipo_superficie: v }))}>
-                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectTrigger className="bg-input border-0 h-11"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Sintético">Sintético</SelectItem>
                     <SelectItem value="Natural">Natural</SelectItem>
@@ -231,9 +230,9 @@ export default function EditarCanchaPage() {
 
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="tamano" className="font-bold text-sm">Tamaño (jugadores) *</Label>
+                <Label htmlFor="tamano" className="font-medium text-sm">Tamaño (jugadores) *</Label>
                 <Select value={formData.tamano} onValueChange={(v) => setFormData(p => ({ ...p, tamano: v }))}>
-                  <SelectTrigger className="bg-secondary border-border"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                  <SelectTrigger className="bg-input border-0 h-11"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="5">Fútbol 5</SelectItem>
                     <SelectItem value="7">Fútbol 7</SelectItem>
@@ -243,8 +242,8 @@ export default function EditarCanchaPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="precio_por_turno" className="font-bold text-sm">Precio por turno ($) *</Label>
-                <Input id="precio_por_turno" name="precio_por_turno" type="number" min="0" step="100" value={formData.precio_por_turno} onChange={handleChange} className="bg-secondary border-border" />
+                <Label htmlFor="precio_por_turno" className="font-medium text-sm">Precio por turno ($) *</Label>
+                <Input id="precio_por_turno" name="precio_por_turno" type="number" min="0" step="100" value={formData.precio_por_turno} onChange={handleChange} className="bg-input border-0 h-11" />
               </div>
               <div className="flex items-center justify-center space-x-2 pt-6">
                 <Switch
@@ -252,29 +251,29 @@ export default function EditarCanchaPage() {
                   checked={formData.iluminacion}
                   onCheckedChange={(checked) => setFormData(p => ({ ...p, iluminacion: checked }))}
                 />
-                <Label htmlFor="iluminacion" className="font-bold text-sm">Tiene iluminación</Label>
+                <Label htmlFor="iluminacion" className="font-medium text-sm">Tiene iluminación</Label>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="zona" className="font-bold text-sm">Zona/Barrio *</Label>
-                <Input id="zona" name="zona" value={formData.zona} onChange={handleChange} className="bg-secondary border-border" />
+                <Label htmlFor="zona" className="font-medium text-sm">Zona/Barrio *</Label>
+                <Input id="zona" name="zona" value={formData.zona} onChange={handleChange} className="bg-input border-0 h-11" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="direccion" className="font-bold text-sm">Dirección exacta *</Label>
-                <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange} className="bg-secondary border-border" />
+                <Label htmlFor="direccion" className="font-medium text-sm">Dirección exacta *</Label>
+                <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange} className="bg-input border-0 h-11" />
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="font-bold text-sm">Días operativos *</Label>
+                <Label className="font-medium text-sm">Días operativos *</Label>
                 <div className="flex gap-2">
-                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-md border border-border bg-secondary text-muted-foreground hover:bg-background hover:text-foreground hover:border-primary transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 31 }))}>Lun – Vie</button>
-                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-md border border-border bg-secondary text-muted-foreground hover:bg-background hover:text-foreground hover:border-primary transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 96 }))}>Fin de semana</button>
-                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-md border border-border bg-secondary text-muted-foreground hover:bg-background hover:text-foreground hover:border-primary transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 127 }))}>Todos los días</button>
-                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-md border border-border bg-secondary text-muted-foreground hover:bg-background hover:text-foreground hover:border-primary transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 0 }))}>Limpiar</button>
+                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-lg border border-border bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 31 }))}>Lun – Vie</button>
+                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-lg border border-border bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 96 }))}>Fin de semana</button>
+                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-lg border border-border bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 127 }))}>Todos los días</button>
+                  <button type="button" className="px-3 py-1.5 text-[13px] rounded-lg border border-border bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all" onClick={() => setFormData(p => ({ ...p, dias_operativos: 0 }))}>Limpiar</button>
                 </div>
               </div>
               <div className="flex gap-2 flex-wrap">
@@ -293,41 +292,37 @@ export default function EditarCanchaPage() {
                       key={d.bit}
                       type="button"
                       onClick={() => setFormData(p => ({ ...p, dias_operativos: p.dias_operativos ^ (1 << d.bit) }))}
-                      className={`w-[72px] h-[72px] rounded-lg border flex flex-col items-center justify-center gap-[2px] transition-all select-none ${active ? 'bg-[#EEEDFE] border-[#534AB7] border-[1.5px]' : 'bg-background border-border hover:bg-secondary hover:border-primary'}`}
+                      className={`w-[72px] h-[72px] rounded-xl border flex flex-col items-center justify-center gap-[2px] transition-all select-none ${active ? 'bg-primary/10 border-primary border-[1.5px]' : 'bg-background border-border hover:bg-secondary hover:border-primary/50'}`}
                     >
-                      <span className={`text-[13px] font-medium ${active ? 'text-[#3C3489]' : 'text-muted-foreground'}`}>{d.abbr}</span>
-                      <span className={`text-[11px] ${active ? 'text-[#534AB7]' : 'text-muted-foreground'}`}>{d.full}</span>
+                      <span className={`text-[13px] font-medium ${active ? 'text-primary' : 'text-muted-foreground'}`}>{d.abbr}</span>
+                      <span className={`text-[11px] ${active ? 'text-primary/80' : 'text-muted-foreground'}`}>{d.full}</span>
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="font-bold text-sm">Apertura (24hs) *</Label>
+                <Label className="font-medium text-sm">Apertura (24hs) *</Label>
                 <div className="flex items-center space-x-2">
-                  <Input name="apertura_h" type="number" min="0" max="23" placeholder="HH" value={formData.apertura_h} onChange={handleChange} className="bg-secondary border-border text-center" />
-                  <span className="font-bold">:</span>
-                  <Input name="apertura_m" type="number" min="0" max="59" placeholder="MM" value={formData.apertura_m} onChange={handleChange} className="bg-secondary border-border text-center" />
+                  <Input name="apertura_h" type="number" min="0" max="23" placeholder="HH" value={formData.apertura_h} onChange={handleChange} className="bg-input border-0 text-center h-11" />
+                  <span className="font-bold text-muted-foreground">:</span>
+                  <Input name="apertura_m" type="number" min="0" max="59" placeholder="MM" value={formData.apertura_m} onChange={handleChange} className="bg-input border-0 text-center h-11" />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="font-bold text-sm">Cierre (24hs) *</Label>
+                <Label className="font-medium text-sm">Cierre (24hs) *</Label>
                 <div className="flex items-center space-x-2">
-                  <Input name="cierre_h" type="number" min="0" max="23" placeholder="HH" value={formData.cierre_h} onChange={handleChange} className="bg-secondary border-border text-center" />
-                  <span className="font-bold">:</span>
-                  <Input name="cierre_m" type="number" min="0" max="59" placeholder="MM" value={formData.cierre_m} onChange={handleChange} className="bg-secondary border-border text-center" />
+                  <Input name="cierre_h" type="number" min="0" max="23" placeholder="HH" value={formData.cierre_h} onChange={handleChange} className="bg-input border-0 text-center h-11" />
+                  <span className="font-bold text-muted-foreground">:</span>
+                  <Input name="cierre_m" type="number" min="0" max="59" placeholder="MM" value={formData.cierre_m} onChange={handleChange} className="bg-input border-0 text-center h-11" />
                 </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="duracion_turno" className="font-bold text-sm">Duración turno (min) *</Label>
-                <Input id="duracion_turno" name="duracion_turno" type="number" min="30" step="30" value={formData.duracion_turno} onChange={handleChange} className="bg-secondary border-border" />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fotos" className="font-bold text-sm">Foto de la Cancha (Opcional)</Label>
+              <Label htmlFor="fotos" className="font-medium text-sm">Foto de la Cancha (Opcional)</Label>
               {fotoActual && (
                 <div className="mb-2">
                   <span className="text-sm text-muted-foreground">Ya hay una foto guardada. Subí una nueva si querés reemplazarla.</span>
@@ -338,16 +333,16 @@ export default function EditarCanchaPage() {
                 type="file"
                 accept="image/*"
                 onChange={(e) => setFoto(e.target.files?.[0] || null)}
-                className="bg-secondary border-border"
+                className="bg-input border-0"
               />
             </div>
 
-            <Button type="submit" className="w-full font-semibold" disabled={isLoading}>
+            <Button type="submit" className="w-full font-semibold h-11" disabled={isLoading}>
               {isLoading ? "Guardando cambios..." : "Guardar Cambios"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
