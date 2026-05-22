@@ -20,6 +20,14 @@ class PartidoCreate(BaseModel):
     descripcion: Optional[str] = None
     cupos_disponibles: Optional[int] = None
 
+class PartidoUpdate(BaseModel):
+    cancha_id: int
+    fecha: date
+    horario: time
+    tipo: Optional[str] = None
+    descripcion: Optional[str] = None
+    cupos_disponibles: Optional[int] = None
+
 class PartidoRespuesta(BaseModel):
     id: int
     cancha_id: int

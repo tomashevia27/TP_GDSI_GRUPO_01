@@ -4,7 +4,7 @@ from typing import List
 
 from ..db import get_db
 from ..models.usuario_model import Usuario
-from ..schemas.partido_schemas import PartidoCreate, PartidoRespuesta, MisPartidosRespuesta
+from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, PartidoRespuesta, MisPartidosRespuesta
 from ..services import partido_service
 from ..security import get_current_user
 
@@ -31,3 +31,22 @@ def crear_partido(
 ):
     """Crea un nuevo partido."""
     return partido_service.crear_partido(db, current_user.id, datos)
+
+@router.patch("/{partido_id}/cancelar", response_model=PartidoRespuesta)
+def cancelar_partido(
+    partido_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Cancela un partido previamente creado."""
+    return partido_service.cancelar_partido(db, partido_id, current_user.id)
+
+@router.put("/{partido_id}", response_model=PartidoRespuesta)
+def editar_partido(
+    partido_id: int,
+    datos: PartidoUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Edita los datos de un partido."""
+    return partido_service.editar_partido(db, partido_id, current_user.id, datos)

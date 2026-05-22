@@ -16,13 +16,18 @@ def obtener_por_id(db: Session, partido_id: int):
     """Obtiene un partido por su ID."""
     return db.query(Partido).filter(Partido.id == partido_id).first()
 
-def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60) -> bool:
+def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60, excluir_partido_id: int = None) -> bool:
     """Verifica si una cancha está disponible en una fecha y horario específicos, sin solapamientos."""
-    partidos_del_dia = db.query(Partido).filter(
+    query = db.query(Partido).filter(
         Partido.cancha_id == cancha_id,
         Partido.fecha == fecha,
         Partido.estado.in_(["confirmado", "pendiente"])
-    ).all()
+    )
+    
+    if excluir_partido_id is not None:
+        query = query.filter(Partido.id != excluir_partido_id)
+        
+    partidos_del_dia = query.all()
     
     delta_duracion = datetime.timedelta(minutes=duracion_turno)
     nuevo_inicio = datetime.datetime.combine(fecha, horario)
