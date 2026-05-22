@@ -122,7 +122,7 @@ export default function ProfilePage() {
           <h1 className="text-2xl font-bold text-foreground">
             {profile?.nombre} {profile?.apellido}
           </h1>
-          <p className="text-muted-foreground mt-1">{profile?.edad} años • {profile?.genero} • {profile?.rol}</p>
+          <p className="text-muted-foreground mt-1 capitalize">{profile?.edad} años • {profile?.genero} • {profile?.rol}</p>
           
           <div className="flex items-center justify-center sm:justify-start gap-4 mt-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                           {cancha.zona} • {cancha.direccion}
                         </div>
                         <p className="text-sm font-semibold text-primary mt-1">
-                          {formatearPrecio(cancha.precio_por_turno)} / turno
+                          {formatearPrecio(cancha.precio_por_turno)} / Turno
                         </p>
                       </div>
                     </div>
@@ -248,7 +248,7 @@ export default function ProfilePage() {
               {/* Próximos partidos */}
               {proximos.length > 0 && (
                 <div>
-                  <h2 className="font-semibold text-foreground mb-4">Próximos partidos</h2>
+                  <h2 className="font-semibold text-foreground mb-4">Próximos Partidos</h2>
                   <div className="space-y-3">
                     {proximos.map(partido => (
                       <Link key={partido.id} href={`/partidos/${partido.id}`}>
@@ -273,7 +273,11 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="px-2 py-1 text-xs font-medium rounded-lg bg-accent/10 text-accent">
+                            <span className={`px-2 py-1 text-xs font-medium rounded-lg capitalize ${
+                              partido.estado.toLowerCase() === "cancelado"
+                                ? "bg-red-500/10 text-red-500"
+                                : "bg-accent/10 text-accent"
+                            }`}>
                               {partido.estado}
                             </span>
                             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -288,7 +292,7 @@ export default function ProfilePage() {
               {/* Partidos pasados */}
               {pasados.length > 0 && (
                 <div>
-                  <h2 className="font-semibold text-foreground mb-4">Partidos pasados</h2>
+                  <h2 className="font-semibold text-foreground mb-4">Partidos Pasados</h2>
                   <div className="bg-card rounded-xl border border-border overflow-hidden">
                     {pasados.map((partido, index) => (
                       <Link key={partido.id} href={`/partidos/${partido.id}`}>
@@ -306,7 +310,11 @@ export default function ProfilePage() {
                               </p>
                             </div>
                           </div>
-                          <span className="text-xs font-medium text-muted-foreground px-2 py-1 bg-secondary rounded-lg">
+                          <span className={`text-xs font-medium px-2 py-1 rounded-lg capitalize ${
+                            partido.estado.toLowerCase() === "cancelado"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-secondary text-muted-foreground"
+                          }`}>
                             {partido.estado}
                           </span>
                         </div>
@@ -323,7 +331,7 @@ export default function ProfilePage() {
       {/* Action buttons */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">
         <Button variant="outline" className="flex-1" asChild>
-          <Link href="/profile/edit">Editar perfil</Link>
+          <Link href="/profile/edit">Editar Perfil</Link>
         </Button>
       </div>
     </div>

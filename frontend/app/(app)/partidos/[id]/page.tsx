@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getPartido, type PartidoData } from "@/hooks/use-api"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido } from "@/hooks/use-api"
+import Swal from "sweetalert2"
 
 const API_URL = "http://localhost:8000"
 
@@ -15,7 +16,9 @@ export default function PartidoDetallePage() {
 
   const [partido, setPartido] = useState<PartidoData | null>(null)
   const [cancha, setCancha] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -28,6 +31,13 @@ export default function PartidoDetallePage() {
         if (res.ok) {
           const cData = await res.json()
           setCancha(cData)
+        }
+
+        try {
+          const user = await getUserProfile()
+          setCurrentUser(user)
+        } catch (e) {
+          // No user logged in or error
         }
       } catch (error) {
         console.warn("Error al cargar detalles:", error)
@@ -73,13 +83,57 @@ export default function PartidoDetallePage() {
   const confirmedCount = partido.cantidad_jugadores - partido.cupos_disponibles
   const spotsLeft = partido.cupos_disponibles
 
+  const isOrganizer = currentUser && partido.organizador && currentUser.id === partido.organizador.id
+  const canEditOrCancel = isOrganizer && partido.estado?.toLowerCase() !== "cancelado"
+
+  const handleCancel = async () => {
+    const result = await Swal.fire({
+      title: "¿Cancelar partido?",
+      text: "Esta acción no se puede deshacer.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Sí, cancelar",
+      cancelButtonText: "No, mantener"
+    })
+
+    if (result.isConfirmed) {
+      setIsCancelling(true)
+      try {
+        await cancelarPartido(partido.id)
+        Swal.fire("Cancelado", "El partido ha sido cancelado exitosamente.", "success")
+        // Reload data
+        const updated = await getPartido(partidoId)
+        setPartido(updated)
+      } catch (error: any) {
+        Swal.fire("Error", error.message || "No se pudo cancelar el partido", "error")
+      } finally {
+        setIsCancelling(false)
+      }
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
-      <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
-        <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">Volver</span>
-      </button>
+      <div className="flex items-center justify-between mb-6">
+        <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Volver</span>
+        </button>
+
+        {canEditOrCancel && (
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => router.push(`/partidos/${partido.id}/editar`)}>
+              Modificar datos del partido
+            </Button>
+            <Button variant="destructive" size="sm" disabled={isCancelling} onClick={handleCancel}>
+              {isCancelling ? "Cancelando..." : "Cancelar Partido"}
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Match header */}
       <div className="mb-6">

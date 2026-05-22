@@ -338,3 +338,37 @@ export async function crearPartido(partidoData: PartidoCreateData): Promise<Part
   }
   return data
 }
+
+export async function cancelarPartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/cancelar`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cancelar el partido")
+  }
+  return data
+}
+
+export async function editarPartido(partidoId: string | number, partidoData: PartidoCreateData): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(partidoData),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al editar el partido")
+  }
+  return data
+}
+

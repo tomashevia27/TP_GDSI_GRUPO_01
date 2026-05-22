@@ -128,7 +128,7 @@ export default function CanchasPage() {
                                             {formatearPrecio(cancha.precio_por_turno)}
                                         </span>
                                         <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-lg">
-                                            por turno
+                                            Por turno
                                         </span>
                                     </div>
                                 </div>

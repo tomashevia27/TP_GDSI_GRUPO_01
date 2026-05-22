@@ -111,7 +111,7 @@ export default function CanchaDetallePage() {
             <div className="flex items-center justify-between mb-6">
                 <Link href="/canchas" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors">
                     <ArrowLeft className="w-5 h-5" />
-                    <span className="text-sm font-medium">Volver a canchas</span>
+                    <span className="text-sm font-medium">Volver a Canchas</span>
                 </Link>
 
                 {isOwner && (
@@ -172,7 +172,7 @@ export default function CanchaDetallePage() {
                             <div className="flex items-center gap-2 text-muted-foreground mb-2">
                                 <span className="text-xs font-medium uppercase tracking-wide">Superficie</span>
                             </div>
-                            <p className="font-semibold text-foreground">{cancha.tipo_superficie}</p>
+                            <p className="font-semibold text-foreground capitalize">{cancha.tipo_superficie}</p>
                         </div>
                         <div className="bg-card rounded-xl p-4 border border-border">
                             <div className="flex items-center gap-2 text-muted-foreground mb-2">
@@ -219,7 +219,7 @@ export default function CanchaDetallePage() {
                     {role === "jugador" && (
                         <Link href={`/partidos/nuevo?canchaId=${canchaId}`} className="block">
                             <Button className="w-full font-semibold" size="lg">
-                                Reservar turno
+                                Reservar Turno
                             </Button>
                         </Link>
                     )}
