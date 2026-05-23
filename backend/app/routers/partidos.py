@@ -5,7 +5,7 @@ from datetime import date
 
 from ..db import get_db
 from ..models.usuario_model import Usuario
-from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, PartidoRespuesta, MisPartidosRespuesta
+from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, PartidoRespuesta, MisPartidosRespuesta, FiltrosDisponibles
 from ..services import partido_service
 from ..security import get_current_user
 
@@ -29,6 +29,15 @@ def obtener_partidos_disponibles(
 ):
     """Obtiene el listado de partidos abiertos, futuros y con cupos."""
     return partido_service.obtener_partidos_disponibles(db, zona, modalidad, fecha)
+
+@router.get("/filtros", response_model=FiltrosDisponibles)
+def obtener_filtros_disponibles(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Obtiene las opciones de filtros dinámicas para partidos disponibles."""
+    return partido_service.obtener_filtros_disponibles(db)
+
 
 @router.get("/{partido_id}", response_model=PartidoRespuesta)
 def obtener_detalle_partido(partido_id: int, db: Session = Depends(get_db)):

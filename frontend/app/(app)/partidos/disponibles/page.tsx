@@ -20,31 +20,14 @@ import { useAuthContext } from "@/components/auth-provider"
 import {
   getPartidosDisponibles,
   getUserProfile,
+  getFiltrosDisponibles,
   type PartidoData,
   type UserProfile,
   type PartidoDisponibleFilters,
+  type FiltrosDisponiblesData,
 } from "@/hooks/use-api"
 
-// Zonas de Buenos Aires disponibles en el sistema
-const ZONAS = [
-  "Caballito",
-  "Belgrano",
-  "Almagro",
-  "Villa Crespo",
-  "Palermo",
-  "Flores",
-  "Saavedra",
-  "Núñez",
-  "Villa Urquiza",
-  "Devoto",
-  "Liniers",
-  "Boedo",
-  "San Telmo",
-  "La Boca",
-  "Barracas",
-]
 
-const MODALIDADES = ["futbol 5", "futbol 7", "futbol 9", "futbol 11"]
 
 export default function PartidosDisponiblesPage() {
 
@@ -60,6 +43,7 @@ export default function PartidosDisponiblesPage() {
   const [filtroFecha, setFiltroFecha] = useState<string>("")
   const [userZona, setUserZona] = useState<string>("")
   const [isUsingUserZone, setIsUsingUserZone] = useState(true)
+  const [filtrosOpciones, setFiltrosOpciones] = useState<FiltrosDisponiblesData | null>(null)
 
   // Load user profile to get their zone
   useEffect(() => {
@@ -75,7 +59,16 @@ export default function PartidosDisponiblesPage() {
         console.warn("Error al cargar perfil:", e)
       }
     }
+    async function loadFiltros() {
+      try {
+        const opciones = await getFiltrosDisponibles()
+        setFiltrosOpciones(opciones)
+      } catch (e) {
+        console.warn("Error al cargar filtros dinámicos:", e)
+      }
+    }
     loadProfile()
+    loadFiltros()
   }, [])
 
   // Fetch partidos whenever filters change
@@ -255,12 +248,18 @@ export default function PartidosDisponiblesPage() {
               className="flex h-10 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Todas las zonas</option>
-              {ZONAS.map((zona) => (
-                <option key={zona} value={zona}>
-                  {zona}
-                  {zona === userZona ? " (tu zona)" : ""}
-                </option>
-              ))}
+              {(() => {
+                const zonas = [...(filtrosOpciones?.zonas || [])]
+                if (userZona && !zonas.find((z) => z.valor === userZona)) {
+                  zonas.push({ valor: userZona, cantidad: 0 })
+                }
+                return zonas.map((zona) => (
+                  <option key={zona.valor} value={zona.valor}>
+                    {zona.valor}
+                    {zona.valor === userZona ? " (tu zona)" : ""} ({zona.cantidad})
+                  </option>
+                ))
+              })()}
             </select>
           </div>
 
@@ -275,9 +274,9 @@ export default function PartidosDisponiblesPage() {
               className="flex h-10 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Todas las modalidades</option>
-              {MODALIDADES.map((mod) => (
-                <option key={mod} value={mod}>
-                  {mod}
+              {filtrosOpciones?.modalidades.map((mod) => (
+                <option key={mod.valor} value={mod.valor}>
+                  <span className="capitalize">{mod.valor}</span> ({mod.cantidad})
                 </option>
               ))}
             </select>

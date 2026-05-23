@@ -47,3 +47,11 @@ class PartidoRespuesta(BaseModel):
 class MisPartidosRespuesta(BaseModel):
     organizados: List[PartidoRespuesta]
     inscritos: List[PartidoRespuesta]
+
+class FiltroOpcion(BaseModel):
+    valor: str
+    cantidad: int
+
+class FiltrosDisponibles(BaseModel):
+    zonas: List[FiltroOpcion]
+    modalidades: List[FiltroOpcion]

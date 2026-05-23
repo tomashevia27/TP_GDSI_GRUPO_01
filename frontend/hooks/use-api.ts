@@ -402,3 +402,27 @@ export async function getPartidosDisponibles(filters?: PartidoDisponibleFilters)
   }
   return data
 }
+
+export interface FiltroOpcion {
+  valor: string;
+  cantidad: number;
+}
+
+export interface FiltrosDisponiblesData {
+  zonas: FiltroOpcion[];
+  modalidades: FiltroOpcion[];
+}
+
+export async function getFiltrosDisponibles(): Promise<FiltrosDisponiblesData> {
+  const response = await fetch(`${API_URL}/partidos/filtros`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar opciones de filtros");
+  }
+  return data;
+}
+

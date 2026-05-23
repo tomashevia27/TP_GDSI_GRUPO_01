@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from ..models.partido_model import Partido
 import datetime
-from sqlalchemy import or_, and_
+from sqlalchemy import or_, and_, func
 from ..models.cancha_model import Cancha
 
 def obtener_organizados_por_usuario(db: Session, usuario_id: int):
@@ -45,6 +45,38 @@ def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fe
         query = query.filter(Partido.fecha == fecha_filtro)
         
     return query.order_by(Partido.fecha.asc(), Partido.horario.asc()).all()
+
+def obtener_filtros_disponibles(db: Session):
+    """Obtiene las opciones de filtros dinámicos basados en partidos disponibles."""
+    now = datetime.datetime.now()
+    hoy = now.date()
+    hora_actual = now.time()
+
+    # Filtros base comunes
+    base_filter = and_(
+        Partido.tipo == "abierto",
+        Partido.cupos_disponibles > 0,
+        Partido.estado != "Cancelado",
+        or_(
+            Partido.fecha > hoy,
+            and_(Partido.fecha == hoy, Partido.horario > hora_actual)
+        )
+    )
+
+    # Consulta para agrupar por zona
+    zonas = db.query(Cancha.zona, func.count(Partido.id)).select_from(Partido).join(Cancha).filter(
+        base_filter
+    ).group_by(Cancha.zona).all()
+
+    # Consulta para agrupar por modalidad
+    modalidades = db.query(Partido.modalidad, func.count(Partido.id)).select_from(Partido).join(Cancha).filter(
+        base_filter
+    ).group_by(Partido.modalidad).all()
+
+    return {
+        "zonas": [{"valor": z[0], "cantidad": z[1]} for z in zonas if z[0]],
+        "modalidades": [{"valor": m[0], "cantidad": m[1]} for m in modalidades if m[0]]
+    }
 
 def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60, excluir_partido_id: int = None) -> bool:
     """Verifica si una cancha está disponible en una fecha y horario específicos, sin solapamientos."""

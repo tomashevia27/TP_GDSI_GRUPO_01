@@ -46,6 +46,10 @@ def obtener_partidos_disponibles(db: Session, zona: str = None, modalidad: str =
     """Llama al repositorio para obtener los partidos disponibles aplicando los filtros dados."""
     return partido_repository.obtener_disponibles(db, zona, modalidad, fecha)
 
+def obtener_filtros_disponibles(db: Session):
+    """Llama al repositorio para obtener los filtros dinámicos disponibles."""
+    return partido_repository.obtener_filtros_disponibles(db)
+
 
 def obtener_detalle_partido(db: Session, partido_id: int):
     """Obtiene el detalle de un partido específico."""

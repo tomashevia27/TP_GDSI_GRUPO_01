@@ -23,9 +23,11 @@ import {
   getMisCanchas,
   getPartidosDisponibles,
   getUserProfile,
+  getFiltrosDisponibles,
   type PartidoData,
   type UserProfile,
   type PartidoDisponibleFilters,
+  type FiltrosDisponiblesData,
 } from "@/hooks/use-api"
 
 const API_URL = "http://localhost:8000"
@@ -84,6 +86,7 @@ export default function HomePage() {
   const [filtroZona, setFiltroZona] = useState<string>("")
   const [filtroModalidad, setFiltroModalidad] = useState<string>("")
   const [filtroFecha, setFiltroFecha] = useState<string>("")
+  const [filtrosOpciones, setFiltrosOpciones] = useState<FiltrosDisponiblesData | null>(null)
 
   const [isLoading, setIsLoading] = useState(true)
 
@@ -101,8 +104,17 @@ export default function HomePage() {
         console.warn("Error al cargar perfil:", e)
       }
     }
+    async function loadFiltros() {
+      try {
+        const opciones = await getFiltrosDisponibles()
+        setFiltrosOpciones(opciones)
+      } catch (e) {
+        console.warn("Error al cargar filtros dinámicos:", e)
+      }
+    }
     if (role === "jugador") {
       loadProfile()
+      loadFiltros()
     }
   }, [role])
 
@@ -381,8 +393,8 @@ export default function HomePage() {
         {/* Expanded filters */}
         <div
           className={`grid grid-cols-1 sm:grid-cols-3 gap-3 transition-all duration-300 ${showFilters
-              ? "max-h-96 opacity-100 mt-3"
-              : "max-h-0 opacity-0 overflow-hidden"
+            ? "max-h-96 opacity-100 mt-3"
+            : "max-h-0 opacity-0 overflow-hidden"
             }`}
         >
           <div className="space-y-1.5">
@@ -395,12 +407,18 @@ export default function HomePage() {
               className="flex h-10 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Todas las zonas</option>
-              {ZONAS.map((zona) => (
-                <option key={zona} value={zona}>
-                  {zona}
-                  {zona === userZona ? " (tu zona)" : ""}
-                </option>
-              ))}
+              {(() => {
+                const zonas = [...(filtrosOpciones?.zonas || [])]
+                if (userZona && !zonas.find((z) => z.valor === userZona)) {
+                  zonas.push({ valor: userZona, cantidad: 0 })
+                }
+                return zonas.map((zona) => (
+                  <option key={zona.valor} value={zona.valor}>
+                    {zona.valor}
+                    {zona.valor === userZona ? " (tu zona)" : ""} ({zona.cantidad})
+                  </option>
+                ))
+              })()}
             </select>
           </div>
 
@@ -414,9 +432,9 @@ export default function HomePage() {
               className="flex h-10 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">Todas las modalidades</option>
-              {MODALIDADES.map((mod) => (
-                <option key={mod} value={mod}>
-                  {mod}
+              {filtrosOpciones?.modalidades.map((mod) => (
+                <option key={mod.valor} value={mod.valor}>
+                  <span className="capitalize">{mod.valor}</span> ({mod.cantidad})
                 </option>
               ))}
             </select>
@@ -573,8 +591,8 @@ export default function HomePage() {
                                 <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
                                   <div
                                     className={`h-full rounded-full transition-all ${spotsUrgent
-                                        ? "bg-destructive"
-                                        : "bg-accent"
+                                      ? "bg-destructive"
+                                      : "bg-accent"
                                       }`}
                                     style={{
                                       width: `${(confirmedCount / totalPlayers) * 100}%`,
@@ -583,8 +601,8 @@ export default function HomePage() {
                                 </div>
                                 <span
                                   className={`text-xs font-semibold ${spotsUrgent
-                                      ? "text-destructive"
-                                      : "text-muted-foreground"
+                                    ? "text-destructive"
+                                    : "text-muted-foreground"
                                     }`}
                                 >
                                   {spotsLeft}{" "}
