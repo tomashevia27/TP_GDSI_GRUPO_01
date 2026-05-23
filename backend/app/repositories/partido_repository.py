@@ -17,6 +17,11 @@ def obtener_por_id(db: Session, partido_id: int):
     """Obtiene un partido por su ID."""
     return db.query(Partido).filter(Partido.id == partido_id).first()
 
+
+def obtener_por_id_bloqueado(db: Session, partido_id: int):
+    """Obtiene un partido bloqueando la fila para evitar carreras al inscribirse."""
+    return db.query(Partido).filter(Partido.id == partido_id).with_for_update().first()
+
 def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha_filtro: datetime.date = None):
     """Obtiene los partidos abiertos, con cupos y fecha futura."""
     now = datetime.datetime.now()
