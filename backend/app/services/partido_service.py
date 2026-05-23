@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 from ..models.partido_model import Partido
 from ..repositories import partido_repository
@@ -117,6 +117,47 @@ def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
         )
 
     return partido_repository.guardar_inscripcion(db, partido, usuario)
+
+
+def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
+    """Permite que un jugador se baje de un partido abierto respetando el plazo mínimo."""
+    partido = partido_repository.obtener_por_id_bloqueado(db, partido_id)
+
+    if not partido:
+        raise HTTPException(status_code=404, detail="Partido no encontrado")
+
+    if partido.tipo != "abierto":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo te podés bajar de partidos abiertos"
+        )
+
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="No te podés bajar de un partido cancelado"
+        )
+
+    usuario = usuario_repository.obtener_por_id(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if not any(jugador.id == usuario_id for jugador in partido.jugadores):
+        raise HTTPException(
+            status_code=400,
+            detail="No estás inscripto en este partido"
+        )
+
+    now = datetime.now().astimezone().replace(tzinfo=None)
+    partido_inicio = datetime.combine(partido.fecha, partido.horario)
+
+    if partido_inicio - now <= timedelta(hours=2):
+        raise HTTPException(
+            status_code=400,
+            detail="El plazo para bajarse de este partido expiró"
+        )
+
+    return partido_repository.guardar_baja_inscripcion(db, partido, usuario)
 
 
 def crear_partido(

@@ -53,6 +53,16 @@ def inscribirse_a_partido(
     """Inscribe al jugador actual en un partido abierto con cupo."""
     return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
 
+
+@router.delete("/{partido_id}/bajarse", response_model=PartidoRespuesta)
+def bajarse_de_partido(
+    partido_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Cancela la participación del jugador actual en un partido abierto."""
+    return partido_service.bajarse_de_partido(db, partido_id, current_user.id)
+
 @router.post("", response_model=PartidoRespuesta)
 def crear_partido(
     datos: PartidoCreate,

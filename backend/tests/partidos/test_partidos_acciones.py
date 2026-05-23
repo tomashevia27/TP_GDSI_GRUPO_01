@@ -468,3 +468,47 @@ def test_inscribirse_partido_pasado():
     res = client.post(f"/partidos/{p_id}/inscribirse")
     assert res.status_code == 400
     assert "ya pasó" in res.json()["detail"]
+
+
+def test_bajarse_partido_exito_libera_cupo():
+    res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=3)
+    assert res_crear.status_code == 200
+    partido_id = res_crear.json()["id"]
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res_inscripcion = client.post(f"/partidos/{partido_id}/inscribirse")
+    assert res_inscripcion.status_code == 200
+    assert res_inscripcion.json()["cupos_disponibles"] == 2
+
+    res_baja = client.delete(f"/partidos/{partido_id}/bajarse")
+
+    assert res_baja.status_code == 200
+    assert res_baja.json()["cupos_disponibles"] == 3
+
+
+def test_bajarse_partido_fuera_de_plazo():
+    fecha = (datetime.now() + timedelta(hours=1)).date().isoformat()
+    horario = (datetime.now() + timedelta(hours=1)).time().replace(microsecond=0).isoformat()
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(1)
+    res_crear = client.post(
+        "/partidos",
+        json={
+            "cancha_id": 1,
+            "fecha": fecha,
+            "horario": horario,
+            "tipo": "abierto",
+            "cupos_disponibles": 3,
+        },
+    )
+    assert res_crear.status_code == 200
+    partido_id = res_crear.json()["id"]
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res_inscripcion = client.post(f"/partidos/{partido_id}/inscribirse")
+    assert res_inscripcion.status_code == 200
+
+    res_baja = client.delete(f"/partidos/{partido_id}/bajarse")
+
+    assert res_baja.status_code == 400
+    assert "plazo" in res_baja.json()["detail"]
