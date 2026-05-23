@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido } from "@/hooks/use-api"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido } from "@/hooks/use-api"
 import Swal from "sweetalert2"
 
 const API_URL = "http://localhost:8000"
@@ -19,6 +19,7 @@ export default function PartidoDetallePage() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -85,6 +86,7 @@ export default function PartidoDetallePage() {
 
   const isOrganizer = currentUser && partido.organizador && currentUser.id === partido.organizador.id
   const canEditOrCancel = isOrganizer && partido.estado?.toLowerCase() !== "cancelado"
+  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && spotsLeft > 0
 
   const handleCancel = async () => {
     const result = await Swal.fire({
@@ -110,6 +112,33 @@ export default function PartidoDetallePage() {
         Swal.fire("Error", error.message || "No se pudo cancelar el partido", "error")
       } finally {
         setIsCancelling(false)
+      }
+    }
+  }
+
+  const handleJoin = async () => {
+    const result = await Swal.fire({
+      title: "¿Confirmar inscripción?",
+      text: "Vas a reservar tu lugar en este partido.",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#F97316",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Sí, anotarme",
+      cancelButtonText: "Cancelar"
+    })
+
+    if (result.isConfirmed) {
+      setIsJoining(true)
+      try {
+        await inscribirseAPartido(partido.id)
+        Swal.fire("Inscripto", "Tu lugar fue reservado correctamente.", "success")
+        const updated = await getPartido(partidoId)
+        setPartido(updated)
+      } catch (error: any) {
+        Swal.fire("Error", error.message || "No se pudo completar la inscripción", "error")
+      } finally {
+        setIsJoining(false)
       }
     }
   }
@@ -200,6 +229,14 @@ export default function PartidoDetallePage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {canJoin && (
+        <div className="mb-6">
+          <Button className="w-full sm:w-auto" onClick={handleJoin} disabled={isJoining}>
+            {isJoining ? "Anotándote..." : "Anotarme al partido"}
+          </Button>
         </div>
       )}
 

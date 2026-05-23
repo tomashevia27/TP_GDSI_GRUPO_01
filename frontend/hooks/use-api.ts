@@ -353,6 +353,20 @@ export async function cancelarPartido(partidoId: string | number): Promise<Parti
   return data
 }
 
+export async function inscribirseAPartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al inscribirse al partido")
+  }
+  return data
+}
+
 export async function editarPartido(partidoId: string | number, partidoData: PartidoCreateData): Promise<PartidoData> {
   const response = await fetch(`${API_URL}/partidos/${partidoId}`, {
     method: "PUT",
