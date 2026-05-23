@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from ..models.partido_model import Partido
+from ..models.usuario_model import Usuario
 import datetime
 from sqlalchemy import or_, and_, func
 from ..models.cancha_model import Cancha
@@ -105,6 +106,15 @@ def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime
 def guardar_partido(db: Session, partido: Partido):
     """Guarda un nuevo partido en la base de datos."""
     db.add(partido)
+    db.commit()
+    db.refresh(partido)
+    return partido
+
+
+def guardar_inscripcion(db: Session, partido: Partido, usuario: Usuario):
+    """Registra la inscripción de un jugador y actualiza cupos disponibles."""
+    partido.jugadores.append(usuario)
+    partido.cupos_disponibles -= 1
     db.commit()
     db.refresh(partido)
     return partido

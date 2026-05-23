@@ -44,6 +44,15 @@ def obtener_detalle_partido(partido_id: int, db: Session = Depends(get_db)):
     """Obtiene el detalle de un partido específico."""
     return partido_service.obtener_detalle_partido(db, partido_id)
 
+@router.post("/{partido_id}/inscribirse", response_model=PartidoRespuesta)
+def inscribirse_a_partido(
+    partido_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Inscribe al jugador actual en un partido abierto con cupo."""
+    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
+
 @router.post("", response_model=PartidoRespuesta)
 def crear_partido(
     datos: PartidoCreate,

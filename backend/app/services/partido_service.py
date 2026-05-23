@@ -4,6 +4,7 @@ from datetime import datetime, date
 
 from ..models.partido_model import Partido
 from ..repositories import partido_repository
+from ..repositories import usuario_repository
 from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate
 from ..repositories import cancha_repository
 
@@ -63,6 +64,59 @@ def obtener_detalle_partido(db: Session, partido_id: int):
         )
 
     return partido
+
+
+def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
+    """Inscribe un jugador a un partido abierto aplicando validaciones básicas."""
+    partido = partido_repository.obtener_por_id(db, partido_id)
+
+    if not partido:
+        raise HTTPException(status_code=404, detail="Partido no encontrado")
+
+    if partido.organizador_id == usuario_id:
+        raise HTTPException(
+            status_code=400,
+            detail="El organizador no puede inscribirse nuevamente en su propio partido"
+        )
+
+    if partido.tipo != "abierto":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo te podés inscribir en partidos abiertos"
+        )
+
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="No te podés inscribir a un partido cancelado"
+        )
+
+    now = datetime.now().astimezone().replace(tzinfo=None)
+    hora_partido = partido.horario.replace(tzinfo=None)
+
+    if partido.fecha < now.date() or (partido.fecha == now.date() and hora_partido <= now.time()):
+        raise HTTPException(
+            status_code=400,
+            detail="No te podés inscribir a un partido que ya pasó"
+        )
+
+    if partido.cupos_disponibles <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="El partido ya no tiene cupos disponibles"
+        )
+
+    if any(jugador.id == usuario_id for jugador in partido.jugadores):
+        raise HTTPException(
+            status_code=400,
+            detail="Ya estás inscripto en este partido"
+        )
+
+    usuario = usuario_repository.obtener_por_id(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    return partido_repository.guardar_inscripcion(db, partido, usuario)
 
 
 def crear_partido(

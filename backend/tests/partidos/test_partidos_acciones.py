@@ -107,6 +107,18 @@ def crear_partido_test(fecha_offset_days=1, horario_str="14:00:00", cancha_id=1)
     }
     return client.post("/partidos", json=datos)
 
+def crear_partido_abierto_test(fecha_offset_days=1, horario_str="14:00:00", cancha_id=1, cupos_disponibles=3):
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(1)
+    fecha = (datetime.now() + timedelta(days=fecha_offset_days)).date().isoformat()
+    datos = {
+        "cancha_id": cancha_id,
+        "fecha": fecha,
+        "horario": horario_str,
+        "tipo": "abierto",
+        "cupos_disponibles": cupos_disponibles
+    }
+    return client.post("/partidos", json=datos)
+
 
 # ==========================================
 # TESTS - CANCELAR PARTIDO
@@ -376,3 +388,83 @@ def test_mis_partidos_incluye_inscritos():
     data = res_mis_partidos.json()
     ids_inscritos = [p["id"] for p in data["inscritos"]]
     assert partido_id in ids_inscritos
+
+
+# ==========================================
+# TESTS - INSCRIPCION A PARTIDO
+# ==========================================
+
+def test_inscribirse_partido_exito_descuenta_cupo():
+    res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=3)
+    assert res_crear.status_code == 200
+    partido_id = res_crear.json()["id"]
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res_inscripcion = client.post(f"/partidos/{partido_id}/inscribirse")
+
+    assert res_inscripcion.status_code == 200
+    assert res_inscripcion.json()["cupos_disponibles"] == 2
+
+
+def test_inscribirse_partido_duplicada():
+    res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=3)
+    partido_id = res_crear.json()["id"]
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res_1 = client.post(f"/partidos/{partido_id}/inscribirse")
+    assert res_1.status_code == 200
+
+    res_2 = client.post(f"/partidos/{partido_id}/inscribirse")
+    assert res_2.status_code == 400
+    assert "Ya estás inscripto" in res_2.json()["detail"]
+
+
+def test_inscribirse_partido_sin_cupo():
+    res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=1)
+    partido_id = res_crear.json()["id"]
+
+    db = TestingSessionLocal()
+    partido = db.query(Partido).filter(Partido.id == partido_id).first()
+    partido.cupos_disponibles = 0
+    db.commit()
+    db.close()
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res = client.post(f"/partidos/{partido_id}/inscribirse")
+    assert res.status_code == 400
+    assert "no tiene cupos" in res.json()["detail"]
+
+
+def test_inscribirse_partido_cerrado():
+    res_crear = crear_partido_test(fecha_offset_days=2, horario_str="18:00:00")
+    partido_id = res_crear.json()["id"]
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res = client.post(f"/partidos/{partido_id}/inscribirse")
+    assert res.status_code == 400
+    assert "partidos abiertos" in res.json()["detail"]
+
+
+def test_inscribirse_partido_pasado():
+    db = TestingSessionLocal()
+    partido_pasado = Partido(
+        cancha_id=1,
+        fecha=(datetime.now() - timedelta(days=1)).date(),
+        horario=time(15, 0),
+        modalidad="futbol 5",
+        tipo="abierto",
+        cantidad_jugadores=10,
+        cupos_disponibles=3,
+        estado="pendiente",
+        organizador_id=1
+    )
+    db.add(partido_pasado)
+    db.commit()
+    db.refresh(partido_pasado)
+    p_id = partido_pasado.id
+    db.close()
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res = client.post(f"/partidos/{p_id}/inscribirse")
+    assert res.status_code == 400
+    assert "ya pasó" in res.json()["detail"]
