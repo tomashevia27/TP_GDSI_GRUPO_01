@@ -65,7 +65,7 @@ const ZONAS = [
   "Barracas",
 ]
 
-const MODALIDADES = ["Fútbol 5", "Fútbol 7", "Fútbol 9", "Fútbol 11"]
+const MODALIDADES = ["futbol 5", "futbol 7", "futbol 9", "futbol 11"]
 
 export default function HomePage() {
   const { role } = useAuthContext()
@@ -380,11 +380,10 @@ export default function HomePage() {
 
         {/* Expanded filters */}
         <div
-          className={`grid grid-cols-1 sm:grid-cols-3 gap-3 transition-all duration-300 ${
-            showFilters
+          className={`grid grid-cols-1 sm:grid-cols-3 gap-3 transition-all duration-300 ${showFilters
               ? "max-h-96 opacity-100 mt-3"
               : "max-h-0 opacity-0 overflow-hidden"
-          }`}
+            }`}
         >
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -573,22 +572,20 @@ export default function HomePage() {
                               <div className="flex items-center gap-1.5">
                                 <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
                                   <div
-                                    className={`h-full rounded-full transition-all ${
-                                      spotsUrgent
+                                    className={`h-full rounded-full transition-all ${spotsUrgent
                                         ? "bg-destructive"
                                         : "bg-accent"
-                                    }`}
+                                      }`}
                                     style={{
                                       width: `${(confirmedCount / totalPlayers) * 100}%`,
                                     }}
                                   />
                                 </div>
                                 <span
-                                  className={`text-xs font-semibold ${
-                                    spotsUrgent
+                                  className={`text-xs font-semibold ${spotsUrgent
                                       ? "text-destructive"
                                       : "text-muted-foreground"
-                                  }`}
+                                    }`}
                                 >
                                   {spotsLeft}{" "}
                                   {spotsLeft === 1 ? "lugar" : "lugares"}
