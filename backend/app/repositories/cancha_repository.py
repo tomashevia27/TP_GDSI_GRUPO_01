@@ -36,6 +36,14 @@ def obtener_por_id(db: Session, cancha_id: int):
     return cancha
 
 
+def obtener_por_id_bloqueado(db: Session, cancha_id: int):
+    """Obtiene una cancha bloqueando su fila para evitar carreras al reservar."""
+    cancha = db.query(Cancha).filter(Cancha.id == cancha_id).with_for_update().first()
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    return cancha
+
+
 def tiene_reservas_activas(db: Session, cancha_id: int) -> bool:
     """Verifica si una cancha tiene reservas activas."""
     from ..models.partido_model import Partido

@@ -125,141 +125,123 @@ def crear_partido(
     datos: PartidoCreate,
 ):
     """Crea un nuevo partido validando los datos proporcionados."""
+    try:
+        hora_partido = datos.horario.replace(tzinfo=None)
+        now = datetime.now().astimezone().replace(tzinfo=None)
 
-    # Validar que la cancha exista
-    cancha = cancha_repository.obtener_por_id(
-        db,
-        datos.cancha_id
-    )
-
-    if not cancha:
-        raise HTTPException(
-            status_code=404,
-            detail="Cancha no encontrada"
-        )
-
-    # Validar que la cancha esté activa
-    if not cancha.activa:
-        raise HTTPException(
-            status_code=400,
-            detail="La cancha no está activa"
-        )
-
-    # Obtener modalidad automáticamente
-    modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
-
-    if not modalidad:
-        raise HTTPException(
-            status_code=400,
-            detail="La cancha tiene un tamaño inválido"
-        )
-
-    # Cantidad de jugadores automática
-    cantidad_jugadores = cancha.tamano * 2
-
-    # Manejo de cupos disponibles
-    if datos.tipo == "abierto":
-        cupos_disponibles = datos.cupos_disponibles
-        if cupos_disponibles is None or cupos_disponibles < 1 or cupos_disponibles >= cantidad_jugadores:
+        if datos.tipo not in ["abierto", "cerrado"]:
             raise HTTPException(
                 status_code=400,
-                detail=f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles"
+                detail="El tipo de partido debe ser 'abierto' o 'cerrado'"
             )
-    else:
-        cupos_disponibles = 0
 
+        if (
+            datos.fecha < now.date()
+            or (
+                datos.fecha == now.date()
+                and hora_partido <= now.time()
+            )
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="La fecha y hora deben ser futuras"
+            )
 
-    # Validar que la cancha opere ese día
-    dia_semana = datos.fecha.weekday()
+        cancha = cancha_repository.obtener_por_id_bloqueado(db, datos.cancha_id)
 
-    if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
-        raise HTTPException(
-            status_code=400,
-            detail="La cancha no opera ese día"
-        )
+        if not cancha.activa:
+            raise HTTPException(
+                status_code=400,
+                detail="La cancha no está activa"
+            )
 
-    # Validar horario de funcionamiento
-    hora_apertura = datetime.strptime(
-        cancha.hora_apertura,
-        "%H:%M"
-    ).time()
+        modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
 
-    if cancha.hora_cierre == "24:00":
-        hora_cierre = datetime.strptime("23:59", "%H:%M").time()
-    else:
-        hora_cierre = datetime.strptime(
-            cancha.hora_cierre,
+        if not modalidad:
+            raise HTTPException(
+                status_code=400,
+                detail="La cancha tiene un tamaño inválido"
+            )
+
+        cantidad_jugadores = cancha.tamano * 2
+
+        if datos.tipo == "abierto":
+            cupos_disponibles = datos.cupos_disponibles
+            if cupos_disponibles is None or cupos_disponibles < 1 or cupos_disponibles >= cantidad_jugadores:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles"
+                )
+        else:
+            cupos_disponibles = 0
+
+        dia_semana = datos.fecha.weekday()
+
+        if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
+            raise HTTPException(
+                status_code=400,
+                detail="La cancha no opera ese día"
+            )
+
+        hora_apertura = datetime.strptime(
+            cancha.hora_apertura,
             "%H:%M"
         ).time()
 
-    hora_partido = datos.horario.replace(tzinfo=None)
+        if cancha.hora_cierre == "24:00":
+            hora_cierre = datetime.strptime("23:59", "%H:%M").time()
+        else:
+            hora_cierre = datetime.strptime(
+                cancha.hora_cierre,
+                "%H:%M"
+            ).time()
 
-    if (
-        hora_partido < hora_apertura
-        or hora_partido >= hora_cierre
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="La cancha no está disponible en ese horario"
+        hora_partido = datos.horario.replace(tzinfo=None)
+
+        if (
+            hora_partido < hora_apertura
+            or hora_partido >= hora_cierre
+        ):
+            raise HTTPException(
+                status_code=400,
+                detail="La cancha no está disponible en ese horario"
+            )
+
+        cancha_disponible = partido_repository.verificar_disponibilidad_cancha(
+            db,
+            datos.cancha_id,
+            datos.fecha,
+            datos.horario,
+            cancha.duracion_turno
         )
 
-    # Validar disponibilidad
-    cancha_disponible = partido_repository.verificar_disponibilidad_cancha(
-        db,
-        datos.cancha_id,
-        datos.fecha,
-        datos.horario,
-        cancha.duracion_turno
-    )
+        if not cancha_disponible:
+            raise HTTPException(
+                status_code=400,
+                detail="La cancha no está disponible en la fecha y horario seleccionados"
+            )
 
-    if not cancha_disponible:
-        raise HTTPException(
-            status_code=400,
-            detail="La cancha no está disponible en la fecha y horario seleccionados"
+        nuevo_partido = Partido(
+            cancha_id=datos.cancha_id,
+            fecha=datos.fecha,
+            horario=datos.horario,
+            modalidad=modalidad,
+            tipo=datos.tipo,
+            cantidad_jugadores=cantidad_jugadores,
+            cupos_disponibles=cupos_disponibles,
+            descripcion=datos.descripcion,
+            estado="pendiente",
+            organizador_id=organizador_id
         )
 
-    # Validar fecha futura
-    now = datetime.now().astimezone().replace(tzinfo=None)
+        db.add(nuevo_partido)
+        db.commit()
+        db.refresh(nuevo_partido)
+        return nuevo_partido
 
-    if (
-        datos.fecha < now.date()
-        or (
-            datos.fecha == now.date()
-            and hora_partido <= now.time()
-        )
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="La fecha y hora deben ser futuras"
-        )
-
-    #validar tipo de partido
-    if datos.tipo not in ["abierto", "cerrado"]:
-        raise HTTPException(
-            status_code=400,
-            detail="El tipo de partido debe ser 'abierto' o 'cerrado'"
-        )
-       
-    # Crear partido
-    nuevo_partido = Partido(
-        cancha_id=datos.cancha_id,
-        fecha=datos.fecha,
-        horario=datos.horario,
-        modalidad=modalidad,
-        tipo=datos.tipo,
-        cantidad_jugadores=cantidad_jugadores,
-        cupos_disponibles=cupos_disponibles,
-        descripcion=datos.descripcion,
-        estado="pendiente",
-        organizador_id=organizador_id
-    )
-
-    partido_guardado = partido_repository.guardar_partido(
-        db,
-        nuevo_partido
-    )
-
-    return partido_guardado
+    except HTTPException:
+        db.rollback()
+        raise
 
 def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
     """Cancela un partido si el usuario es el organizador y cumple las condiciones."""
