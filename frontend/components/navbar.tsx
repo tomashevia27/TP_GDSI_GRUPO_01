@@ -37,6 +37,17 @@ export function Navbar({ onLogout }: NavbarProps) {
               Inicio
             </Link>
             <Link
+              href="/partidos/disponibles"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-foreground",
+                pathname?.startsWith("/partidos")
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              Partidos
+            </Link>
+            <Link
               href="/canchas"
               className={cn(
                 "text-sm font-medium transition-colors hover:text-foreground",

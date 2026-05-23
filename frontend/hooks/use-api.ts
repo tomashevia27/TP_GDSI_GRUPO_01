@@ -372,3 +372,33 @@ export async function editarPartido(partidoId: string | number, partidoData: Par
   return data
 }
 
+// ─────────────────────────────────────────────
+// US 7: Ver partidos disponibles
+// ─────────────────────────────────────────────
+
+export interface PartidoDisponibleFilters {
+  zona?: string;
+  modalidad?: string;
+  fecha?: string;
+}
+
+export async function getPartidosDisponibles(filters?: PartidoDisponibleFilters): Promise<PartidoData[]> {
+  const params = new URLSearchParams()
+  if (filters?.zona) params.set("zona", filters.zona)
+  if (filters?.modalidad) params.set("modalidad", filters.modalidad)
+  if (filters?.fecha) params.set("fecha", filters.fecha)
+
+  const queryString = params.toString()
+  const url = `${API_URL}/partidos/disponibles${queryString ? `?${queryString}` : ""}`
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar partidos disponibles")
+  }
+  return data
+}
