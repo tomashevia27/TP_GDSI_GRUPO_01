@@ -134,36 +134,38 @@ export default function ProfilePage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Trophy className="w-5 h-5 text-primary" />
+      {profile?.rol !== "admin" && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <div className="bg-card rounded-xl p-4 border border-border text-center">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Trophy className="w-5 h-5 text-primary" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{proximos.length + pasados.length}</p>
+            <p className="text-xs text-muted-foreground">Partidos</p>
           </div>
-          <p className="text-2xl font-bold text-foreground">{proximos.length + pasados.length}</p>
-          <p className="text-xs text-muted-foreground">Partidos</p>
-        </div>
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Calendar className="w-5 h-5 text-accent" />
+          <div className="bg-card rounded-xl p-4 border border-border text-center">
+            <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Calendar className="w-5 h-5 text-accent" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{proximos.length}</p>
+            <p className="text-xs text-muted-foreground">Próximos</p>
           </div>
-          <p className="text-2xl font-bold text-foreground">{proximos.length}</p>
-          <p className="text-xs text-muted-foreground">Próximos</p>
-        </div>
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Users className="w-5 h-5 text-muted-foreground" />
+          <div className="bg-card rounded-xl p-4 border border-border text-center">
+            <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Users className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">{pasados.length}</p>
+            <p className="text-xs text-muted-foreground">Jugados</p>
           </div>
-          <p className="text-2xl font-bold text-foreground">{pasados.length}</p>
-          <p className="text-xs text-muted-foreground">Jugados</p>
-        </div>
-        <div className="bg-card rounded-xl p-4 border border-border text-center">
-          <div className="w-10 h-10 bg-yellow-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-            <Star className="w-5 h-5 text-yellow-500" />
+          <div className="bg-card rounded-xl p-4 border border-border text-center">
+            <div className="w-10 h-10 bg-yellow-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Star className="w-5 h-5 text-yellow-500" />
+            </div>
+            <p className="text-2xl font-bold text-foreground">4.8</p>
+            <p className="text-xs text-muted-foreground">Rating</p>
           </div>
-          <p className="text-2xl font-bold text-foreground">4.8</p>
-          <p className="text-xs text-muted-foreground">Rating</p>
         </div>
-      </div>
+      )}
 
       {/* Content based on role */}
       {profile?.rol === "admin" ? (

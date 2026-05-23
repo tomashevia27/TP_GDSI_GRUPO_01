@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useAuthContext } from "@/components/auth-provider"
 
 interface NavbarProps {
   onLogout: () => void
@@ -12,6 +13,7 @@ interface NavbarProps {
 
 export function Navbar({ onLogout }: NavbarProps) {
   const pathname = usePathname()
+  const { role } = useAuthContext()
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -36,17 +38,19 @@ export function Navbar({ onLogout }: NavbarProps) {
             >
               Inicio
             </Link>
-            <Link
-              href="/partidos/disponibles"
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-foreground",
-                pathname?.startsWith("/partidos")
-                  ? "text-foreground"
-                  : "text-muted-foreground"
-              )}
-            >
-              Partidos
-            </Link>
+            {role !== "admin" && (
+              <Link
+                href="/partidos/disponibles"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-foreground",
+                  pathname?.startsWith("/partidos")
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                Partidos
+              </Link>
+            )}
             <Link
               href="/canchas"
               className={cn(
