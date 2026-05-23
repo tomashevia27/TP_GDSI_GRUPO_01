@@ -4,11 +4,11 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { 
-  Users, 
-  MapPin, 
-  Calendar, 
-  ChevronRight, 
+import {
+  Users,
+  MapPin,
+  Calendar,
+  ChevronRight,
   ArrowRight,
   Star,
   Clock,
@@ -52,10 +52,13 @@ export default function RootPage() {
               </div>
               <span className="font-semibold text-lg text-foreground">TeamUp</span>
             </Link>
-            
+
             <div className="hidden md:flex items-center gap-8">
-              <Link href="#como-funciona" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                Cómo funciona
+              <Link href="#jugadores" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Jugadores
+              </Link>
+              <Link href="#duenos" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                Dueños de Canchas
               </Link>
               <Link href="#features" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Funciones
@@ -82,15 +85,15 @@ export default function RootPage() {
               <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
               <span className="text-sm font-medium text-primary">+2,500 partidos armados este mes</span>
             </div>
-            
+
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-tight tracking-tight text-balance">
               Juntate a jugar,{" "}
               <span className="text-primary">sin vueltas</span>
             </h1>
-            
+
             <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl leading-relaxed text-pretty">
-              Armá partidos de fútbol con amigos o encontrá gente para completar tu equipo. 
-              Simple, rápido y sin grupos de WhatsApp interminables.
+              Armá partidos de fútbol con amigos o encontrá gente para completar tu equipo.
+              Simple y rápido.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row gap-4">
@@ -138,67 +141,122 @@ export default function RootPage() {
 
       {/* How it works */}
       <section id="como-funciona" className="py-20 px-4 sm:px-6 bg-secondary/30">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-              Armá tu partido en 3 pasos
-            </h2>
-            <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
-              Sin complicaciones. Sin apps de más. Todo lo que necesitás en un solo lugar.
-            </p>
+        <div className="max-w-6xl mx-auto space-y-24">
+
+          {/* Jugadores */}
+          <div id="jugadores" className="scroll-mt-24">
+            <div className="text-center mb-16">
+              <span className="text-sm font-semibold text-primary tracking-wider uppercase mb-2 block">Para Jugadores</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
+                Armá tu partido en 3 pasos
+              </h2>
+              <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
+                Sin complicaciones. Sin apps de más. Todo lo que necesitás en un solo lugar.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  step: "01",
+                  icon: Calendar,
+                  title: "Elegí una cancha",
+                  description: "Navegá por las canchas disponibles y reservá el horario que mejor te quede."
+                },
+                {
+                  step: "02",
+                  icon: Users,
+                  title: "Creá el partido",
+                  description: "Hacé el partido abierto para todos o cerrado solo para tu equipo."
+                },
+                {
+                  step: "03",
+                  icon: MapPin,
+                  title: "A jugar",
+                  description: "Los jugadores se anotan, y cuando está completo, solo queda ir a la cancha."
+                }
+              ].map((item) => (
+                <div key={item.step} className="relative group">
+                  <div className="p-8 rounded-3xl bg-card shadow-sm border border-border hover:border-primary/50 transition-all duration-300 h-full">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <item.icon className="w-6 h-6 text-primary" />
+                      </div>
+                      <span className="text-5xl font-bold text-muted/30">{item.step}</span>
+                    </div>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">{item.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{item.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                step: "01",
-                icon: Calendar,
-                title: "Elegí una cancha",
-                description: "Navegá por las canchas disponibles y reservá el horario que mejor te quede."
-              },
-              {
-                step: "02",
-                icon: Users,
-                title: "Creá el partido",
-                description: "Hacé el partido abierto para todos o cerrado solo para tus invitados."
-              },
-              {
-                step: "03",
-                icon: MapPin,
-                title: "A jugar",
-                description: "Los jugadores se anotan, y cuando está completo, solo queda ir a la cancha."
-              }
-            ].map((item) => (
-              <div key={item.step} className="relative group">
-                <div className="p-8 rounded-3xl bg-card shadow-sm border border-border hover:border-primary/50 transition-all duration-300 h-full">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <item.icon className="w-6 h-6 text-primary" />
+          {/* Dueños */}
+          <div id="duenos" className="scroll-mt-24">
+            <div className="text-center mb-16">
+              <span className="text-sm font-semibold text-primary tracking-wider uppercase mb-2 block">Para Dueños de Canchas</span>
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
+                Gestioná tu complejo fácilmente
+              </h2>
+              <p className="mt-4 text-muted-foreground text-lg max-w-2xl mx-auto">
+                Publicá tus canchas y multiplicá tus reservas sin esfuerzo.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                {
+                  step: "01",
+                  icon: MapPin,
+                  title: "Registrá tu complejo",
+                  description: "Creá tu cuenta de dueño e indicá la ubicación de tu predio."
+                },
+                {
+                  step: "02",
+                  icon: CheckCircle2,
+                  title: "Publicá tus canchas",
+                  description: "Agregá tus canchas, fotos, detalles y definí los precios por turno."
+                },
+                {
+                  step: "03",
+                  icon: Users,
+                  title: "Recibí reservas",
+                  description: "Los jugadores reservan online y vos administras todo desde tu panel."
+                }
+              ].map((item) => (
+                <div key={item.step} className="relative group">
+                  <div className="p-8 rounded-3xl bg-card shadow-sm border border-border hover:border-primary/50 transition-all duration-300 h-full">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center group-hover:bg-accent/20 transition-colors">
+                        <item.icon className="w-6 h-6 text-accent" />
+                      </div>
+                      <span className="text-5xl font-bold text-muted/30">{item.step}</span>
                     </div>
-                    <span className="text-5xl font-bold text-muted/30">{item.step}</span>
+                    <h3 className="text-xl font-semibold text-foreground mb-3">{item.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{item.description}</p>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{item.description}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
         </div>
       </section>
 
       {/* Features Grid */}
       <section id="features" className="py-20 px-4 sm:px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
+          <div className="grid lg:grid-cols-2 gap-16 items-stretch">
+            <div className="flex flex-col">
               <h2 className="text-3xl sm:text-4xl font-bold text-foreground text-balance">
-                Todo lo que necesitás para organizar y jugar
+                Todo lo que necesitás para organizar, jugar y administrar
               </h2>
               <p className="mt-4 text-muted-foreground text-lg">
-                Diseñado para jugadores y administradores. Resolvé todo desde una sola plataforma.
+                Diseñado para jugadores y dueños de canchas. Resolvé todo desde una sola plataforma.
               </p>
 
-              <div className="mt-10 space-y-6">
+              <div className="mt-10 flex flex-col justify-between flex-1 gap-6">
                 {[
                   {
                     icon: Users,
@@ -214,6 +272,11 @@ export default function RootPage() {
                     icon: CheckCircle2,
                     title: "Historial y estadísticas",
                     description: "Revisá tus partidos jugados y organizados desde tu perfil."
+                  },
+                  {
+                    icon: Calendar,
+                    title: "Panel para dueños",
+                    description: "Administrá tu predio, agregá tus canchas y definí precios por turno fácilmente."
                   }
                 ].map((feature) => (
                   <div key={feature.title} className="flex gap-4">
@@ -231,12 +294,12 @@ export default function RootPage() {
 
             {/* Mock phone/app preview */}
             <div className="relative">
-              <div className="aspect-[4/5] bg-secondary rounded-[2.5rem] p-6 shadow-2xl shadow-primary/10 border border-border/50">
-                <div className="bg-background rounded-3xl h-full p-4 overflow-hidden border border-border shadow-inner">
+              <div className="h-full bg-secondary rounded-[2.5rem] p-6 shadow-2xl shadow-primary/10 border border-border/50">
+                <div className="bg-background rounded-3xl h-full p-4 overflow-hidden border border-border shadow-inner flex flex-col">
                   <div className="flex items-center justify-between mb-6 pt-2 px-2">
                     <span className="font-bold text-lg text-foreground">Canchas Disponibles</span>
                   </div>
-                  
+
                   {/* Mock match cards */}
                   <div className="space-y-4 px-2">
                     {[
@@ -261,7 +324,7 @@ export default function RootPage() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Decorative elements */}
               <div className="absolute -top-4 -right-4 w-32 h-32 bg-primary/20 rounded-full blur-3xl -z-10" />
               <div className="absolute -bottom-4 -left-4 w-40 h-40 bg-accent/20 rounded-full blur-3xl -z-10" />
@@ -294,7 +357,7 @@ export default function RootPage() {
                 </Button>
               </div>
             </div>
-            
+
             {/* Decorative */}
             <div className="absolute top-0 right-0 w-80 h-80 bg-primary/30 rounded-full blur-[100px] pointer-events-none" />
             <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent/30 rounded-full blur-[80px] pointer-events-none" />
@@ -312,7 +375,7 @@ export default function RootPage() {
               </div>
               <span className="font-semibold text-foreground">TeamUp</span>
             </div>
-            
+
             <p className="text-sm text-muted-foreground text-center md:text-left">
               © {new Date().getFullYear()} TeamUp. Hecho con pasión por el fútbol.
             </p>
