@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import date
 
 from ..db import get_db
 from ..models.usuario_model import Usuario
@@ -17,6 +18,17 @@ def obtener_mis_partidos(
 ):
     """Obtiene los partidos organizados e inscritos por el jugador."""
     return partido_service.obtener_mis_partidos(db, current_user.id)
+
+@router.get("/disponibles", response_model=List[PartidoRespuesta])
+def obtener_partidos_disponibles(
+    zona: Optional[str] = None,
+    modalidad: Optional[str] = None,
+    fecha: Optional[date] = None,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    """Obtiene el listado de partidos abiertos, futuros y con cupos."""
+    return partido_service.obtener_partidos_disponibles(db, zona, modalidad, fecha)
 
 @router.get("/{partido_id}", response_model=PartidoRespuesta)
 def obtener_detalle_partido(partido_id: int, db: Session = Depends(get_db)):

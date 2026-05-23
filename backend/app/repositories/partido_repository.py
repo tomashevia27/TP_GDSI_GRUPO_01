@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from ..models.partido_model import Partido
 import datetime
+from sqlalchemy import or_, and_
+from ..models.cancha_model import Cancha
 
 def obtener_organizados_por_usuario(db: Session, usuario_id: int):
     """Obtiene los partidos organizados por un usuario."""
@@ -15,6 +17,34 @@ def obtener_inscritos_por_usuario(db: Session, usuario_id: int):
 def obtener_por_id(db: Session, partido_id: int):
     """Obtiene un partido por su ID."""
     return db.query(Partido).filter(Partido.id == partido_id).first()
+
+def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha_filtro: datetime.date = None):
+    """Obtiene los partidos abiertos, con cupos y fecha futura."""
+    now = datetime.datetime.now()
+    hoy = now.date()
+    hora_actual = now.time()
+
+    query = db.query(Partido).join(Cancha).filter(
+        Partido.tipo == "abierto",
+        Partido.cupos_disponibles > 0,
+        Partido.estado != "Cancelado"
+    )
+
+    query = query.filter(
+        or_(
+            Partido.fecha > hoy,
+            and_(Partido.fecha == hoy, Partido.horario > hora_actual)
+        )
+    )
+
+    if zona:
+        query = query.filter(Cancha.zona.ilike(f"%{zona}%"))
+    if modalidad:
+        query = query.filter(Partido.modalidad.ilike(f"%{modalidad}%"))
+    if fecha_filtro:
+        query = query.filter(Partido.fecha == fecha_filtro)
+        
+    return query.order_by(Partido.fecha.asc(), Partido.horario.asc()).all()
 
 def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60, excluir_partido_id: int = None) -> bool:
     """Verifica si una cancha está disponible en una fecha y horario específicos, sin solapamientos."""

@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, date
 
 from ..models.partido_model import Partido
 from ..repositories import partido_repository
@@ -41,6 +41,10 @@ def obtener_mis_partidos(db: Session, usuario_id: int):
         "organizados": organizados,
         "inscritos": inscritos
     }
+
+def obtener_partidos_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha: date = None):
+    """Llama al repositorio para obtener los partidos disponibles aplicando los filtros dados."""
+    return partido_repository.obtener_disponibles(db, zona, modalidad, fecha)
 
 
 def obtener_detalle_partido(db: Session, partido_id: int):
