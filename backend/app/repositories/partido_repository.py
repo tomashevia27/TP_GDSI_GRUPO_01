@@ -10,9 +10,7 @@ def obtener_organizados_por_usuario(db: Session, usuario_id: int):
 
 def obtener_inscritos_por_usuario(db: Session, usuario_id: int):
     """Obtiene los partidos en los que un usuario está inscrito."""
-    # return db.query(Partido).filter(Partido.jugadores.any(id=usuario_id)).all()
-    # TODO: Implementar cuando se agregue la tabla intermedia partido_jugadores
-    return []
+    return db.query(Partido).filter(Partido.jugadores.any(id=usuario_id)).all()
 
 def obtener_por_id(db: Session, partido_id: int):
     """Obtiene un partido por su ID."""

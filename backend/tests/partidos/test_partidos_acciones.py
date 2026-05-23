@@ -352,3 +352,27 @@ def test_editar_partido_horario_cancha_cerrada():
     res = client.put(f"/partidos/{p_id}", json=datos_update)
     assert res.status_code == 400
     assert "no está disponible en ese horario" in res.json()["detail"]
+
+
+def test_mis_partidos_incluye_inscritos():
+    # Usuario 1 crea un partido
+    res_crear = crear_partido_test(fecha_offset_days=2, horario_str="18:00:00")
+    assert res_crear.status_code == 200
+    partido_id = res_crear.json()["id"]
+
+    # Usuario 2 queda inscripto por tabla intermedia
+    db = TestingSessionLocal()
+    partido = db.query(Partido).filter(Partido.id == partido_id).first()
+    usuario_2 = db.query(Usuario).filter(Usuario.id == 2).first()
+    partido.jugadores.append(usuario_2)
+    db.commit()
+    db.close()
+
+    # Al pedir mis-partidos como usuario 2, debe aparecer en inscritos
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+    res_mis_partidos = client.get("/partidos/mis-partidos")
+
+    assert res_mis_partidos.status_code == 200
+    data = res_mis_partidos.json()
+    ids_inscritos = [p["id"] for p in data["inscritos"]]
+    assert partido_id in ids_inscritos

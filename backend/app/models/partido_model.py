@@ -1,6 +1,13 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Table
 from sqlalchemy.orm import relationship
 from ..db import Base
+
+partido_jugadores = Table(
+    "partido_jugadores",
+    Base.metadata,
+    Column("partido_id", Integer, ForeignKey("partidos.id"), primary_key=True),
+    Column("usuario_id", Integer, ForeignKey("usuarios.id"), primary_key=True),
+)
 
 class Partido(Base):
     __tablename__ = "partidos"
@@ -19,4 +26,4 @@ class Partido(Base):
 
     cancha = relationship("Cancha", back_populates="partidos")
     organizador = relationship("Usuario", back_populates="partidos_organizados")
-    #jugadores = relationship("Usuario", secondary="partido_jugadores", back_populates="partidos_inscritos")
+    jugadores = relationship("Usuario", secondary=partido_jugadores, back_populates="partidos_inscritos")
