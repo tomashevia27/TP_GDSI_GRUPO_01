@@ -125,7 +125,7 @@ export default function PartidoDetallePage() {
       text: "Vas a reservar tu lugar en este partido.",
       icon: "question",
       showCancelButton: true,
-      confirmButtonColor: "#F97316",
+      confirmButtonColor: "#FF6B4A",
       cancelButtonColor: "#6B7280",
       confirmButtonText: "Sí, anotarme",
       cancelButtonText: "Cancelar"
@@ -135,7 +135,23 @@ export default function PartidoDetallePage() {
       setIsJoining(true)
       try {
         await inscribirseAPartido(partido.id)
-        Swal.fire("Inscripto", "Tu lugar fue reservado correctamente.", "success")
+        
+        await Swal.fire({
+          title: "¡Reserva iniciada!",
+          text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
+          icon: "success",
+          confirmButtonColor: "#FF6B4A",
+          confirmButtonText: "Proceder al pago"
+        })
+
+        await Swal.fire({
+          title: "¡Pago exitoso!",
+          text: "Tu lugar fue reservado correctamente.",
+          icon: "success",
+          timer: 2000,
+          showConfirmButton: false
+        })
+
         const updated = await getPartido(partidoId)
         setPartido(updated)
       } catch (error: any) {
