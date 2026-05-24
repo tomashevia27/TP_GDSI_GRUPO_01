@@ -224,7 +224,7 @@ export default function RootPage() {
             }}
           >
             <Image
-              src="/ver_centro.png"
+              src="/ver_centro1.png"
               alt="Deportes TeamUp"
               fill
               priority
