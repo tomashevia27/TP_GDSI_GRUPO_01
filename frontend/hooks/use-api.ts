@@ -283,6 +283,7 @@ export interface PartidoData {
     nombre: string;
     apellido: string;
   };
+  jugadores?: UserProfile[];
 }
 
 export async function getMisPartidos() {
@@ -363,6 +364,20 @@ export async function inscribirseAPartido(partidoId: string | number): Promise<P
   const data = await response.json()
   if (!response.ok) {
     throw new Error(data.detail || "Error al inscribirse al partido")
+  }
+  return data
+}
+
+export async function bajarseDePartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/bajarse`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al darse de baja del partido")
   }
   return data
 }

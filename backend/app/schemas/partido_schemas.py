@@ -41,6 +41,7 @@ class PartidoRespuesta(BaseModel):
     estado: str
     cancha: Optional[CanchaBasica] = None
     organizador: Optional[UsuarioRespuesta] = None
+    jugadores: List[UsuarioRespuesta] = []
 
     model_config = ConfigDict(from_attributes=True)
 

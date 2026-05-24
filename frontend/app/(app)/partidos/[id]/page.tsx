@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido } from "@/hooks/use-api"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido } from "@/hooks/use-api"
 import Swal from "sweetalert2"
 import { CountdownTimer } from "@/components/CountdownTimer"
 
@@ -21,6 +21,7 @@ export default function PartidoDetallePage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isCancelling, setIsCancelling] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -85,9 +86,11 @@ export default function PartidoDetallePage() {
   const confirmedCount = partido.cantidad_jugadores - partido.cupos_disponibles
   const spotsLeft = partido.cupos_disponibles
 
-  const isOrganizer = currentUser && partido.organizador && currentUser.id === partido.organizador.id
+  const isOrganizer = !!(currentUser && partido.organizador && currentUser.id === partido.organizador.id)
+  const isJoined = !!(currentUser && partido.jugadores?.some(j => j.id === currentUser.id))
   const canEditOrCancel = isOrganizer && partido.estado?.toLowerCase() !== "cancelado"
-  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && spotsLeft > 0
+  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && !isJoined && spotsLeft > 0
+  const canLeave = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && isJoined
 
   const handleCancel = async () => {
     const result = await Swal.fire({
@@ -140,6 +143,33 @@ export default function PartidoDetallePage() {
         Swal.fire("Error", error.message || "No se pudo completar la inscripción", "error")
       } finally {
         setIsJoining(false)
+      }
+    }
+  }
+
+  const handleLeave = async () => {
+    const result = await Swal.fire({
+      title: "¿Darse de baja?",
+      text: "Vas a cancelar tu inscripción a este partido.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: "Sí, darme de baja",
+      cancelButtonText: "Cancelar"
+    })
+
+    if (result.isConfirmed) {
+      setIsLeaving(true)
+      try {
+        await bajarseDePartido(partido.id)
+        Swal.fire("Baja confirmada", "Te has dado de baja del partido correctamente.", "success")
+        const updated = await getPartido(partidoId)
+        setPartido(updated)
+      } catch (error: any) {
+        Swal.fire("Error", error.message || "No se pudo completar la baja", "error")
+      } finally {
+        setIsLeaving(false)
       }
     }
   }
@@ -241,8 +271,16 @@ export default function PartidoDetallePage() {
 
       {canJoin && (
         <div className="mb-6">
-          <Button className="w-full sm:w-auto" onClick={handleJoin} disabled={isJoining}>
+          <Button className="w-full sm:w-auto font-semibold" onClick={handleJoin} disabled={isJoining}>
             {isJoining ? "Anotándote..." : "Anotarme al partido"}
+          </Button>
+        </div>
+      )}
+
+      {canLeave && (
+        <div className="mb-6">
+          <Button variant="destructive" className="w-full sm:w-auto font-semibold" onClick={handleLeave} disabled={isLeaving}>
+            {isLeaving ? "Procesando baja..." : "Darse de baja del partido"}
           </Button>
         </div>
       )}
@@ -293,11 +331,19 @@ export default function PartidoDetallePage() {
           {/* Creador del partido */}
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                <span className="font-medium text-primary-foreground text-sm">
-                  {partido.organizador ? partido.organizador.nombre.charAt(0) : "O"}
-                </span>
-              </div>
+              {partido.organizador?.foto_perfil ? (
+                <img
+                  src={partido.organizador.foto_perfil}
+                  alt={`${partido.organizador.nombre} ${partido.organizador.apellido}`}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                  <span className="font-medium text-primary-foreground text-sm">
+                    {partido.organizador ? partido.organizador.nombre.charAt(0) : "O"}
+                  </span>
+                </div>
+              )}
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-foreground">
@@ -312,10 +358,40 @@ export default function PartidoDetallePage() {
               <CheckCircle2 className="w-4 h-4 text-accent" />
             </div>
           </div>
+
+          {/* Jugadores que se sumaron al partido */}
+          {partido.jugadores?.map((jugador) => (
+            <div key={`jugador-${jugador.id}`} className="flex items-center justify-between p-4">
+              <div className="flex items-center gap-3">
+                {jugador.foto_perfil ? (
+                  <img
+                    src={jugador.foto_perfil}
+                    alt={`${jugador.nombre} ${jugador.apellido}`}
+                    className="w-10 h-10 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                    <span className="font-medium text-primary text-sm">
+                      {jugador.nombre.charAt(0)}
+                    </span>
+                  </div>
+                )}
+                <div>
+                  <span className="font-medium text-foreground">
+                    {jugador.nombre} {jugador.apellido}
+                  </span>
+                  <p className="text-xs text-accent">Confirmado</p>
+                </div>
+              </div>
+              <div className="w-8 h-8 rounded-full flex items-center justify-center bg-accent/10">
+                <CheckCircle2 className="w-4 h-4 text-accent" />
+              </div>
+            </div>
+          ))}
           
           {/* Amigos/Invitados del creador */}
-          {Array.from({ length: Math.max(0, partido.cantidad_jugadores - partido.cupos_disponibles - 1) }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between p-4">
+          {Array.from({ length: Math.max(0, partido.cantidad_jugadores - partido.cupos_disponibles - 1 - (partido.jugadores?.length || 0)) }).map((_, i) => (
+            <div key={`invitado-${i}`} className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
                   <span className="font-medium text-muted-foreground text-sm">J{i + 1}</span>
