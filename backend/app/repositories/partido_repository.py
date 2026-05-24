@@ -123,3 +123,12 @@ def guardar_inscripcion(db: Session, partido: Partido, usuario: Usuario):
     db.commit()
     db.refresh(partido)
     return partido
+
+
+def guardar_baja_inscripcion(db: Session, partido: Partido, usuario: Usuario):
+    """Registra la baja de un jugador y actualiza cupos disponibles."""
+    partido.jugadores.remove(usuario)
+    partido.cupos_disponibles += 1
+    db.commit()
+    db.refresh(partido)
+    return partido
