@@ -11,12 +11,11 @@ interface CountdownTimerProps {
 
 function BaseCountdownTimer({ fecha, horario }: CountdownTimerProps) {
   const [timeLeft, setTimeLeft] = useState<string>("")
-  const [isMatchTime, setIsMatchTime] = useState<boolean>(false)
+  const [timerStatus, setTimerStatus] = useState<'normal' | 'urgente' | 'partido'>('normal')
 
   useEffect(() => {
     const [year, month, day] = fecha.split("-").map(Number)
     const [hours, minutes] = horario.split(":").map(Number)
-    
     const fechaPartido = new Date(year, month - 1, day, hours, minutes, 0)
 
     const updateTimer = () => {
@@ -24,9 +23,15 @@ function BaseCountdownTimer({ fecha, horario }: CountdownTimerProps) {
       const diferencia = fechaPartido.getTime() - ahora.getTime()
 
       if (diferencia <= 0) {
-        setIsMatchTime(true)
+        setTimerStatus('partido')
         setTimeLeft("¡A jugar!")
         return
+      }
+
+      if (diferencia < 7200000) {
+        setTimerStatus('urgente')
+      } else {
+        setTimerStatus('normal')
       }
 
       const d = Math.floor(diferencia / (1000 * 60 * 60 * 24))
@@ -49,14 +54,22 @@ function BaseCountdownTimer({ fecha, horario }: CountdownTimerProps) {
     return () => clearInterval(interval)
   }, [fecha, horario])
 
+  const getStyles = () => {
+    switch (timerStatus) {
+      case 'partido':
+        return "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 animate-pulse"
+      case 'urgente':
+        return "bg-rose-500/10 text-rose-500 border-rose-500/20 font-extrabold animate-pulse"
+      case 'normal':
+      default:
+        return "bg-amber-500/10 text-amber-500 border-amber-500/20"
+    }
+  }
+
   return (
-    <div className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded-lg border ${
-      isMatchTime 
-        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20 animate-pulse" 
-        : "bg-amber-500/10 text-amber-500 border-amber-500/20"
-    }`}>
-      <Timer className="w-4 h-4" /> 
-      <span>{isMatchTime ? timeLeft : `Faltan: ${timeLeft}`}</span>
+    <div className={`inline-flex items-center gap-2 px-3 py-1.5 text-sm font-bold rounded-lg border transition-colors duration-500 ${getStyles()}`}>
+      <Timer className="w-4 h-4" />
+      <span>{timerStatus === 'partido' ? timeLeft : `Faltan: ${timeLeft}`}</span>
     </div>
   )
 }
