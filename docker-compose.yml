@@ -37,6 +37,8 @@ services:
     build:
       context: ./frontend
     container_name: bdd_frontend
+    environment:
+      - HOSTNAME=0.0.0.0
     restart: unless-stopped
     depends_on:
       - backend
