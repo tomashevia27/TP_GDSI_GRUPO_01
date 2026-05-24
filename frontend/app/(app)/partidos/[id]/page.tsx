@@ -6,6 +6,7 @@ import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Cro
 import { Button } from "@/components/ui/button"
 import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido } from "@/hooks/use-api"
 import Swal from "sweetalert2"
+import { CountdownTimer } from "@/components/CountdownTimer"
 
 const API_URL = "http://localhost:8000"
 
@@ -166,19 +167,25 @@ export default function PartidoDetallePage() {
 
       {/* Match header */}
       <div className="mb-6">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="px-2.5 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-lg">
+        <div className="flex items-center flex-wrap gap-3 mb-4">
+          
+          <span className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-lg tracking-wide">
             {partido.estado.toUpperCase()}
           </span>
-          <span className="px-2.5 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-lg capitalize">
+          
+          <span className="px-3 py-1.5 bg-secondary text-secondary-foreground text-sm font-semibold rounded-lg capitalize tracking-wide">
             {partido.tipo}
           </span>
+          
+          {partido.estado.toLowerCase() !== "cancelado" && (
+            <CountdownTimer fecha={partido.fecha} horario={partido.horario} />
+          )}
         </div>
-        
-        <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
-          Partido de <span className="capitalize">{partido.modalidad}</span>
-        </h1>
-      </div>
+  
+  <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
+    Partido de <span className="capitalize">{partido.modalidad}</span>
+  </h1>
+</div>
 
       {/* Key info cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
