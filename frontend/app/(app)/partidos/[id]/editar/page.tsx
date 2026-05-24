@@ -7,9 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MapPin, Info, ArrowLeft, Clock, DollarSign, Zap } from "lucide-react"
 import Swal from "sweetalert2"
-import { editarPartido, getPartido, type PartidoData } from "@/hooks/use-api"
-
-const API_URL = "http://localhost:8000"
+import { editarPartido, getPartido, type PartidoData, API_URL } from "@/hooks/use-api"
 
 function EditarPartidoForm() {
   const router = useRouter()

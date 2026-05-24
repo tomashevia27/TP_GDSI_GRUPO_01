@@ -55,11 +55,13 @@ def tiene_reservas_activas(db: Session, cancha_id: int) -> bool:
 def tiene_reservas_activas_futuras(db: Session, cancha_id: int) -> bool:
     """Verifica si una cancha tiene reservas activas a partir de hoy."""
     from ..models.partido_model import Partido
-    from datetime import date
+    from datetime import datetime, timezone, timedelta
+    tz_local = timezone(timedelta(hours=-3))
+    hoy = datetime.now(tz_local).date()
     reservas_activas = db.query(Partido).filter(
         Partido.cancha_id == cancha_id, 
         Partido.estado != "cancelado",
-        Partido.fecha >= date.today()
+        Partido.fecha >= hoy
     ).count()
     return reservas_activas > 0
 

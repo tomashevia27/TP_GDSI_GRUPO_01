@@ -1,9 +1,12 @@
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.orm import Session
 from ..models.partido_model import Partido
 from ..models.usuario_model import Usuario
-import datetime
 from sqlalchemy import or_, and_, func
 from ..models.cancha_model import Cancha
+
+# Zona horaria de la aplicación (Argentina UTC-3)
+TZ_LOCAL = timezone(timedelta(hours=-3))
 
 def obtener_organizados_por_usuario(db: Session, usuario_id: int):
     """Obtiene los partidos organizados por un usuario."""
@@ -22,9 +25,9 @@ def obtener_por_id_bloqueado(db: Session, partido_id: int):
     """Obtiene un partido bloqueando la fila para evitar carreras al inscribirse."""
     return db.query(Partido).filter(Partido.id == partido_id).with_for_update().first()
 
-def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha_filtro: datetime.date = None):
+def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha_filtro: date = None):
     """Obtiene los partidos abiertos, con cupos y fecha futura."""
-    now = datetime.datetime.now()
+    now = datetime.now(TZ_LOCAL)
     hoy = now.date()
     hora_actual = now.time()
 
@@ -52,7 +55,7 @@ def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fe
 
 def obtener_filtros_disponibles(db: Session):
     """Obtiene las opciones de filtros dinámicos basados en partidos disponibles."""
-    now = datetime.datetime.now()
+    now = datetime.now(TZ_LOCAL)
     hoy = now.date()
     hora_actual = now.time()
 
@@ -95,12 +98,12 @@ def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime
         
     partidos_del_dia = query.all()
     
-    delta_duracion = datetime.timedelta(minutes=duracion_turno)
-    nuevo_inicio = datetime.datetime.combine(fecha, horario)
+    delta_duracion = timedelta(minutes=duracion_turno)
+    nuevo_inicio = datetime.combine(fecha, horario)
     nuevo_fin = nuevo_inicio + delta_duracion
 
     for p in partidos_del_dia:
-        p_inicio = datetime.datetime.combine(p.fecha, p.horario)
+        p_inicio = datetime.combine(p.fecha, p.horario)
         p_fin = p_inicio + delta_duracion
         
         if nuevo_inicio < p_fin and nuevo_fin > p_inicio:

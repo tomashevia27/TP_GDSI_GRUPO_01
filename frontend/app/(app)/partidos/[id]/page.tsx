@@ -4,11 +4,9 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido } from "@/hooks/use-api"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL } from "@/hooks/use-api"
 import Swal from "sweetalert2"
 import { CountdownTimer } from "@/components/CountdownTimer"
-
-const API_URL = "http://localhost:8000"
 
 export default function PartidoDetallePage() {
   const params = useParams()

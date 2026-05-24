@@ -1,6 +1,9 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
+
+# Zona horaria de la aplicación (Argentina UTC-3)
+TZ_LOCAL = timezone(timedelta(hours=-3))
 
 from ..models.partido_model import Partido
 from ..repositories import partido_repository
@@ -91,7 +94,7 @@ def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
             detail="No te podés inscribir a un partido cancelado"
         )
 
-    now = datetime.now().astimezone().replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
     hora_partido = partido.horario.replace(tzinfo=None)
 
     if partido.fecha < now.date() or (partido.fecha == now.date() and hora_partido <= now.time()):
@@ -148,7 +151,7 @@ def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
             detail="No estás inscripto en este partido"
         )
 
-    now = datetime.now().astimezone().replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
     partido_inicio = datetime.combine(partido.fecha, partido.horario)
 
     if partido_inicio - now <= timedelta(hours=2):
@@ -167,7 +170,7 @@ def crear_partido(
 ):
     """Crea un nuevo partido validando los datos proporcionados."""
     hora_partido = datos.horario.replace(tzinfo=None)
-    now = datetime.now().astimezone().replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
 
     if datos.tipo not in ["abierto", "cerrado"]:
         raise HTTPException(
@@ -297,7 +300,7 @@ def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
         )
         
     # Verificar que el partido no se haya jugado ya (fecha y hora pasadas)
-    now = datetime.now().astimezone().replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
     hora_partido = partido.horario.replace(tzinfo=None)
     
     if partido.fecha < now.date() or (partido.fecha == now.date() and hora_partido <= now.time()):
@@ -340,7 +343,7 @@ def editar_partido(
         )
         
     # Verificar que el partido original no haya pasado ya
-    now = datetime.now().astimezone().replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
     hora_original = partido.horario.replace(tzinfo=None)
     if partido.fecha < now.date() or (partido.fecha == now.date() and hora_original <= now.time()):
         raise HTTPException(
