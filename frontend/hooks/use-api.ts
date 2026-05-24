@@ -278,11 +278,7 @@ export interface PartidoData {
     zona: string;
     direccion: string;
   };
-  organizador?: {
-    id: number;
-    nombre: string;
-    apellido: string;
-  };
+  organizador?: UserProfile;
   jugadores?: UserProfile[];
 }
 

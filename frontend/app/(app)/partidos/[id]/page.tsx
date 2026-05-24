@@ -22,6 +22,7 @@ export default function PartidoDetallePage() {
   const [isCancelling, setIsCancelling] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState<UserProfile | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -329,7 +330,10 @@ export default function PartidoDetallePage() {
 
         <div className="divide-y divide-border">
           {/* Creador del partido */}
-          <div className="flex items-center justify-between p-4">
+          <div 
+            className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
+            onClick={() => partido.organizador && setSelectedPlayer(partido.organizador)}
+          >
             <div className="flex items-center gap-3">
               {partido.organizador?.foto_perfil ? (
                 <img
@@ -361,7 +365,11 @@ export default function PartidoDetallePage() {
 
           {/* Jugadores que se sumaron al partido */}
           {partido.jugadores?.map((jugador) => (
-            <div key={`jugador-${jugador.id}`} className="flex items-center justify-between p-4">
+            <div 
+              key={`jugador-${jugador.id}`} 
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
+              onClick={() => setSelectedPlayer(jugador)}
+            >
               <div className="flex items-center gap-3">
                 {jugador.foto_perfil ? (
                   <img
@@ -425,6 +433,71 @@ export default function PartidoDetallePage() {
           ))}
         </div>
       </div>
+
+      {/* Modal de perfil del jugador */}
+      {selectedPlayer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Botón de cerrar */}
+            <button 
+              onClick={() => setSelectedPlayer(null)}
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-secondary transition-colors"
+            >
+              <span className="sr-only">Cerrar</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Cabecera del Perfil */}
+            <div className="p-6 text-center border-b border-border">
+              {selectedPlayer.foto_perfil ? (
+                <img
+                  src={selectedPlayer.foto_perfil}
+                  alt={selectedPlayer.nombre}
+                  className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-2 border-primary"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary/10 text-primary flex items-center justify-center mx-auto mb-4 text-3xl font-bold">
+                  {selectedPlayer.nombre.charAt(0)}
+                </div>
+              )}
+              <h3 className="text-xl font-bold text-foreground">
+                {selectedPlayer.nombre} {selectedPlayer.apellido}
+              </h3>
+              <span className="inline-block px-3 py-1 mt-2 text-xs font-semibold bg-primary/10 text-primary rounded-full uppercase tracking-wide">
+                {selectedPlayer.rol === "owner" ? "Dueño de Cancha" : "Jugador"}
+              </span>
+            </div>
+
+            {/* Detalles del Jugador */}
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-secondary/30 p-3 rounded-xl">
+                  <span className="text-xs text-muted-foreground block mb-0.5 uppercase tracking-wide">Edad</span>
+                  <span className="font-semibold text-foreground">{selectedPlayer.edad} años</span>
+                </div>
+                <div className="bg-secondary/30 p-3 rounded-xl">
+                  <span className="text-xs text-muted-foreground block mb-0.5 uppercase tracking-wide">Género</span>
+                  <span className="font-semibold text-foreground capitalize">{selectedPlayer.genero}</span>
+                </div>
+              </div>
+
+              <div className="bg-secondary/30 p-3 rounded-xl">
+                <span className="text-xs text-muted-foreground block mb-0.5 uppercase tracking-wide">Zona de juego</span>
+                <span className="font-semibold text-foreground">{selectedPlayer.zona}</span>
+              </div>
+
+              {selectedPlayer.email && (
+                <div className="bg-secondary/30 p-3 rounded-xl">
+                  <span className="text-xs text-muted-foreground block mb-0.5 uppercase tracking-wide">Contacto</span>
+                  <span className="font-semibold text-foreground break-all">{selectedPlayer.email}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
