@@ -138,7 +138,10 @@ export default function RootPage() {
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -z-10" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/20 rounded-full blur-[100px] -z-10" />
 
-        <div className="max-w-6xl mx-auto relative">
+        {/* CONTENEDOR PRINCIPAL: Cambiado a GRID para dividir en dos columnas en pantallas grandes */}
+        <div className="max-w-6xl mx-auto relative grid lg:grid-cols-2 gap-12 items-center">
+          
+          {/* COLUMNA IZQUIERDA: Todo tu texto y botones actuales */}
           <div className="max-w-3xl">
             {/* Live Badge */}
             <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full mb-8 backdrop-blur-sm animate-slide-up">
@@ -210,6 +213,23 @@ export default function RootPage() {
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* COLUMNA DERECHA: Suavizado perfecto sin mover la posición de los personajes */}
+          <div 
+            className="relative w-full h-[350px] sm:h-[450px] lg:h-[550px] mt-8 lg:mt-0 flex items-center justify-center animate-slide-up animation-delay-200"
+            style={{
+              WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0) 100%)',
+              maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 20%, rgba(0,0,0,0.6) 60%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0) 100%)'
+            }}
+          >
+            <Image
+              src="/ver_centro.png"
+              alt="Deportes TeamUp"
+              fill
+              priority
+              className="object-contain object-center drop-shadow-[0_20px_50px_rgba(var(--primary),0.15)]"
+            />
           </div>
         </div>
       </section>
