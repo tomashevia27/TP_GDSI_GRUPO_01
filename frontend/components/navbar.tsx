@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useAuthContext } from "@/components/auth-provider"
+import { NotificationsPanel } from "@/components/notifications-panel"
 
 interface NavbarProps {
   onLogout: () => void
@@ -76,13 +77,7 @@ export function Navbar({ onLogout }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              className="relative text-muted-foreground hover:text-foreground transition-colors p-2"
-              title="Notificaciones"
-            >
-              <Bell className="h-5 w-5" />
-              <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-primary rounded-full" />
-            </button>
+            <NotificationsPanel />
             <Button
               variant="ghost"
               size="sm"

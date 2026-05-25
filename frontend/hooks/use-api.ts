@@ -451,3 +451,116 @@ export async function getFiltrosDisponibles(): Promise<FiltrosDisponiblesData> {
   return data;
 }
 
+// ─────────────────────────────────────────────
+// Notificaciones internas
+// ─────────────────────────────────────────────
+
+export interface NotificacionData {
+  id: number;
+  tipo: string;
+  mensaje: string;
+  partido_id?: number | null;
+  leida: boolean;
+  fecha_creacion: string;
+}
+
+export interface NotificacionesListado {
+  notificaciones: NotificacionData[];
+  total_no_leidas: number;
+}
+
+export interface ConteoNoLeidas {
+  total_no_leidas: number;
+}
+
+export async function getNotificaciones(
+  soloNoLeidas: boolean = false,
+  limit: number = 50,
+  offset: number = 0
+): Promise<NotificacionesListado> {
+  const params = new URLSearchParams()
+  if (soloNoLeidas) params.set("solo_no_leidas", "true")
+  params.set("limit", String(limit))
+  params.set("offset", String(offset))
+
+  const queryString = params.toString()
+  const response = await fetch(`${API_URL}/notificaciones?${queryString}`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar notificaciones")
+  }
+  return data
+}
+
+export async function getConteoNoLeidas(): Promise<ConteoNoLeidas> {
+  const response = await fetch(`${API_URL}/notificaciones/no-leidas/count`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al obtener conteo de notificaciones")
+  }
+  return data
+}
+
+export async function marcarNotificacionLeida(notificacionId: number): Promise<NotificacionData> {
+  const response = await fetch(`${API_URL}/notificaciones/${notificacionId}/leer`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al marcar notificación como leída")
+  }
+  return data
+}
+
+export async function marcarTodasLeidas(): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/notificaciones/leer-todas`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al marcar notificaciones como leídas")
+  }
+  return data
+}
+
+export async function eliminarNotificacion(notificacionId: number): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/notificaciones/${notificacionId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al eliminar notificación")
+  }
+  return data
+}
+
+export async function eliminarTodasNotificaciones(): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/notificaciones`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al eliminar notificaciones")
+  }
+  return data
+}

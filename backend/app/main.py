@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .routers import auth, canchas, users, partidos
+from .routers import auth, canchas, users, partidos, notificaciones
 from .db import engine, Base
 
 # Crear tablas
@@ -28,3 +28,4 @@ app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(canchas.router)
 app.include_router(partidos.router)
+app.include_router(notificaciones.router)

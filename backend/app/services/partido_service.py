@@ -10,6 +10,7 @@ from ..repositories import partido_repository
 from ..repositories import usuario_repository
 from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate
 from ..repositories import cancha_repository
+from ..services import notificacion_service
 
 
 DIAS_SEMANA = {
@@ -119,7 +120,13 @@ def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
             detail="El partido ya no tiene cupos disponibles"
         )
 
-    return partido_repository.guardar_inscripcion(db, partido, usuario)
+    resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
+
+    # Notificar a los demás jugadores y al organizador
+    notificacion_service.notificar_inscripcion(db, partido, usuario)
+    db.commit()
+
+    return resultado
 
 
 def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
@@ -160,7 +167,13 @@ def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
             detail="El plazo para bajarse de este partido expiró"
         )
 
-    return partido_repository.guardar_baja_inscripcion(db, partido, usuario)
+    resultado = partido_repository.guardar_baja_inscripcion(db, partido, usuario)
+
+    # Notificar a los demás jugadores y al organizador
+    notificacion_service.notificar_baja(db, partido, usuario)
+    db.commit()
+
+    return resultado
 
 
 def crear_partido(
@@ -275,7 +288,13 @@ def crear_partido(
         organizador_id=organizador_id
     )
 
-    return partido_repository.guardar_partido(db, nuevo_partido)
+    resultado = partido_repository.guardar_partido(db, nuevo_partido)
+
+    # Notificar al propietario de la cancha
+    notificacion_service.notificar_propietario_reserva(db, cancha, resultado)
+    db.commit()
+
+    return resultado
 
 def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
     """Cancela un partido si el usuario es el organizador y cumple las condiciones."""
@@ -310,6 +329,15 @@ def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
         )
 
     partido.estado = "Cancelado"
+
+    # Notificar a los inscriptos (solo si abierto)
+    notificacion_service.notificar_partido_cancelado(db, partido)
+
+    # Notificar al propietario de la cancha
+    cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
+    if cancha:
+        notificacion_service.notificar_propietario_cancelacion(db, cancha, partido)
+
     db.commit()
     db.refresh(partido)
     
@@ -421,6 +449,13 @@ def editar_partido(
             detail="La cancha no está disponible en la fecha y horario seleccionados"
         )
 
+    # Guardar valores anteriores para detectar cambios
+    cancha_id_anterior = partido.cancha_id
+    fecha_anterior = partido.fecha
+    horario_anterior = partido.horario
+    descripcion_anterior = partido.descripcion
+    cupos_anterior = partido.cupos_disponibles
+
     # Actualizar valores
     partido.cancha_id = datos.cancha_id
     partido.fecha = datos.fecha
@@ -431,6 +466,42 @@ def editar_partido(
     partido.cupos_disponibles = nuevo_cupos
     if datos.descripcion is not None:
         partido.descripcion = datos.descripcion
+
+    # Detectar cambios para las notificaciones
+    cambios = {}
+    if fecha_anterior != datos.fecha:
+        cambios["fecha"] = {
+            "anterior": fecha_anterior.strftime("%d/%m/%Y"),
+            "nuevo": datos.fecha.strftime("%d/%m/%Y")
+        }
+    if horario_anterior != datos.horario:
+        cambios["horario"] = {
+            "anterior": horario_anterior.strftime("%H:%M"),
+            "nuevo": datos.horario.strftime("%H:%M")
+        }
+    if cancha_id_anterior != datos.cancha_id:
+        cancha_anterior_obj = cancha_repository.obtener_por_id(db, cancha_id_anterior)
+        cambios["cancha"] = {
+            "anterior": cancha_anterior_obj.nombre if cancha_anterior_obj else "desconocida",
+            "nuevo": cancha.nombre
+        }
+    if datos.descripcion is not None and descripcion_anterior != datos.descripcion:
+        cambios["descripcion"] = True
+    if cupos_anterior != nuevo_cupos:
+        cambios["cupos_disponibles"] = {
+            "anterior": str(cupos_anterior),
+            "nuevo": str(nuevo_cupos)
+        }
+
+    # Notificar a los inscriptos sobre los cambios (solo si abierto)
+    if cambios:
+        notificacion_service.notificar_partido_editado(db, partido, cambios)
+
+    # Notificar cambio de cancha a los propietarios
+    if cancha_id_anterior != datos.cancha_id:
+        cancha_anterior_obj = cancha_repository.obtener_por_id(db, cancha_id_anterior)
+        if cancha_anterior_obj:
+            notificacion_service.notificar_cambio_cancha(db, cancha_anterior_obj, cancha, partido)
 
     db.commit()
     db.refresh(partido)

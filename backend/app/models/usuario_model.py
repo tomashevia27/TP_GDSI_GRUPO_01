@@ -27,3 +27,4 @@ class Usuario(Base):
 
     partidos_organizados = relationship("Partido", back_populates="organizador")
     partidos_inscritos = relationship("Partido", secondary="partido_jugadores", back_populates="jugadores")
+    notificaciones = relationship("Notificacion", back_populates="usuario", order_by="desc(Notificacion.fecha_creacion)")

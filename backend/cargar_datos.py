@@ -17,6 +17,7 @@ from app.db import Base
 from app.models.usuario_model import Usuario, RolUsuario
 from app.models.cancha_model import Cancha
 from app.models.partido_model import Partido
+from app.models.notificacion_model import Notificacion
 from app.repositories.usuario_repository import guardar
 
 
