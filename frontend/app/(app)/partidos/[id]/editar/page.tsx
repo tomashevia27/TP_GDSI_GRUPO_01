@@ -1,22 +1,22 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MapPin, Info, ArrowLeft, Clock, DollarSign, Zap } from "lucide-react"
 import Swal from "sweetalert2"
-import { crearPartido } from "@/hooks/use-api"
+import { editarPartido, getPartido, type PartidoData, API_URL } from "@/hooks/use-api"
 
-const API_URL = "http://localhost:8000"
-
-function NuevoPartidoForm() {
+function EditarPartidoForm() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const canchaId = searchParams.get("canchaId")
+  const params = useParams()
+  const partidoId = params.id as string
 
+  const [partido, setPartido] = useState<PartidoData | null>(null)
   const [cancha, setCancha] = useState<any>(null)
+  const [originalTamano, setOriginalTamano] = useState<number | null>(null)
   const [todasCanchas, setTodasCanchas] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,6 +28,39 @@ function NuevoPartidoForm() {
   const [cuposDisponibles, setCuposDisponibles] = useState("")
   const [descripcion, setDescripcion] = useState("")
   const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string }[]>([])
+
+  useEffect(() => {
+    async function fetchPartido() {
+      try {
+        const data = await getPartido(partidoId)
+        setPartido(data)
+        setFecha(data.fecha)
+        setHorario(data.horario.substring(0, 5)) // "HH:MM"
+        setTipo(data.tipo)
+        if (data.cupos_disponibles !== undefined && data.cupos_disponibles !== null) {
+          setCuposDisponibles(data.cupos_disponibles.toString())
+        }
+        setDescripcion(data.descripcion || "")
+
+        const resCancha = await fetch(`${API_URL}/canchas/${data.cancha_id}`)
+        if (resCancha.ok) {
+          const canchaData = await resCancha.json()
+          setCancha(canchaData)
+          setOriginalTamano(canchaData.tamano)
+        }
+
+        const resTodasCanchas = await fetch(`${API_URL}/canchas`)
+        if (resTodasCanchas.ok) {
+          setTodasCanchas(await resTodasCanchas.json())
+        }
+      } catch (error) {
+        Swal.fire("Error", "No se pudo cargar el partido", "error").then(() => router.back())
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchPartido()
+  }, [partidoId, router])
 
   useEffect(() => {
     if (cancha) {
@@ -55,49 +88,13 @@ function NuevoPartidoForm() {
     } else {
       setTurnosDisponibles([])
     }
-    setHorario("")
   }, [cancha])
-
-  useEffect(() => {
-    async function fetchData() {
-      try {
-        if (canchaId) {
-          const res = await fetch(`${API_URL}/canchas/${canchaId}`)
-          if (res.ok) {
-            const data = await res.json()
-            setCancha(data)
-          } else {
-            Swal.fire("Error", "Cancha no encontrada", "error").then(() => router.push("/home"))
-          }
-        } else {
-          // Traer todas las canchas para que elija en el select
-          const res = await fetch(`${API_URL}/canchas/disponibles`) // O `/canchas` dependiendo de las rutas activas
-          const canchasDisponibles = res.ok ? await res.json() : []
-          // Por si el backend no tiene ruta `/disponibles`, intentamos `/canchas`
-          if (canchasDisponibles.detail === "Not Found" || !res.ok) {
-            const resAll = await fetch(`${API_URL}/canchas`)
-            if (resAll.ok) {
-              setTodasCanchas(await resAll.json())
-            }
-          } else {
-            setTodasCanchas(canchasDisponibles)
-          }
-        }
-      } catch (error) {
-        console.warn("Error fetching data:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [canchaId, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!cancha || !fecha || !horario || !tipo) {
-      Swal.fire({ title: "Atención", text: "Por favor, elegí una cancha y completá todos los campos requeridos.", icon: "warning", confirmButtonColor: "#FF6B4A" })
+      Swal.fire({ title: "Atención", text: "Por favor completá todos los campos requeridos.", icon: "warning", confirmButtonColor: "#FF6B4A" })
       return
     }
 
@@ -120,7 +117,7 @@ function NuevoPartidoForm() {
 
     setIsSubmitting(true)
     try {
-      await crearPartido({
+      await editarPartido(partidoId, {
         cancha_id: Number(cancha.id),
         fecha,
         horario,
@@ -129,26 +126,18 @@ function NuevoPartidoForm() {
         cupos_disponibles: tipo === "abierto" ? Number(cuposDisponibles) : undefined
       })
 
-      await Swal.fire({
-        title: "¡Reserva iniciada!",
-        text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
-        icon: "success",
-        confirmButtonColor: "#FF6B4A",
-        confirmButtonText: "Proceder al pago"
-      })
-
       Swal.fire({
-        title: "¡Pago exitoso!",
-        text: "El partido fue creado y la cancha está reservada.",
+        title: "¡Guardado!",
+        text: "El partido fue actualizado.",
         icon: "success",
         timer: 2000,
         showConfirmButton: false
       }).then(() => {
-        router.push("/profile")
+        router.push(`/partidos/${partidoId}`)
       })
       
     } catch (error: any) {
-      Swal.fire({ title: "Error", text: error.message || "No se pudo crear el partido", icon: "error", confirmButtonColor: "#FF6B4A" })
+      Swal.fire({ title: "Error", text: error.message || "No se pudo editar el partido", icon: "error", confirmButtonColor: "#FF6B4A" })
     } finally {
       setIsSubmitting(false)
     }
@@ -171,36 +160,36 @@ function NuevoPartidoForm() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
       <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-6">
         <ArrowLeft className="w-5 h-5" />
-        <span className="text-sm font-medium">Volver</span>
+        <span className="text-sm font-medium">Volver al detalle</span>
       </button>
 
       <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-1">Crear Nuevo Partido</h1>
-            <p className="text-muted-foreground">Configurá los detalles de tu encuentro deportivo.</p>
+            <h1 className="text-2xl font-bold text-foreground mb-1">Editar Partido</h1>
+            <p className="text-muted-foreground">Modificá los detalles de tu encuentro deportivo.</p>
           </div>
-          
-          {!canchaId && (
-            <div className="space-y-2 mb-6">
-              <Label htmlFor="canchaSelect" className="font-medium text-sm">Seleccioná una Cancha *</Label>
-              <select
-                id="canchaSelect"
-                className="flex h-11 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                value={cancha?.id || ""}
-                onChange={(e) => {
-                  const selected = todasCanchas.find((c: any) => c.id === Number(e.target.value))
-                  setCancha(selected || null)
-                }}
-                required
-              >
-                <option value="" disabled>Elegí una cancha disponible</option>
-                {todasCanchas.map(c => (
+
+          <div className="space-y-2 mb-6">
+            <Label htmlFor="canchaSelect" className="font-medium text-sm">Cancha *</Label>
+            <select
+              id="canchaSelect"
+              className="flex h-11 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              value={cancha?.id || ""}
+              onChange={(e) => {
+                const selected = todasCanchas.find((c: any) => c.id === Number(e.target.value))
+                setCancha(selected || null)
+              }}
+              required
+            >
+              <option value="" disabled>Elegí una cancha disponible</option>
+              {todasCanchas
+                .filter(c => originalTamano === null || c.tamano === originalTamano)
+                .map(c => (
                   <option key={c.id} value={c.id}>{c.nombre} - {c.zona}</option>
                 ))}
-              </select>
-            </div>
-          )}
+            </select>
+          </div>
           
           {cancha && (
             <div className="bg-secondary/30 p-6 rounded-xl mb-6 border border-border/50">
@@ -270,6 +259,10 @@ function NuevoPartidoForm() {
                       De {turno.inicio} a {turno.fin} hs
                     </option>
                   ))}
+                  {/* Fallback option if current time is not in available slots (e.g. past time or custom) */}
+                  {!turnosDisponibles.some(t => t.inicio === horario) && horario && (
+                     <option value={horario}>De {horario} hs</option>
+                  )}
                 </select>
               </div>
             </div>
@@ -338,7 +331,7 @@ function NuevoPartidoForm() {
             </div>
 
             <Button type="submit" className="w-full font-semibold h-11" disabled={isSubmitting || !cancha}>
-              {isSubmitting ? "Procesando..." : "Confirmar y Pagar Seña"}
+              {isSubmitting ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </form>
         </div>
@@ -347,10 +340,10 @@ function NuevoPartidoForm() {
   )
 }
 
-export default function NuevoPartidoPage() {
+export default function EditarPartidoPage() {
   return (
     <Suspense fallback={<div className="p-8 text-center">Cargando...</div>}>
-      <NuevoPartidoForm />
+      <EditarPartidoForm />
     </Suspense>
   )
 }

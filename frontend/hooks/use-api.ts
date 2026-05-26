@@ -1,6 +1,6 @@
 "use client"
 
-const API_URL = typeof window !== "undefined" 
+export const API_URL = typeof window !== "undefined" 
   ? `${window.location.protocol}//${window.location.hostname}:8000`
   : "http://localhost:8000"
 
@@ -278,11 +278,8 @@ export interface PartidoData {
     zona: string;
     direccion: string;
   };
-  organizador?: {
-    id: number;
-    nombre: string;
-    apellido: string;
-  };
+  organizador?: UserProfile;
+  jugadores?: UserProfile[];
 }
 
 export async function getMisPartidos() {
@@ -335,6 +332,235 @@ export async function crearPartido(partidoData: PartidoCreateData): Promise<Part
       throw new Error("Revisá los datos ingresados.")
     }
     throw new Error(data.detail || "Error al crear el partido")
+  }
+  return data
+}
+
+export async function cancelarPartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/cancelar`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cancelar el partido")
+  }
+  return data
+}
+
+export async function inscribirseAPartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al inscribirse al partido")
+  }
+  return data
+}
+
+export async function bajarseDePartido(partidoId: string | number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/bajarse`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al darse de baja del partido")
+  }
+  return data
+}
+
+export async function editarPartido(partidoId: string | number, partidoData: PartidoCreateData): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(partidoData),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al editar el partido")
+  }
+  return data
+}
+
+// ─────────────────────────────────────────────
+// US 7: Ver partidos disponibles
+// ─────────────────────────────────────────────
+
+export interface PartidoDisponibleFilters {
+  zona?: string;
+  modalidad?: string;
+  fecha?: string;
+}
+
+export async function getPartidosDisponibles(filters?: PartidoDisponibleFilters): Promise<PartidoData[]> {
+  const params = new URLSearchParams()
+  if (filters?.zona) params.set("zona", filters.zona)
+  if (filters?.modalidad) params.set("modalidad", filters.modalidad)
+  if (filters?.fecha) params.set("fecha", filters.fecha)
+
+  const queryString = params.toString()
+  const url = `${API_URL}/partidos/disponibles${queryString ? `?${queryString}` : ""}`
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar partidos disponibles")
+  }
+  return data
+}
+
+export interface FiltroOpcion {
+  valor: string;
+  cantidad: number;
+}
+
+export interface FiltrosDisponiblesData {
+  zonas: FiltroOpcion[];
+  modalidades: FiltroOpcion[];
+}
+
+export async function getFiltrosDisponibles(): Promise<FiltrosDisponiblesData> {
+  const response = await fetch(`${API_URL}/partidos/filtros`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar opciones de filtros");
+  }
+  return data;
+}
+
+// ─────────────────────────────────────────────
+// Notificaciones internas
+// ─────────────────────────────────────────────
+
+export interface NotificacionData {
+  id: number;
+  tipo: string;
+  mensaje: string;
+  partido_id?: number | null;
+  leida: boolean;
+  fecha_creacion: string;
+}
+
+export interface NotificacionesListado {
+  notificaciones: NotificacionData[];
+  total_no_leidas: number;
+}
+
+export interface ConteoNoLeidas {
+  total_no_leidas: number;
+}
+
+export async function getNotificaciones(
+  soloNoLeidas: boolean = false,
+  limit: number = 50,
+  offset: number = 0
+): Promise<NotificacionesListado> {
+  const params = new URLSearchParams()
+  if (soloNoLeidas) params.set("solo_no_leidas", "true")
+  params.set("limit", String(limit))
+  params.set("offset", String(offset))
+
+  const queryString = params.toString()
+  const response = await fetch(`${API_URL}/notificaciones?${queryString}`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar notificaciones")
+  }
+  return data
+}
+
+export async function getConteoNoLeidas(): Promise<ConteoNoLeidas> {
+  const response = await fetch(`${API_URL}/notificaciones/no-leidas/count`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al obtener conteo de notificaciones")
+  }
+  return data
+}
+
+export async function marcarNotificacionLeida(notificacionId: number): Promise<NotificacionData> {
+  const response = await fetch(`${API_URL}/notificaciones/${notificacionId}/leer`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al marcar notificación como leída")
+  }
+  return data
+}
+
+export async function marcarTodasLeidas(): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/notificaciones/leer-todas`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al marcar notificaciones como leídas")
+  }
+  return data
+}
+
+export async function eliminarNotificacion(notificacionId: number): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/notificaciones/${notificacionId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al eliminar notificación")
+  }
+  return data
+}
+
+export async function eliminarTodasNotificaciones(): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/notificaciones`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al eliminar notificaciones")
   }
   return data
 }

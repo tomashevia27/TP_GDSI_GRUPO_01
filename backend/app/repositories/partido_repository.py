@@ -1,6 +1,12 @@
+from datetime import datetime, date, timedelta, timezone
 from sqlalchemy.orm import Session
 from ..models.partido_model import Partido
-import datetime
+from ..models.usuario_model import Usuario
+from sqlalchemy import or_, and_, func
+from ..models.cancha_model import Cancha
+
+# Zona horaria de la aplicación (Argentina UTC-3)
+TZ_LOCAL = timezone(timedelta(hours=-3))
 
 def obtener_organizados_por_usuario(db: Session, usuario_id: int):
     """Obtiene los partidos organizados por un usuario."""
@@ -8,28 +14,96 @@ def obtener_organizados_por_usuario(db: Session, usuario_id: int):
 
 def obtener_inscritos_por_usuario(db: Session, usuario_id: int):
     """Obtiene los partidos en los que un usuario está inscrito."""
-    # return db.query(Partido).filter(Partido.jugadores.any(id=usuario_id)).all()
-    # TODO: Implementar cuando se agregue la tabla intermedia partido_jugadores
-    return []
+    return db.query(Partido).filter(Partido.jugadores.any(id=usuario_id)).all()
 
 def obtener_por_id(db: Session, partido_id: int):
     """Obtiene un partido por su ID."""
     return db.query(Partido).filter(Partido.id == partido_id).first()
 
-def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60) -> bool:
+
+def obtener_por_id_bloqueado(db: Session, partido_id: int):
+    """Obtiene un partido bloqueando la fila para evitar carreras al inscribirse."""
+    return db.query(Partido).filter(Partido.id == partido_id).with_for_update().first()
+
+def obtener_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha_filtro: date = None):
+    """Obtiene los partidos abiertos, con cupos y fecha futura."""
+    now = datetime.now(TZ_LOCAL)
+    hoy = now.date()
+    hora_actual = now.time()
+
+    query = db.query(Partido).join(Cancha).filter(
+        Partido.tipo == "abierto",
+        Partido.cupos_disponibles > 0,
+        Partido.estado != "Cancelado"
+    )
+
+    query = query.filter(
+        or_(
+            Partido.fecha > hoy,
+            and_(Partido.fecha == hoy, Partido.horario > hora_actual)
+        )
+    )
+
+    if zona:
+        query = query.filter(Cancha.zona.ilike(f"%{zona}%"))
+    if modalidad:
+        query = query.filter(Partido.modalidad.ilike(f"%{modalidad}%"))
+    if fecha_filtro:
+        query = query.filter(Partido.fecha == fecha_filtro)
+        
+    return query.order_by(Partido.fecha.asc(), Partido.horario.asc()).all()
+
+def obtener_filtros_disponibles(db: Session):
+    """Obtiene las opciones de filtros dinámicos basados en partidos disponibles."""
+    now = datetime.now(TZ_LOCAL)
+    hoy = now.date()
+    hora_actual = now.time()
+
+    # Filtros base comunes
+    base_filter = and_(
+        Partido.tipo == "abierto",
+        Partido.cupos_disponibles > 0,
+        Partido.estado != "Cancelado",
+        or_(
+            Partido.fecha > hoy,
+            and_(Partido.fecha == hoy, Partido.horario > hora_actual)
+        )
+    )
+
+    # Consulta para agrupar por zona
+    zonas = db.query(Cancha.zona, func.count(Partido.id)).select_from(Partido).join(Cancha).filter(
+        base_filter
+    ).group_by(Cancha.zona).all()
+
+    # Consulta para agrupar por modalidad
+    modalidades = db.query(Partido.modalidad, func.count(Partido.id)).select_from(Partido).join(Cancha).filter(
+        base_filter
+    ).group_by(Partido.modalidad).all()
+
+    return {
+        "zonas": [{"valor": z[0], "cantidad": z[1]} for z in zonas if z[0]],
+        "modalidades": [{"valor": m[0], "cantidad": m[1]} for m in modalidades if m[0]]
+    }
+
+def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60, excluir_partido_id: int = None) -> bool:
     """Verifica si una cancha está disponible en una fecha y horario específicos, sin solapamientos."""
-    partidos_del_dia = db.query(Partido).filter(
+    query = db.query(Partido).filter(
         Partido.cancha_id == cancha_id,
         Partido.fecha == fecha,
         Partido.estado.in_(["confirmado", "pendiente"])
-    ).all()
+    )
     
-    delta_duracion = datetime.timedelta(minutes=duracion_turno)
-    nuevo_inicio = datetime.datetime.combine(fecha, horario)
+    if excluir_partido_id is not None:
+        query = query.filter(Partido.id != excluir_partido_id)
+        
+    partidos_del_dia = query.all()
+    
+    delta_duracion = timedelta(minutes=duracion_turno)
+    nuevo_inicio = datetime.combine(fecha, horario)
     nuevo_fin = nuevo_inicio + delta_duracion
 
     for p in partidos_del_dia:
-        p_inicio = datetime.datetime.combine(p.fecha, p.horario)
+        p_inicio = datetime.combine(p.fecha, p.horario)
         p_fin = p_inicio + delta_duracion
         
         if nuevo_inicio < p_fin and nuevo_fin > p_inicio:
@@ -40,6 +114,24 @@ def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime
 def guardar_partido(db: Session, partido: Partido):
     """Guarda un nuevo partido en la base de datos."""
     db.add(partido)
+    db.commit()
+    db.refresh(partido)
+    return partido
+
+
+def guardar_inscripcion(db: Session, partido: Partido, usuario: Usuario):
+    """Registra la inscripción de un jugador y actualiza cupos disponibles."""
+    partido.jugadores.append(usuario)
+    partido.cupos_disponibles -= 1
+    db.commit()
+    db.refresh(partido)
+    return partido
+
+
+def guardar_baja_inscripcion(db: Session, partido: Partido, usuario: Usuario):
+    """Registra la baja de un jugador y actualiza cupos disponibles."""
+    partido.jugadores.remove(usuario)
+    partido.cupos_disponibles += 1
     db.commit()
     db.refresh(partido)
     return partido

@@ -17,7 +17,9 @@ from app.db import Base
 from app.models.usuario_model import Usuario, RolUsuario
 from app.models.cancha_model import Cancha
 from app.models.partido_model import Partido
+from app.models.notificacion_model import Notificacion
 from app.repositories.usuario_repository import guardar
+
 
 
 USUARIOS_SEED = [
@@ -31,6 +33,7 @@ USUARIOS_SEED = [
         "zona": "Caballito",
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490316/Captura_desde_2026-05-22_19-51-40_km9yne.png",
     },
     {
         "nombre": "Valeria",
@@ -42,6 +45,7 @@ USUARIOS_SEED = [
         "zona": "Belgrano",
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490533/Valeria_kmanxt.png",
     },
     {
         "nombre": "Santiago",
@@ -53,6 +57,7 @@ USUARIOS_SEED = [
         "zona": "Almagro",
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490533/Santiago_okjzdk.png",
     },
     {
         "nombre": "Tomas",
@@ -64,6 +69,7 @@ USUARIOS_SEED = [
         "zona": "Villa Crespo",
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490533/Tomas_eyoa35.png",
     },
     {
         "nombre": "Carlos",
@@ -75,6 +81,7 @@ USUARIOS_SEED = [
         "zona": "Palermo",
         "rol": RolUsuario.admin,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490534/Carlos_dthk2y.png",
     },
     {
         "nombre": "Miguel",
@@ -86,6 +93,7 @@ USUARIOS_SEED = [
         "zona": "Flores",
         "rol": RolUsuario.admin,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491362/Miguel_ibuv1k.png",
     },
     {
         "nombre": "Laura",
@@ -97,6 +105,7 @@ USUARIOS_SEED = [
         "zona": "Saavedra",
         "rol": RolUsuario.admin,
         "email_confirmado": True,
+        "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491363/Laura_sa5urg.png",
     },
 ]
 
@@ -142,6 +151,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "23:00",
             "duracion_turno": 60,
             "propietario_id": laura.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779492072/hotel-lagomar-compensar_astoax.jpg",
         },
         {
             "nombre": "El Estadio F5",
@@ -156,6 +166,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "22:00",
             "duracion_turno": 60,
             "propietario_id": laura.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779492021/800_600_parquechas_mptqpp.jpg",
         },
         {
             "nombre": "Sporting F5",
@@ -170,6 +181,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "24:00",
             "duracion_turno": 60,
             "propietario_id": laura.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779492005/canchas-futbol-5_wkmjr1.jpg",
         },
         {
             "nombre": "La Grande F11",
@@ -184,6 +196,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "23:00",
             "duracion_turno": 90,
             "propietario_id": miguel.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491956/01-04_deportes_244-1024x556_ucgxiw.jpg",
         },
         {
             "nombre": "El Gigante F11",
@@ -198,6 +211,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "22:00",
             "duracion_turno": 90,
             "propietario_id": miguel.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491955/cancha-futbol-11-del-parque-villa-mayor-bogota-tiene-nuevo-alumbrado-junio-2025_z3acps.jpg",
         },
         {
             "nombre": "Metrópolis F11",
@@ -212,6 +226,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "24:00",
             "duracion_turno": 90,
             "propietario_id": miguel.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491956/Se-inauguro-la-cancha-de-futbol-11-en-el-Camping-del-Circulo-Trovador-12_ah2kjy.png",
         },
         {
             "nombre": "La Seventh F7",
@@ -226,6 +241,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "23:00",
             "duracion_turno": 60,
             "propietario_id": carlos.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779492308/pasto-artificial-Futbol-7-851x576_ukhfix.jpg",
         },
         {
             "nombre": "Club Social F7",
@@ -240,6 +256,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "22:00",
             "duracion_turno": 60,
             "propietario_id": carlos.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491990/Futsal-vs-Almafuerte_kt1pyz.jpg",
         },
         {
             "nombre": "Arena F7",
@@ -254,6 +271,7 @@ def seed_canchas(db: SessionLocal):
             "hora_cierre": "24:00",
             "duracion_turno": 60,
             "propietario_id": carlos.id,
+            "fotos": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779492766/cancha-de-fut-7-2_nkcqcn.jpg",
         },
     ]
 
@@ -262,6 +280,7 @@ def seed_canchas(db: SessionLocal):
         if existente:
             print(f"  - {datos['nombre']} ya existe, saltando...")
             continue
+        
         cancha = Cancha(**datos)
         db.add(cancha)
         print(f"  + Creada: {datos['nombre']}")

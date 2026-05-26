@@ -20,6 +20,14 @@ class PartidoCreate(BaseModel):
     descripcion: Optional[str] = None
     cupos_disponibles: Optional[int] = None
 
+class PartidoUpdate(BaseModel):
+    cancha_id: int
+    fecha: date
+    horario: time
+    tipo: Optional[str] = None
+    descripcion: Optional[str] = None
+    cupos_disponibles: Optional[int] = None
+
 class PartidoRespuesta(BaseModel):
     id: int
     cancha_id: int
@@ -33,9 +41,18 @@ class PartidoRespuesta(BaseModel):
     estado: str
     cancha: Optional[CanchaBasica] = None
     organizador: Optional[UsuarioRespuesta] = None
+    jugadores: List[UsuarioRespuesta] = []
 
     model_config = ConfigDict(from_attributes=True)
 
 class MisPartidosRespuesta(BaseModel):
     organizados: List[PartidoRespuesta]
     inscritos: List[PartidoRespuesta]
+
+class FiltroOpcion(BaseModel):
+    valor: str
+    cantidad: int
+
+class FiltrosDisponibles(BaseModel):
+    zonas: List[FiltroOpcion]
+    modalidades: List[FiltroOpcion]

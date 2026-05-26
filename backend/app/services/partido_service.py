@@ -1,11 +1,16 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, date, timedelta, timezone
+
+# Zona horaria de la aplicación (Argentina UTC-3)
+TZ_LOCAL = timezone(timedelta(hours=-3))
 
 from ..models.partido_model import Partido
 from ..repositories import partido_repository
-from ..schemas.partido_schemas import PartidoCreate
+from ..repositories import usuario_repository
+from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate
 from ..repositories import cancha_repository
+from ..services import notificacion_service
 
 
 DIAS_SEMANA = {
@@ -42,6 +47,14 @@ def obtener_mis_partidos(db: Session, usuario_id: int):
         "inscritos": inscritos
     }
 
+def obtener_partidos_disponibles(db: Session, zona: str = None, modalidad: str = None, fecha: date = None):
+    """Llama al repositorio para obtener los partidos disponibles aplicando los filtros dados."""
+    return partido_repository.obtener_disponibles(db, zona, modalidad, fecha)
+
+def obtener_filtros_disponibles(db: Session):
+    """Llama al repositorio para obtener los filtros dinámicos disponibles."""
+    return partido_repository.obtener_filtros_disponibles(db)
+
 
 def obtener_detalle_partido(db: Session, partido_id: int):
     """Obtiene el detalle de un partido específico."""
@@ -57,33 +70,147 @@ def obtener_detalle_partido(db: Session, partido_id: int):
     return partido
 
 
+def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
+    """Inscribe un jugador a un partido abierto aplicando validaciones básicas."""
+    partido = partido_repository.obtener_por_id_bloqueado(db, partido_id)
+
+    if not partido:
+        raise HTTPException(status_code=404, detail="Partido no encontrado")
+
+    if partido.organizador_id == usuario_id:
+        raise HTTPException(
+            status_code=400,
+            detail="El organizador no puede inscribirse nuevamente en su propio partido"
+        )
+
+    if partido.tipo != "abierto":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo te podés inscribir en partidos abiertos"
+        )
+
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="No te podés inscribir a un partido cancelado"
+        )
+
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
+    hora_partido = partido.horario.replace(tzinfo=None)
+
+    if partido.fecha < now.date() or (partido.fecha == now.date() and hora_partido <= now.time()):
+        raise HTTPException(
+            status_code=400,
+            detail="No te podés inscribir a un partido que ya pasó"
+        )
+
+    if any(jugador.id == usuario_id for jugador in partido.jugadores):
+        raise HTTPException(
+            status_code=400,
+            detail="Ya estás inscripto en este partido"
+        )
+
+    usuario = usuario_repository.obtener_por_id(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if partido.cupos_disponibles <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="El partido ya no tiene cupos disponibles"
+        )
+
+    resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
+
+    # Notificar a los demás jugadores y al organizador
+    notificacion_service.notificar_inscripcion(db, partido, usuario)
+    db.commit()
+
+    return resultado
+
+
+def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
+    """Permite que un jugador se baje de un partido abierto respetando el plazo mínimo."""
+    partido = partido_repository.obtener_por_id_bloqueado(db, partido_id)
+
+    if not partido:
+        raise HTTPException(status_code=404, detail="Partido no encontrado")
+
+    if partido.tipo != "abierto":
+        raise HTTPException(
+            status_code=400,
+            detail="Solo te podés bajar de partidos abiertos"
+        )
+
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="No te podés bajar de un partido cancelado"
+        )
+
+    usuario = usuario_repository.obtener_por_id(db, usuario_id)
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    if not any(jugador.id == usuario_id for jugador in partido.jugadores):
+        raise HTTPException(
+            status_code=400,
+            detail="No estás inscripto en este partido"
+        )
+
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
+    partido_inicio = datetime.combine(partido.fecha, partido.horario)
+
+    if partido_inicio - now <= timedelta(hours=2):
+        raise HTTPException(
+            status_code=400,
+            detail="El plazo para bajarse de este partido expiró"
+        )
+
+    resultado = partido_repository.guardar_baja_inscripcion(db, partido, usuario)
+
+    # Notificar a los demás jugadores y al organizador
+    notificacion_service.notificar_baja(db, partido, usuario)
+    db.commit()
+
+    return resultado
+
+
 def crear_partido(
     db: Session,
     organizador_id: int,
     datos: PartidoCreate,
 ):
     """Crea un nuevo partido validando los datos proporcionados."""
+    hora_partido = datos.horario.replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
 
-    # Validar que la cancha exista
-    cancha = cancha_repository.obtener_por_id(
-        db,
-        datos.cancha_id
-    )
-
-    if not cancha:
+    if datos.tipo not in ["abierto", "cerrado"]:
         raise HTTPException(
-            status_code=404,
-            detail="Cancha no encontrada"
+            status_code=400,
+            detail="El tipo de partido debe ser 'abierto' o 'cerrado'"
         )
 
-    # Validar que la cancha esté activa
+    if (
+        datos.fecha < now.date()
+        or (
+            datos.fecha == now.date()
+            and hora_partido <= now.time()
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="La fecha y hora deben ser futuras"
+        )
+
+    cancha = cancha_repository.obtener_por_id_bloqueado(db, datos.cancha_id)
+
     if not cancha.activa:
         raise HTTPException(
             status_code=400,
             detail="La cancha no está activa"
         )
 
-    # Obtener modalidad automáticamente
     modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
 
     if not modalidad:
@@ -92,10 +219,8 @@ def crear_partido(
             detail="La cancha tiene un tamaño inválido"
         )
 
-    # Cantidad de jugadores automática
     cantidad_jugadores = cancha.tamano * 2
 
-    # Manejo de cupos disponibles
     if datos.tipo == "abierto":
         cupos_disponibles = datos.cupos_disponibles
         if cupos_disponibles is None or cupos_disponibles < 1 or cupos_disponibles >= cantidad_jugadores:
@@ -106,8 +231,6 @@ def crear_partido(
     else:
         cupos_disponibles = 0
 
-
-    # Validar que la cancha opere ese día
     dia_semana = datos.fecha.weekday()
 
     if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
@@ -116,7 +239,6 @@ def crear_partido(
             detail="La cancha no opera ese día"
         )
 
-    # Validar horario de funcionamiento
     hora_apertura = datetime.strptime(
         cancha.hora_apertura,
         "%H:%M"
@@ -130,8 +252,6 @@ def crear_partido(
             "%H:%M"
         ).time()
 
-    hora_partido = datos.horario.replace(tzinfo=None)
-
     if (
         hora_partido < hora_apertura
         or hora_partido >= hora_cierre
@@ -141,7 +261,6 @@ def crear_partido(
             detail="La cancha no está disponible en ese horario"
         )
 
-    # Validar disponibilidad
     cancha_disponible = partido_repository.verificar_disponibilidad_cancha(
         db,
         datos.cancha_id,
@@ -156,29 +275,6 @@ def crear_partido(
             detail="La cancha no está disponible en la fecha y horario seleccionados"
         )
 
-    # Validar fecha futura
-    now = datetime.now().astimezone().replace(tzinfo=None)
-
-    if (
-        datos.fecha < now.date()
-        or (
-            datos.fecha == now.date()
-            and hora_partido <= now.time()
-        )
-    ):
-        raise HTTPException(
-            status_code=400,
-            detail="La fecha y hora deben ser futuras"
-        )
-
-    #validar tipo de partido
-    if datos.tipo not in ["abierto", "cerrado"]:
-        raise HTTPException(
-            status_code=400,
-            detail="El tipo de partido debe ser 'abierto' o 'cerrado'"
-        )
-       
-    # Crear partido
     nuevo_partido = Partido(
         cancha_id=datos.cancha_id,
         fecha=datos.fecha,
@@ -192,9 +288,221 @@ def crear_partido(
         organizador_id=organizador_id
     )
 
-    partido_guardado = partido_repository.guardar_partido(
+    resultado = partido_repository.guardar_partido(db, nuevo_partido)
+
+    # Notificar al propietario de la cancha
+    notificacion_service.notificar_propietario_reserva(db, cancha, resultado)
+    db.commit()
+
+    return resultado
+
+def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
+    """Cancela un partido si el usuario es el organizador y cumple las condiciones."""
+    partido = partido_repository.obtener_por_id(db, partido_id)
+    
+    if not partido:
+        raise HTTPException(
+            status_code=404,
+            detail="Partido no encontrado"
+        )
+        
+    if partido.organizador_id != usuario_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo el organizador puede cancelar este partido"
+        )
+        
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="El partido ya se encuentra cancelado"
+        )
+        
+    # Verificar que el partido no se haya jugado ya (fecha y hora pasadas)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
+    hora_partido = partido.horario.replace(tzinfo=None)
+    
+    if partido.fecha < now.date() or (partido.fecha == now.date() and hora_partido <= now.time()):
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede cancelar un partido que ya pasó"
+        )
+
+    partido.estado = "Cancelado"
+
+    # Notificar a los inscriptos (solo si abierto)
+    notificacion_service.notificar_partido_cancelado(db, partido)
+
+    # Notificar al propietario de la cancha
+    cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
+    if cancha:
+        notificacion_service.notificar_propietario_cancelacion(db, cancha, partido)
+
+    db.commit()
+    db.refresh(partido)
+    
+    return partido
+
+def editar_partido(
+    db: Session,
+    partido_id: int,
+    usuario_id: int,
+    datos: PartidoUpdate
+):
+    """Edita los datos de un partido validando disponibilidad y reglas de negocio."""
+    partido = partido_repository.obtener_por_id(db, partido_id)
+    
+    if not partido:
+        raise HTTPException(
+            status_code=404,
+            detail="Partido no encontrado"
+        )
+        
+    if partido.organizador_id != usuario_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo el organizador puede editar este partido"
+        )
+        
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede editar un partido cancelado"
+        )
+        
+    # Verificar que el partido original no haya pasado ya
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
+    hora_original = partido.horario.replace(tzinfo=None)
+    if partido.fecha < now.date() or (partido.fecha == now.date() and hora_original <= now.time()):
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede editar un partido que ya pasó"
+        )
+        
+    # Validar que la NUEVA fecha y hora sean futuras
+    hora_nueva = datos.horario.replace(tzinfo=None)
+    if datos.fecha < now.date() or (datos.fecha == now.date() and hora_nueva <= now.time()):
+        raise HTTPException(
+            status_code=400,
+            detail="La nueva fecha y hora deben ser futuras"
+        )
+
+    # Validar que la cancha exista y apliquen reglas
+    cancha = cancha_repository.obtener_por_id(db, datos.cancha_id)
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    if not cancha.activa:
+        raise HTTPException(status_code=400, detail="La cancha no está activa")
+
+    # Obtener modalidad y cantidad_jugadores automáticamente
+    modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
+    if not modalidad:
+        raise HTTPException(status_code=400, detail="La cancha tiene un tamaño inválido")
+        
+    cantidad_jugadores = cancha.tamano * 2
+
+    if cantidad_jugadores != partido.cantidad_jugadores:
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede cambiar la modalidad del partido. Si deseas jugar en otra modalidad, cancelá el partido y creá uno nuevo."
+        )
+
+    # Tipo y cupos
+    nuevo_tipo = datos.tipo if datos.tipo is not None else partido.tipo
+    if nuevo_tipo not in ["abierto", "cerrado"]:
+        raise HTTPException(status_code=400, detail="El tipo de partido debe ser 'abierto' o 'cerrado'")
+        
+    if nuevo_tipo == "abierto":
+        nuevo_cupos = datos.cupos_disponibles if datos.cupos_disponibles is not None else partido.cupos_disponibles
+        if nuevo_cupos is None or nuevo_cupos < 1 or nuevo_cupos >= cantidad_jugadores:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles"
+            )
+    else:
+        nuevo_cupos = 0
+
+    # Validar días y horarios de la cancha
+    dia_semana = datos.fecha.weekday()
+    if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
+        raise HTTPException(status_code=400, detail="La cancha no opera ese día")
+
+    hora_apertura = datetime.strptime(cancha.hora_apertura, "%H:%M").time()
+    hora_cierre = datetime.strptime("23:59", "%H:%M").time() if cancha.hora_cierre == "24:00" else datetime.strptime(cancha.hora_cierre, "%H:%M").time()
+
+    if hora_nueva < hora_apertura or hora_nueva >= hora_cierre:
+        raise HTTPException(status_code=400, detail="La cancha no está disponible en ese horario")
+
+    # Validar disponibilidad EXCLUYENDO el partido actual
+    cancha_disponible = partido_repository.verificar_disponibilidad_cancha(
         db,
-        nuevo_partido
+        datos.cancha_id,
+        datos.fecha,
+        datos.horario,
+        cancha.duracion_turno,
+        excluir_partido_id=partido.id
     )
 
-    return partido_guardado
+    if not cancha_disponible:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está disponible en la fecha y horario seleccionados"
+        )
+
+    # Guardar valores anteriores para detectar cambios
+    cancha_id_anterior = partido.cancha_id
+    fecha_anterior = partido.fecha
+    horario_anterior = partido.horario
+    descripcion_anterior = partido.descripcion
+    cupos_anterior = partido.cupos_disponibles
+
+    # Actualizar valores
+    partido.cancha_id = datos.cancha_id
+    partido.fecha = datos.fecha
+    partido.horario = datos.horario
+    partido.modalidad = modalidad
+    partido.cantidad_jugadores = cantidad_jugadores
+    partido.tipo = nuevo_tipo
+    partido.cupos_disponibles = nuevo_cupos
+    if datos.descripcion is not None:
+        partido.descripcion = datos.descripcion
+
+    # Detectar cambios para las notificaciones
+    cambios = {}
+    if fecha_anterior != datos.fecha:
+        cambios["fecha"] = {
+            "anterior": fecha_anterior.strftime("%d/%m/%Y"),
+            "nuevo": datos.fecha.strftime("%d/%m/%Y")
+        }
+    if horario_anterior != datos.horario:
+        cambios["horario"] = {
+            "anterior": horario_anterior.strftime("%H:%M"),
+            "nuevo": datos.horario.strftime("%H:%M")
+        }
+    if cancha_id_anterior != datos.cancha_id:
+        cancha_anterior_obj = cancha_repository.obtener_por_id(db, cancha_id_anterior)
+        cambios["cancha"] = {
+            "anterior": cancha_anterior_obj.nombre if cancha_anterior_obj else "desconocida",
+            "nuevo": cancha.nombre
+        }
+    if datos.descripcion is not None and descripcion_anterior != datos.descripcion:
+        cambios["descripcion"] = True
+    if cupos_anterior != nuevo_cupos:
+        cambios["cupos_disponibles"] = {
+            "anterior": str(cupos_anterior),
+            "nuevo": str(nuevo_cupos)
+        }
+
+    # Notificar a los inscriptos sobre los cambios (solo si abierto)
+    if cambios:
+        notificacion_service.notificar_partido_editado(db, partido, cambios)
+
+    # Notificar cambio de cancha a los propietarios
+    if cancha_id_anterior != datos.cancha_id:
+        cancha_anterior_obj = cancha_repository.obtener_por_id(db, cancha_id_anterior)
+        if cancha_anterior_obj:
+            notificacion_service.notificar_cambio_cancha(db, cancha_anterior_obj, cancha, partido)
+
+    db.commit()
+    db.refresh(partido)
+    return partido

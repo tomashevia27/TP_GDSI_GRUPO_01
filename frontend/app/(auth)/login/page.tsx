@@ -3,12 +3,13 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent } from "@/components/ui/card"
 import { useAuthContext } from "@/components/auth-provider"
 import { loginUser } from "@/hooks/use-api"
+import { Loader2, Mail, Lock, Trophy } from "lucide-react"
 
 import Swal from 'sweetalert2'
 import 'sweetalert2/dist/sweetalert2.min.css'
@@ -28,7 +29,7 @@ export default function LoginPage() {
         title: "Atención",
         text: "El email y la contraseña son requeridos.",
         icon: "warning",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A", // Mantiene tu color naranja original
       })
       return
     }
@@ -55,7 +56,7 @@ export default function LoginPage() {
         title: "Error de acceso",
         text: error instanceof Error ? error.message : "No se pudo conectar con el servidor.",
         icon: "error",
-        confirmButtonColor: "#00c2cb",
+        confirmButtonColor: "#FF6B4A",
       })
     } finally {
       setIsLoading(false)
@@ -63,64 +64,119 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
-      <Card className="w-full max-w-md shadow-lg border-0">
-        <CardContent className="p-10">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-primary tracking-tight mb-2">
-              TeamUp
+    <div className="min-h-screen relative flex items-center justify-center overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <Image
+          src="/football-bg.jpg"
+          alt="Futbol"
+          fill
+          className="object-cover"
+          priority
+        />
+        {/* Light overlay for readability */}
+        <div className="absolute inset-0 bg-white/85" />
+        {/* Subtle red gradient accent */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
+      </div>
+
+      {/* Decorative Elements */}
+      <div className="absolute top-20 left-20 w-24 h-24 border-2 border-primary/20 rounded-full animate-float hidden lg:block" />
+      <div className="absolute bottom-32 right-32 w-16 h-16 bg-primary/10 rounded-full animate-float hidden lg:block" style={{ animationDelay: '1s' }} />
+      <div className="absolute top-1/3 right-20 w-12 h-12 border-2 border-primary/15 rounded-lg rotate-45 animate-float hidden lg:block" style={{ animationDelay: '0.5s' }} />
+
+      {/* Login Card - Centered */}
+      <div className="relative z-10 w-full max-w-md mx-4 animate-scale-in">
+        <div className="bg-white rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 p-8">
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/25 animate-pulse-glow">
+              <Trophy className="w-7 h-7 text-white" />
+            </div>
+            <span className="text-3xl font-bold text-gray-900">TeamUp</span>
+          </div>
+
+          {/* Header */}
+          <div className="text-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+              Bienvenido de nuevo
             </h1>
-            <p className="text-muted-foreground">
-              Gestioná tus partidos y torneos
+            <p className="text-gray-500 text-sm">
+              Ingresa tus datos para continuar
             </p>
           </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="font-bold text-sm">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                 Email
               </Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="usuario@ejemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-secondary border-border"
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="tu@email.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="font-bold text-sm">
+            <div className="space-y-1.5">
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                 Contraseña
               </Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="bg-secondary border-border"
-              />
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="********"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="pl-10 h-11 bg-gray-50 border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
             </div>
 
             <Button
               type="submit"
-              className="w-full font-semibold"
+              className="w-full h-12 font-semibold text-base rounded-xl bg-primary hover:bg-primary/90 text-white shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all duration-300 hover:scale-[1.02] mt-2"
               disabled={isLoading}
             >
-              {isLoading ? "Ingresando..." : "Ingresar a la plataforma"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Ingresando...
+                </>
+              ) : (
+                "Ingresar"
+              )}
             </Button>
           </form>
 
-          <p className="text-center mt-6 text-muted-foreground text-sm">
-            ¿No tenés cuenta?{" "}
-            <Link href="/register" className="text-primary font-semibold hover:underline">
-              Registrate acá
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
+          {/* Footer */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-500 text-sm">
+              ¿No tenés cuenta?{" "}
+              <Link 
+                href="/register" 
+                className="text-primary font-semibold hover:underline transition-colors"
+              >
+                Registrate acá
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom tagline */}
+        <p className="text-center text-gray-600 text-sm mt-6 font-medium">
+          Tu equipo te espera. Volvé a la acción.
+        </p>
+      </div>
     </div>
   )
 }

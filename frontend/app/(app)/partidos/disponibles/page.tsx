@@ -1,26 +1,23 @@
 "use client"
+
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import {
-  Plus,
   MapPin,
-  Clock,
   Calendar,
+  Clock,
   Users,
-  ChevronRight,
-  Frown,
   Filter,
   X,
+  Plus,
+  ChevronRight,
+  Frown,
   SlidersHorizontal,
-  Zap,
-  DollarSign,
-  Sun,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuthContext } from "@/components/auth-provider"
 import {
-  getMisCanchas,
   getPartidosDisponibles,
   getUserProfile,
   getFiltrosDisponibles,
@@ -30,67 +27,25 @@ import {
   type FiltrosDisponiblesData,
 } from "@/hooks/use-api"
 
-const API_URL = "http://localhost:8000"
 
-interface Cancha {
-  id: number
-  nombre: string
-  tipo_superficie: string
-  tamano: number
-  iluminacion: boolean
-  zona: string
-  direccion: string
-  precio_por_turno: number
-  dias_operativos_texto: string
-  hora_apertura: string
-  hora_cierre: string
-  fotos: string | null
-  activa: boolean
-}
 
-// Zonas disponibles en el sistema
-const ZONAS = [
-  "Caballito",
-  "Belgrano",
-  "Almagro",
-  "Villa Crespo",
-  "Palermo",
-  "Flores",
-  "Saavedra",
-  "Núñez",
-  "Villa Urquiza",
-  "Devoto",
-  "Liniers",
-  "Boedo",
-  "San Telmo",
-  "La Boca",
-  "Barracas",
-]
+export default function PartidosDisponiblesPage() {
 
-const MODALIDADES = ["futbol 5", "futbol 7", "futbol 9", "futbol 11"]
-
-export default function HomePage() {
-  const { role } = useAuthContext()
-
-  // Admin state
-  const [canchas, setCanchas] = useState<Cancha[]>([])
-
-  // Jugador state
   const [partidos, setPartidos] = useState<PartidoData[]>([])
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [userZona, setUserZona] = useState<string>("")
-  const [isUsingUserZone, setIsUsingUserZone] = useState(true)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Filter states (jugador)
+  // Filter states
   const [showFilters, setShowFilters] = useState(false)
   const [filtroZona, setFiltroZona] = useState<string>("")
   const [filtroModalidad, setFiltroModalidad] = useState<string>("")
   const [filtroFecha, setFiltroFecha] = useState<string>("")
+  const [userZona, setUserZona] = useState<string>("")
+  const [isUsingUserZone, setIsUsingUserZone] = useState(true)
   const [filtrosOpciones, setFiltrosOpciones] = useState<FiltrosDisponiblesData | null>(null)
 
-  const [isLoading, setIsLoading] = useState(true)
-
-  // Load user profile (for jugador zone auto-filter)
+  // Load user profile to get their zone
   useEffect(() => {
     async function loadProfile() {
       try {
@@ -98,7 +53,7 @@ export default function HomePage() {
         setUserProfile(profile)
         if (profile.zona) {
           setUserZona(profile.zona)
-          setFiltroZona(profile.zona)
+          setFiltroZona(profile.zona) // auto-set filter to user's zone
         }
       } catch (e) {
         console.warn("Error al cargar perfil:", e)
@@ -112,15 +67,14 @@ export default function HomePage() {
         console.warn("Error al cargar filtros dinámicos:", e)
       }
     }
-    if (role === "jugador") {
-      loadProfile()
-      loadFiltros()
-    }
-  }, [role])
+    loadProfile()
+    loadFiltros()
+  }, [])
 
-  // Fetch partidos for jugador
+  // Fetch partidos whenever filters change
   const fetchPartidos = useCallback(async () => {
     setIsLoading(true)
+    setError(null)
     try {
       const filters: PartidoDisponibleFilters = {}
       if (filtroZona) filters.zona = filtroZona
@@ -131,38 +85,21 @@ export default function HomePage() {
       setPartidos(data)
     } catch (err: any) {
       console.warn("Error al cargar partidos:", err)
+      setError(err.message || "No se pudieron cargar los partidos")
       setPartidos([])
     } finally {
       setIsLoading(false)
     }
   }, [filtroZona, filtroModalidad, filtroFecha])
 
-  // Fetch canchas for admin
   useEffect(() => {
-    async function fetchCanchas() {
-      try {
-        if (role === "admin") {
-          const data = await getMisCanchas()
-          setCanchas(data)
-        }
-      } catch (error) {
-        console.warn("Error fetching canchas:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    if (role === "admin") {
-      fetchCanchas()
-    }
-  }, [role])
-
-  // Fetch partidos when jugador zone is ready or filters change
-  useEffect(() => {
-    if (role === "jugador" && (userZona || !isUsingUserZone)) {
+    // Wait for the user's zone to load before fetching (to prioritize by zone)
+    if (userZona || !isUsingUserZone) {
       fetchPartidos()
     }
-  }, [fetchPartidos, userZona, isUsingUserZone, role])
+  }, [fetchPartidos, userZona, isUsingUserZone])
 
+  // When user manually changes zona filter away from their zone
   useEffect(() => {
     if (filtroZona !== userZona) {
       setIsUsingUserZone(false)
@@ -170,22 +107,13 @@ export default function HomePage() {
   }, [filtroZona, userZona])
 
   const clearFilters = () => {
-    setFiltroZona(userZona)
+    setFiltroZona(userZona) // reset to user's zone
     setFiltroModalidad("")
     setFiltroFecha("")
     setIsUsingUserZone(true)
   }
 
-  const hasActiveFilters =
-    filtroZona !== userZona || filtroModalidad || filtroFecha
-
-  const formatearPrecio = (precio: number) => {
-    return new Intl.NumberFormat("es-AR", {
-      style: "currency",
-      currency: "ARS",
-      minimumFractionDigits: 0,
-    }).format(precio)
-  }
+  const hasActiveFilters = filtroZona !== userZona || filtroModalidad || filtroFecha
 
   const formatearFecha = (fechaStr: string) => {
     const [year, month, day] = fechaStr.split("-")
@@ -223,7 +151,7 @@ export default function HomePage() {
     return `${startStr} - ${endH}:${endM}`
   }
 
-  // Group partidos by date
+  // Group partidos by date for visual organization
   const partidosPorFecha = partidos.reduce(
     (acc, partido) => {
       const fecha = partido.fecha
@@ -233,97 +161,9 @@ export default function HomePage() {
     },
     {} as Record<string, PartidoData[]>
   )
+
   const fechasOrdenadas = Object.keys(partidosPorFecha).sort()
 
-  // ─── ADMIN VIEW ──────────────────────────────────────────
-  if (role === "admin") {
-    return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-              Mis Canchas
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Administrá y gestioná tus espacios
-            </p>
-          </div>
-          <Button className="font-semibold" asChild>
-            <Link href="/canchas/nueva">
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Cancha
-            </Link>
-          </Button>
-        </div>
-
-        {isLoading ? (
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-          </div>
-        ) : canchas.length === 0 ? (
-          <div className="bg-card rounded-2xl border border-border p-12 text-center">
-            <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <MapPin className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <p className="text-muted-foreground text-lg">
-              Todavia no tenés canchas creadas.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {canchas.map((cancha) => (
-              <Link key={cancha.id} href={`/canchas/${cancha.id}`}>
-                <div className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-lg group h-full overflow-hidden">
-                  {cancha.fotos ? (
-                    <div className="aspect-video w-full overflow-hidden">
-                      <img
-                        src={cancha.fotos}
-                        alt={cancha.nombre}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                  ) : (
-                    <div className="aspect-video w-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center">
-                      <div className="w-16 h-16 bg-background/50 rounded-2xl flex items-center justify-center">
-                        <Zap className="h-8 w-8 text-primary/40" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-5">
-                    <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors mb-3">
-                      {cancha.nombre}
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <MapPin className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate">
-                          {cancha.zona} • {cancha.direccion}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <Clock className="h-4 w-4 flex-shrink-0" />
-                        {cancha.hora_apertura} - {cancha.hora_cierre} (60 min)
-                      </div>
-                    </div>
-                    <div className="mt-4 pt-3 border-t border-border flex items-center justify-between">
-                      <span className="text-lg font-bold text-primary">
-                        {formatearPrecio(cancha.precio_por_turno)}
-                      </span>
-                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-lg">
-                        Por turno
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
-    )
-  }
-
-  // ─── JUGADOR VIEW: PARTIDOS DISPONIBLES ─────────────────
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
       {/* Header */}
@@ -341,7 +181,7 @@ export default function HomePage() {
         <Button className="font-semibold" asChild>
           <Link href="/partidos/nuevo">
             <Plus className="mr-2 h-4 w-4" />
-            Nuevo Partido
+            Crear Partido
           </Link>
         </Button>
       </div>
@@ -370,7 +210,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Quick zone indicator when filters collapsed */}
+        {/* Always visible: quick zone indicator */}
         {!showFilters && isUsingUserZone && userZona && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <MapPin className="h-3.5 w-3.5" />
@@ -393,10 +233,11 @@ export default function HomePage() {
         {/* Expanded filters */}
         <div
           className={`grid grid-cols-1 sm:grid-cols-3 gap-3 transition-all duration-300 ${showFilters
-            ? "max-h-96 opacity-100 mt-3"
-            : "max-h-0 opacity-0 overflow-hidden"
+              ? "max-h-96 opacity-100 mt-3"
+              : "max-h-0 opacity-0 overflow-hidden"
             }`}
         >
+          {/* Zona */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Zona
@@ -422,6 +263,7 @@ export default function HomePage() {
             </select>
           </div>
 
+          {/* Modalidad */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Modalidad
@@ -440,6 +282,7 @@ export default function HomePage() {
             </select>
           </div>
 
+          {/* Fecha */}
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Fecha
@@ -465,8 +308,22 @@ export default function HomePage() {
             </p>
           </div>
         </div>
+      ) : error ? (
+        /* Error state */
+        <div className="bg-card rounded-2xl border border-border p-12 text-center">
+          <div className="w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <X className="h-8 w-8 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">
+            Error al cargar partidos
+          </h3>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button variant="outline" onClick={fetchPartidos}>
+            Reintentar
+          </Button>
+        </div>
       ) : partidos.length === 0 ? (
-        /* Empty state - friendly message */
+        /* Empty state */
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
           <div className="w-20 h-20 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-5">
             <Frown className="h-10 w-10 text-muted-foreground" />
@@ -504,19 +361,19 @@ export default function HomePage() {
       ) : (
         /* Match cards grouped by date */
         <div className="space-y-8">
+          {/* Results summary */}
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
               <span className="font-semibold text-foreground">
                 {partidos.length}
               </span>{" "}
-              {partidos.length === 1
-                ? "partido disponible"
-                : "partidos disponibles"}
+              {partidos.length === 1 ? "partido disponible" : "partidos disponibles"}
             </p>
           </div>
 
           {fechasOrdenadas.map((fecha) => (
             <div key={fecha}>
+              {/* Date header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg">
                   <Calendar className="h-4 w-4 text-primary" />
@@ -527,6 +384,7 @@ export default function HomePage() {
                 <div className="flex-1 h-px bg-border" />
               </div>
 
+              {/* Cards grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {partidosPorFecha[fecha].map((partido) => {
                   const spotsLeft = partido.cupos_disponibles
@@ -535,10 +393,16 @@ export default function HomePage() {
                   const spotsUrgent = spotsLeft <= 2
 
                   return (
-                    <Link key={partido.id} href={`/partidos/${partido.id}`}>
+                    <Link
+                      key={partido.id}
+                      href={`/partidos/${partido.id}`}
+                    >
                       <div className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-lg group h-full overflow-hidden">
+                        {/* Top accent bar */}
                         <div className="h-1.5 bg-gradient-to-r from-primary to-primary/60" />
+
                         <div className="p-5">
+                          {/* Badge row */}
                           <div className="flex items-center gap-2 mb-3">
                             <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-semibold rounded-md capitalize">
                               {partido.modalidad}
@@ -550,12 +414,14 @@ export default function HomePage() {
                             )}
                           </div>
 
+                          {/* Cancha name */}
                           <h3 className="font-semibold text-lg text-foreground group-hover:text-primary transition-colors mb-1">
                             {partido.cancha
                               ? partido.cancha.nombre
                               : `Cancha #${partido.cancha_id}`}
                           </h3>
 
+                          {/* Address */}
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
                             <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                             <span className="truncate">
@@ -565,6 +431,7 @@ export default function HomePage() {
                             </span>
                           </div>
 
+                          {/* Info grid */}
                           <div className="grid grid-cols-2 gap-3 mb-4">
                             <div className="flex items-center gap-2 text-sm">
                               <div className="w-8 h-8 bg-secondary rounded-lg flex items-center justify-center flex-shrink-0">
@@ -584,15 +451,17 @@ export default function HomePage() {
                             </div>
                           </div>
 
+                          {/* Footer with players */}
                           <div className="pt-3 border-t border-border flex items-center justify-between">
                             <div className="flex items-center gap-2">
                               <Users className="h-4 w-4 text-muted-foreground" />
                               <div className="flex items-center gap-1.5">
+                                {/* Mini progress bar */}
                                 <div className="w-16 h-1.5 bg-secondary rounded-full overflow-hidden">
                                   <div
                                     className={`h-full rounded-full transition-all ${spotsUrgent
-                                      ? "bg-destructive"
-                                      : "bg-accent"
+                                        ? "bg-destructive"
+                                        : "bg-accent"
                                       }`}
                                     style={{
                                       width: `${(confirmedCount / totalPlayers) * 100}%`,
@@ -601,8 +470,8 @@ export default function HomePage() {
                                 </div>
                                 <span
                                   className={`text-xs font-semibold ${spotsUrgent
-                                    ? "text-destructive"
-                                    : "text-muted-foreground"
+                                      ? "text-destructive"
+                                      : "text-muted-foreground"
                                     }`}
                                 >
                                   {spotsLeft}{" "}
