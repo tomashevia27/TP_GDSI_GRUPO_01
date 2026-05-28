@@ -10,7 +10,7 @@ La aplicación está deployada y lista para usar:
 
 | Servicio | URL |
 |---|---|
-| **Frontend** | [teamup-frontend.vercel.app](https://teamup-frontend.vercel.app) |
+| **Frontend** | [tp-gdsi-grupo-01-9ruqenpzr-tomashevia27-3607s-projects.vercel.app](https://tp-gdsi-grupo-01-9ruqenpzr-tomashevia27-3607s-projects.vercel.app/) |
 | **Backend API** | [teamup-backend-lq30.onrender.com](https://teamup-backend-lq30.onrender.com) |
 | **Documentación API** | [teamup-backend-lq30.onrender.com/docs](https://teamup-backend-lq30.onrender.com/docs) |
 
