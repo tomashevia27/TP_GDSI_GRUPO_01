@@ -1,6 +1,30 @@
-# TP_GDSI_GRUPO_01
+# TeamUp ⚽
 
-## Run with Docker Compose
+**TeamUp** es una plataforma para organizar partidos de fútbol. Permite gestionar canchas, armar equipos, coordinar horarios y notificar a los jugadores por mail.
+
+---
+
+## 🌐 Acceder a la aplicación
+
+La aplicación está deployada y lista para usar:
+
+| Servicio | URL |
+|---|---|
+| **Frontend** | [teamup-frontend.vercel.app](https://teamup-frontend.vercel.app) |
+| **Backend API** | [teamup-backend-lq30.onrender.com](https://teamup-backend-lq30.onrender.com) |
+| **Documentación API** | [teamup-backend-lq30.onrender.com/docs](https://teamup-backend-lq30.onrender.com/docs) |
+
+> **Nota:** El backend corre en el tier gratuito de Render. Si estuvo inactivo, la primera request puede tardar ~30-60 segundos en responder (cold start). Las siguientes son instantáneas.
+
+---
+
+## 🐳 Correr localmente con Docker
+
+### Requisitos
+
+- [Docker](https://www.docker.com/) instalado y corriendo.
+
+### Levantar todos los servicios
 
 Desde la raíz del proyecto:
 
@@ -8,59 +32,35 @@ Desde la raíz del proyecto:
 docker compose up --build
 ```
 
-Eso levanta el backend, PostgreSQL, pgAdmin y el frontend.
+Esto levanta automáticamente:
 
-Para detener todo y borrar los contenedores:
+| Servicio | URL local |
+|---|---|
+| Frontend (Next.js) | http://localhost:3000 |
+| Backend (FastAPI) | http://localhost:8000 |
+| Base de datos (PostgreSQL) | localhost:5432 |
+| PgAdmin | http://localhost:5050 |
+
+### Detener los servicios
 
 ```bash
 docker compose down
 ```
 
-Si también querés borrar los volúmenes de datos:
+Para también borrar los volúmenes de datos:
 
 ```bash
 docker compose down -v
-
 ```
 
-otro comando para borrar los volúmenes de datos:
+---
 
-```bash
-docker-compose down -v --rmi all --remove-orphans
+## 🛠️ Stack tecnológico
 
-```
-
-## Dependences 
-
-Instalarse Node.js
-
-Correr esto para descargarse nvm 
-```bash
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-```
-
-Despues de eso, cerrar la terminal y volver a abrirla. Ahi correr esto:
-```bash
-source ~/.bashrc
-```
-
-Ahora si descargamos Node.js y pnpm
-```bash
-# Instala la última versión estable de Node.js
-nvm install --lts
-
-# Verifica que se instaló bien
-node -v
-
-# Activa corepack (que trae pnpm incluido de forma nativa en Node)
-corepack enable
-
-# Verifica pnpm
-pnpm -v
-```
-Entrar a la carpeta de frontend y levantar el dev
-Esto levanta npm para el front, tiene que estar el back en el puerto 8000 (si hay problemas con el Next.js chequear si el CORS esta configurado para permitir consultas del dev server (suele ser este `http://localhost:3000` ))
-```bash
-pnpm dev
-```
-chequeo algo
+| Capa | Tecnología |
+|---|---|
+| Frontend | Next.js + TailwindCSS |
+| Backend | FastAPI + Python 3.11 |
+| Base de datos | PostgreSQL 14 |
+| Deploy frontend | Vercel |
+| Deploy backend | Render |
