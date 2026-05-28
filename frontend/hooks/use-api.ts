@@ -1,8 +1,9 @@
 "use client"
 
-export const API_URL = typeof window !== "undefined" 
-  ? `${window.location.protocol}//${window.location.hostname}:8000`
-  : "http://localhost:8000"
+export const API_URL = process.env.NEXT_PUBLIC_API_URL
+  || (typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : "http://localhost:8000")
 
 const CLOUD_NAME = "dzsrgcgq6"
 const UPLOAD_PRESET = "TeamUp_preset"
@@ -72,7 +73,7 @@ export async function loginUser(
     if (Array.isArray(data.detail)) {
       throw new Error("Por favor, ingresá un formato de email válido.")
     }
-    
+
     // Aquí es donde atrapamos el "Email o contraseña incorrectos" del backend
     // Lanzamos el error para que el 'catch' del LoginPage lo capture
     throw new Error(data.detail || "Error al iniciar sesión")
@@ -108,7 +109,7 @@ export async function registerUser(userData: UserData): Promise<UserProfile> {
           default: return `• Por favor, revisá el campo: ${campo}.`
         }
       })
-      
+
       throw new Error("Revisá los datos ingresados: " + messages.join("\n"))
     }
     throw new Error(data.detail || "Error al registrarse")
@@ -132,7 +133,7 @@ export async function getUserProfile(): Promise<UserProfile> {
   return data
 }
 
-export async function confirmEmail(email: string, code: string): Promise<{ mensaje: string }>{
+export async function confirmEmail(email: string, code: string): Promise<{ mensaje: string }> {
   const response = await fetch(`${API_URL}/confirmar-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -144,7 +145,7 @@ export async function confirmEmail(email: string, code: string): Promise<{ mensa
   return data
 }
 
-export async function resendCode(email: string): Promise<{ mensaje: string }>{
+export async function resendCode(email: string): Promise<{ mensaje: string }> {
   const response = await fetch(`${API_URL}/reenviar-codigo`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

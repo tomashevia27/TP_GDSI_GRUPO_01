@@ -15,10 +15,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useAuthContext } from "@/components/auth-provider"
-import { actualizarCancha, uploadImageToCloudinary } from "@/hooks/use-api"
+import { actualizarCancha, uploadImageToCloudinary, API_URL } from "@/hooks/use-api"
 import Swal from 'sweetalert2'
-
-const API_URL = "http://localhost:8000"
 
 export default function EditarCanchaPage() {
   const router = useRouter()

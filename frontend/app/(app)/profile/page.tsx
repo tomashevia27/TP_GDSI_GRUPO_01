@@ -5,9 +5,7 @@ import Link from "next/link"
 import { MapPin, Trophy, Pencil, Zap, Clock, DollarSign, Calendar, Star, Users, ChevronRight, Edit3, TrendingUp } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/auth-provider"
-import { getUserProfile, getMisPartidos, getMisCanchas, type UserProfile, type PartidoData } from "@/hooks/use-api"
-
-const API_URL = "http://localhost:8000"
+import { getUserProfile, getMisPartidos, getMisCanchas, API_URL, type UserProfile, type PartidoData } from "@/hooks/use-api"
 
 export default function ProfilePage() {
   const { userId, role } = useAuthContext()
@@ -24,12 +22,12 @@ export default function ProfilePage() {
         const data = await getUserProfile()
         setProfile(data)
 
-          if (data.rol === "admin") {
-            const canchasData = await getMisCanchas()
-            setCanchas(canchasData)
+        if (data.rol === "admin") {
+          const canchasData = await getMisCanchas()
+          setCanchas(canchasData)
         } else if (data.rol === "jugador") {
-           const partidosData = await getMisPartidos()
-           setMisPartidos(partidosData)
+          const partidosData = await getMisPartidos()
+          setMisPartidos(partidosData)
         }
       } catch (error) {
         console.warn("Error al cargar el perfil:", error)
@@ -88,7 +86,7 @@ export default function ProfilePage() {
     const partidosMap = new Map<number, PartidoData>()
     misPartidos.organizados.forEach(p => partidosMap.set(p.id, p))
     misPartidos.inscritos.forEach(p => partidosMap.set(p.id, p))
-    
+
     const todosLosPartidos = Array.from(partidosMap.values())
     const now = new Date()
 
@@ -117,13 +115,13 @@ export default function ProfilePage() {
             <Edit3 className="w-4 h-4 text-muted-foreground" />
           </Link>
         </div>
-        
+
         <div className="flex-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold text-foreground">
             {profile?.nombre} {profile?.apellido}
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">{profile?.edad} años • {profile?.genero} • {profile?.rol}</p>
-          
+
           <div className="flex items-center justify-center sm:justify-start gap-4 mt-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <MapPin className="w-4 h-4" />
@@ -275,11 +273,10 @@ export default function ProfilePage() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 text-xs font-medium rounded-lg capitalize ${
-                              partido.estado.toLowerCase() === "cancelado"
-                                ? "bg-red-500/10 text-red-500"
-                                : "bg-accent/10 text-accent"
-                            }`}>
+                            <span className={`px-2 py-1 text-xs font-medium rounded-lg capitalize ${partido.estado.toLowerCase() === "cancelado"
+                              ? "bg-red-500/10 text-red-500"
+                              : "bg-accent/10 text-accent"
+                              }`}>
                               {partido.estado}
                             </span>
                             <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
@@ -298,9 +295,8 @@ export default function ProfilePage() {
                   <div className="bg-card rounded-xl border border-border overflow-hidden">
                     {pasados.map((partido, index) => (
                       <Link key={partido.id} href={`/partidos/${partido.id}`}>
-                        <div className={`flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors ${
-                          index !== pasados.length - 1 ? "border-b border-border" : ""
-                        }`}>
+                        <div className={`flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors ${index !== pasados.length - 1 ? "border-b border-border" : ""
+                          }`}>
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
                               <Trophy className="w-5 h-5 text-muted-foreground" />
@@ -312,11 +308,10 @@ export default function ProfilePage() {
                               </p>
                             </div>
                           </div>
-                          <span className={`text-xs font-medium px-2 py-1 rounded-lg capitalize ${
-                            partido.estado.toLowerCase() === "cancelado"
-                              ? "bg-red-500/10 text-red-500"
-                              : "bg-secondary text-muted-foreground"
-                          }`}>
+                          <span className={`text-xs font-medium px-2 py-1 rounded-lg capitalize ${partido.estado.toLowerCase() === "cancelado"
+                            ? "bg-red-500/10 text-red-500"
+                            : "bg-secondary text-muted-foreground"
+                            }`}>
                             {partido.estado}
                           </span>
                         </div>

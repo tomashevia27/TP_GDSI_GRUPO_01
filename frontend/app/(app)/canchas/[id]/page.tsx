@@ -5,10 +5,8 @@ import Link from "next/link"
 import { ArrowLeft, MapPin, Clock, Zap, DollarSign, CheckCircle, XCircle, Pencil, Trash, Calendar, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/auth-provider"
-import { eliminarCancha } from "@/hooks/use-api"
+import { eliminarCancha, API_URL } from "@/hooks/use-api"
 import Swal from 'sweetalert2'
-
-const API_URL = "http://localhost:8000"
 
 interface Cancha {
     id: number

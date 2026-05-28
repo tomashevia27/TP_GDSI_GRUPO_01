@@ -6,9 +6,7 @@ import Link from "next/link"
 import { MapPin, Clock, Zap, DollarSign, Search, Filter, Trophy, Users, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/auth-provider"
-import { getMisCanchas } from "@/hooks/use-api"
-
-const API_URL = "http://localhost:8000"
+import { getMisCanchas, API_URL } from "@/hooks/use-api"
 
 interface Cancha {
     id: number
@@ -30,9 +28,9 @@ interface Cancha {
 function FootballIcon({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
-            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9"/>
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/>
-            <polygon points="12,7 14.5,11 12,15 9.5,11" fill="white" opacity="0.3"/>
+            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" />
+            <polygon points="12,7 14.5,11 12,15 9.5,11" fill="white" opacity="0.3" />
         </svg>
     )
 }
@@ -63,7 +61,7 @@ export default function CanchasPage() {
             }
         }
         fetchCanchas()
-    }, [role]) 
+    }, [role])
 
     const formatearPrecio = (precio: number) => {
         return new Intl.NumberFormat("es-AR", {
@@ -73,7 +71,7 @@ export default function CanchasPage() {
         }).format(precio)
     }
 
-    const filteredCanchas = canchas.filter(cancha => 
+    const filteredCanchas = canchas.filter(cancha =>
         cancha.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cancha.zona.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -106,7 +104,7 @@ export default function CanchasPage() {
                     priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-b from-foreground/60 via-foreground/40 to-background" />
-                
+
                 {/* Floating football decorations */}
                 <div className="absolute top-10 left-10 opacity-20 animate-float">
                     <FootballIcon className="w-12 h-12 text-card" />
@@ -117,7 +115,7 @@ export default function CanchasPage() {
                 <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
                     <FootballIcon className="w-16 h-16 text-card" />
                 </div>
-                
+
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
                     <div className="flex items-center gap-3 mb-4 animate-slide-up">
                         <div className="w-12 h-12 rounded-xl overflow-hidden shadow-2xl">
@@ -137,7 +135,7 @@ export default function CanchasPage() {
                     <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-200">
                         {role === "admin" ? "Gestioná y editá los complejos que tenés registrados" : "Encontrá la cancha perfecta para tu próximo partido"}
                     </p>
-                    
+
                     {/* Stats row */}
                     <div className="flex gap-8 mt-8 animate-slide-up animation-delay-300">
                         <div className="flex flex-col items-center">
@@ -211,7 +209,7 @@ export default function CanchasPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredCanchas.map((cancha, index) => (
                                 <Link key={cancha.id} href={`/canchas/${cancha.id}`}>
-                                    <div 
+                                    <div
                                         className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 group h-full overflow-hidden hover:-translate-y-1 animate-slide-up"
                                         style={{ animationDelay: `${index * 100}ms` }}
                                     >
@@ -300,7 +298,7 @@ export default function CanchasPage() {
                     </>
                 )}
             </div>
-            
+
             {/* CTA Section (Visible solo si no es Admin para mejorar UX) */}
             {role !== "admin" && (
                 <div className="bg-gradient-to-r from-primary to-primary/80 py-16 mt-8 relative overflow-hidden">

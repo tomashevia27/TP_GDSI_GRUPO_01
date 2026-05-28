@@ -7,9 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MapPin, Info, ArrowLeft, Clock, DollarSign, Zap } from "lucide-react"
 import Swal from "sweetalert2"
-import { crearPartido } from "@/hooks/use-api"
-
-const API_URL = "http://localhost:8000"
+import { crearPartido, API_URL } from "@/hooks/use-api"
 
 function NuevoPartidoForm() {
   const router = useRouter()
@@ -35,18 +33,18 @@ function NuevoPartidoForm() {
       const [aperturaH, aperturaM] = cancha.hora_apertura.split(":").map(Number)
       const [cierreH, cierreM] = cancha.hora_cierre.split(":").map(Number)
       const duracion = 60
-      
+
       let actual = new Date()
       actual.setHours(aperturaH, aperturaM, 0, 0)
-      
+
       const fin = new Date()
       fin.setHours(cierreH, cierreM, 0, 0)
-      
+
       while (actual < fin) {
         const inicioStr = actual.toTimeString().slice(0, 5)
         actual.setMinutes(actual.getMinutes() + duracion)
         const finStr = actual.toTimeString().slice(0, 5)
-        
+
         if (actual <= fin) {
           turnos.push({ inicio: inicioStr, fin: finStr })
         }
@@ -109,7 +107,7 @@ function NuevoPartidoForm() {
     }
 
     const cantidadJugadoresNum = cancha?.tamano ? cancha.tamano * 2 : 0;
-    
+
     if (tipo === "abierto") {
       const cupos = Number(cuposDisponibles)
       if (!cupos || cupos < 1 || cupos >= cantidadJugadoresNum) {
@@ -146,7 +144,7 @@ function NuevoPartidoForm() {
       }).then(() => {
         router.push("/profile")
       })
-      
+
     } catch (error: any) {
       Swal.fire({ title: "Error", text: error.message || "No se pudo crear el partido", icon: "error", confirmButtonColor: "#FF6B4A" })
     } finally {
@@ -180,7 +178,7 @@ function NuevoPartidoForm() {
             <h1 className="text-2xl font-bold text-foreground mb-1">Crear Nuevo Partido</h1>
             <p className="text-muted-foreground">Configurá los detalles de tu encuentro deportivo.</p>
           </div>
-          
+
           {!canchaId && (
             <div className="space-y-2 mb-6">
               <Label htmlFor="canchaSelect" className="font-medium text-sm">Seleccioná una Cancha *</Label>
@@ -201,7 +199,7 @@ function NuevoPartidoForm() {
               </select>
             </div>
           )}
-          
+
           {cancha && (
             <div className="bg-secondary/30 p-6 rounded-xl mb-6 border border-border/50">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-primary">

@@ -27,10 +27,8 @@ import {
   type PartidoData,
   type UserProfile,
   type PartidoDisponibleFilters,
-  type FiltrosDisponiblesData,
+  type FiltrosDisponiblesData
 } from "@/hooks/use-api"
-
-const API_URL = "http://localhost:8000"
 
 interface Cancha {
   id: number
