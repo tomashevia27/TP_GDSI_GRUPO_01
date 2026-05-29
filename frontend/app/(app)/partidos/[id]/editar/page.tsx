@@ -71,7 +71,7 @@ function EditarPartidoForm() {
     if (fecha) {
       getTurnos(cancha.id, fecha, Number(partidoId))
         .then(data => {
-          const duracion = cancha.duracion_turno || 60
+          const duracion = Number(cancha.duracion_turno) || 60
           const turnos = data.slots.map(s => {
             const [h, m] = s.horario.split(":").map(Number)
             const d = new Date()
@@ -85,7 +85,7 @@ function EditarPartidoForm() {
       const turnos = []
       const [aperturaH, aperturaM] = cancha.hora_apertura.split(":").map(Number)
       const [cierreH, cierreM] = cancha.hora_cierre.split(":").map(Number)
-      const duracion = 60
+      const duracion = Number(cancha.duracion_turno) || 60
       
       let actual = new Date()
       actual.setHours(aperturaH, aperturaM, 0, 0)
@@ -223,7 +223,7 @@ function EditarPartidoForm() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    {cancha.hora_apertura} a {cancha.hora_cierre} hs (60 min)
+                    {cancha.hora_apertura} a {cancha.hora_cierre} hs ({cancha.duracion_turno || 60} min)
                   </div>
                 </div>
                 <div className="space-y-3">

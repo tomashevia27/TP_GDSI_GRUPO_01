@@ -9,7 +9,7 @@ from ..models.partido_model import Partido
 from ..models.usuario_model import Usuario, RolUsuario
 from ..repositories import partido_repository
 from ..repositories import usuario_repository
-from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, ReservaManualCreate
+from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, ReservaManualCreate, ReprogramarReserva
 from ..repositories import cancha_repository
 from ..services import notificacion_service
 
@@ -729,3 +729,179 @@ def eliminar_bloqueo_turno(
     db.commit()
 
     return {"mensaje": "Bloqueo eliminado exitosamente"}
+
+
+def cancelar_reserva_dueno(db: Session, current_user: Usuario, partido_id: int):
+    """Cancela una reserva desde la perspectiva del dueño de cancha."""
+
+
+    if current_user.rol != RolUsuario.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los dueños de cancha pueden cancelar reservas"
+        )
+
+
+    partido = partido_repository.obtener_por_id(db, partido_id)
+    if not partido:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+
+
+    cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
+    if cancha.propietario_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés cancelar reservas de canchas que no te pertenecen"
+        )
+
+
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="La reserva ya se encuentra cancelada"
+        )
+
+
+    if partido.estado == "bloqueado":
+        raise HTTPException(
+            status_code=400,
+            detail="Para desbloquear un turno, usá la función de desbloqueo"
+        )
+
+
+    partido.estado = "Cancelado"
+
+
+    if not partido.reserva_manual and partido.organizador_id:
+        notificacion_service.notificar_reserva_cancelada_por_dueno(db, cancha, partido)
+
+    db.commit()
+    db.refresh(partido)
+
+    return partido
+
+
+def reprogramar_reserva(
+    db: Session,
+    current_user: Usuario,
+    partido_id: int,
+    datos: ReprogramarReserva,
+):
+    """Reprograma una reserva existente a un nuevo turno."""
+
+
+    if current_user.rol != RolUsuario.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los dueños de cancha pueden reprogramar reservas"
+        )
+
+
+    partido = partido_repository.obtener_por_id(db, partido_id)
+    if not partido:
+        raise HTTPException(status_code=404, detail="Reserva no encontrada")
+
+
+    if partido.estado == "Cancelado":
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede reprogramar una reserva cancelada"
+        )
+    if partido.estado == "bloqueado":
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede reprogramar un turno bloqueado"
+        )
+
+
+    cancha_id_destino = datos.cancha_id if datos.cancha_id else partido.cancha_id
+    cancha = cancha_repository.obtener_por_id(db, cancha_id_destino)
+
+
+    if cancha.propietario_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés reprogramar reservas en canchas que no te pertenecen"
+        )
+
+
+    if datos.cancha_id and datos.cancha_id != partido.cancha_id:
+        cancha_original = cancha_repository.obtener_por_id(db, partido.cancha_id)
+        if cancha_original.propietario_id != current_user.id:
+            raise HTTPException(
+                status_code=403,
+                detail="No podés mover reservas desde canchas que no te pertenecen"
+            )
+
+
+    hora_nueva = datos.horario.replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
+
+    if (
+        datos.fecha < now.date()
+        or (datos.fecha == now.date() and hora_nueva <= now.time())
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="La nueva fecha y hora deben ser futuras"
+        )
+
+
+    dia_semana = datos.fecha.weekday()
+    if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no opera ese día"
+        )
+
+    hora_apertura = datetime.strptime(cancha.hora_apertura, "%H:%M").time()
+    if cancha.hora_cierre == "24:00":
+        hora_cierre = datetime.strptime("23:59", "%H:%M").time()
+    else:
+        hora_cierre = datetime.strptime(cancha.hora_cierre, "%H:%M").time()
+
+    if hora_nueva < hora_apertura or hora_nueva >= hora_cierre:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está disponible en ese horario"
+        )
+
+
+    disponible = partido_repository.verificar_disponibilidad_cancha(
+        db, cancha_id_destino, datos.fecha, datos.horario,
+        cancha.duracion_turno,
+        excluir_partido_id=partido.id
+    )
+    if not disponible:
+        raise HTTPException(
+            status_code=400,
+            detail="El turno seleccionado no está disponible (está ocupado o bloqueado)"
+        )
+
+
+    fecha_anterior = partido.fecha
+    horario_anterior = partido.horario
+    cancha_id_anterior = partido.cancha_id
+
+
+    partido.fecha = datos.fecha
+    partido.horario = datos.horario
+    if datos.cancha_id:
+        partido.cancha_id = datos.cancha_id
+
+        modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
+        if modalidad:
+            partido.modalidad = modalidad
+            partido.cantidad_jugadores = cancha.tamano * 2
+
+
+    if not partido.reserva_manual and partido.organizador_id:
+        notificacion_service.notificar_reserva_reprogramada(
+            db, cancha, partido,
+            fecha_anterior, horario_anterior, cancha_id_anterior
+        )
+
+    db.commit()
+    db.refresh(partido)
+
+    return partido

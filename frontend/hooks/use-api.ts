@@ -573,11 +573,13 @@ export async function eliminarTodasNotificaciones(): Promise<{ mensaje: string }
 export interface AgendaSlot {
   horario: string
   estado: "disponible" | "ocupado" | "bloqueado"
-  partido_id?: number
-  cliente_nombre?: string
-  cliente_telefono?: string
-  organizador_nombre?: string
-  es_manual?: boolean
+  partido_id?: number | null
+  cliente_nombre?: string | null
+  cliente_apellido?: string | null
+  cliente_telefono?: string | null
+  organizador_nombre?: string | null
+  organizador_apellido?: string | null
+  es_reserva_manual?: boolean
 }
 
 export interface AgendaData {
@@ -682,4 +684,46 @@ export async function desbloquearTurno(partidoId: number): Promise<{ mensaje: st
     throw new Error(data.detail || "Error al desbloquear el turno")
   }
   return data
+}
+
+export async function cancelarReservaDueno(partidoId: number): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/reservas/${partidoId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cancelar la reserva")
+  }
+  return data
+}
+
+export interface ReprogramarReservaData {
+  fecha: string
+  horario: string
+  cancha_id?: number
+}
+
+export async function reprogramarReserva(
+  partidoId: number,
+  data: ReprogramarReservaData
+): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/reservas/${partidoId}/reprogramar`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(data),
+  })
+  const result = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(result.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(result.detail || "Error al reprogramar la reserva")
+  }
+  return result
 }

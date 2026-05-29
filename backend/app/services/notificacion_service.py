@@ -284,3 +284,70 @@ def notificar_cambio_cancha(db: Session, cancha_anterior, cancha_nueva, partido)
         mensaje=mensaje_ganada,
         partido_id=partido.id
     )
+
+def notificar_reserva_cancelada_por_dueno(db: Session, cancha, partido):
+    fecha_str = partido.fecha.strftime("%d/%m/%Y")
+    hora_str = partido.horario.strftime("%H:%M")
+
+    mensaje = (
+        f"El complejo canceló tu reserva en {cancha.nombre} "
+        f"del {fecha_str} a las {hora_str}hs. "
+        f"El turno fue liberado."
+    )
+
+    notificaciones = []
+
+    if partido.organizador_id:
+        notificaciones.append({
+            "usuario_id": partido.organizador_id,
+            "tipo": "reserva_cancelada_por_dueno",
+            "mensaje": mensaje,
+            "partido_id": partido.id
+        })
+
+    if partido.tipo == "abierto":
+        for jugador in partido.jugadores:
+            notificaciones.append({
+                "usuario_id": jugador.id,
+                "tipo": "reserva_cancelada_por_dueno",
+                "mensaje": mensaje,
+                "partido_id": partido.id
+            })
+
+    if notificaciones:
+        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+
+
+def notificar_reserva_reprogramada(db: Session, cancha, partido, fecha_ant, horario_ant, cancha_id_ant):
+    fecha_ant_str = fecha_ant.strftime("%d/%m/%Y")
+    hora_ant_str = horario_ant.strftime("%H:%M")
+    fecha_nueva_str = partido.fecha.strftime("%d/%m/%Y")
+    hora_nueva_str = partido.horario.strftime("%H:%M")
+
+    mensaje = (
+        f"El complejo reprogramó tu reserva en {cancha.nombre}: "
+        f"del {fecha_ant_str} a las {hora_ant_str}hs "
+        f"al {fecha_nueva_str} a las {hora_nueva_str}hs."
+    )
+
+    notificaciones = []
+
+    if partido.organizador_id:
+        notificaciones.append({
+            "usuario_id": partido.organizador_id,
+            "tipo": "reserva_reprogramada",
+            "mensaje": mensaje,
+            "partido_id": partido.id
+        })
+
+    if partido.tipo == "abierto":
+        for jugador in partido.jugadores:
+            notificaciones.append({
+                "usuario_id": jugador.id,
+                "tipo": "reserva_reprogramada",
+                "mensaje": mensaje,
+                "partido_id": partido.id
+            })
+
+    if notificaciones:
+        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)

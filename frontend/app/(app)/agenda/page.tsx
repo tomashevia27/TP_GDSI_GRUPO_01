@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Calendar, MapPin, Clock, Users, ChevronRight, Lock, Unlock, Ban } from "lucide-react"
+import { Calendar, MapPin, Clock, Users, ChevronRight, Lock, Unlock, Ban, RefreshCw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuthContext } from "@/components/auth-provider"
@@ -11,10 +11,12 @@ import {
   getAgenda,
   bloquearTurno,
   desbloquearTurno,
+  cancelarReservaDueno,
   type AgendaData,
   type AgendaSlot,
 } from "@/hooks/use-api"
 import { ManualReservationDialog } from "@/components/manual-reservation-dialog"
+import { RescheduleReservationDialog } from "@/components/reschedule-reservation-dialog"
 import Swal from "sweetalert2"
 
 interface Cancha {
@@ -42,6 +44,9 @@ export default function AgendaPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [slotSeleccionado, setSlotSeleccionado] = useState<AgendaSlot | null>(null)
+
+  const [reprogramarDialogOpen, setReprogramarDialogOpen] = useState(false)
+  const [slotReprogramar, setSlotReprogramar] = useState<AgendaSlot | null>(null)
 
   useEffect(() => {
     if (role !== "admin") {
@@ -158,6 +163,43 @@ export default function AgendaPage() {
         confirmButtonColor: "#FF6B4A",
       })
     }
+  }
+
+  const handleCancelarReserva = async (slot: AgendaSlot) => {
+    if (!slot.partido_id) return
+    const confirm = await Swal.fire({
+      title: "¿Cancelar esta reserva?",
+      text: "El turno volverá a estar disponible. Si la reserva es de un jugador, será notificado.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, cancelar reserva",
+      cancelButtonText: "No, mantener",
+      confirmButtonColor: "#EF4444",
+    })
+    if (!confirm.isConfirmed) return
+    try {
+      await cancelarReservaDueno(slot.partido_id)
+      await Swal.fire({
+        title: "Reserva cancelada",
+        text: "El turno fue liberado exitosamente.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      })
+      recargarAgenda()
+    } catch (error: any) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "No se pudo cancelar la reserva",
+        icon: "error",
+        confirmButtonColor: "#FF6B4A",
+      })
+    }
+  }
+
+  const handleReprogramar = (slot: AgendaSlot) => {
+    setSlotReprogramar(slot)
+    setReprogramarDialogOpen(true)
   }
 
   const recargarAgenda = () => {
@@ -340,6 +382,26 @@ export default function AgendaPage() {
                           Reserva de jugador
                         </span>
                       )}
+                      <div className="flex gap-1.5 ml-auto shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReprogramar(slot)}
+                          className="text-xs h-8"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Reprogramar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleCancelarReserva(slot)}
+                          className="text-xs h-8"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      </div>
                     </>
                   )}
 
@@ -388,6 +450,19 @@ export default function AgendaPage() {
           fecha={fecha}
           horario={slotSeleccionado.horario}
           onSuccess={handleReservaExitosa}
+        />
+      )}
+
+      {slotReprogramar && slotReprogramar.partido_id && (
+        <RescheduleReservationDialog
+          open={reprogramarDialogOpen}
+          onOpenChange={setReprogramarDialogOpen}
+          partidoId={slotReprogramar.partido_id}
+          canchaId={Number(canchaSeleccionada)}
+          canchaNombre={canchaActual?.nombre || ""}
+          fechaActual={fecha}
+          horarioActual={slotReprogramar.horario}
+          onSuccess={recargarAgenda}
         />
       )}
     </div>

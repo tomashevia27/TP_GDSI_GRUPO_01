@@ -29,9 +29,9 @@ class ReservaManualCreate(BaseModel):
     cliente_telefono: Optional[str] = None
 
 class PartidoUpdate(BaseModel):
-    cancha_id: int
-    fecha: date
-    horario: time
+    cancha_id: Optional[int] = None
+    fecha: Optional[date] = None
+    horario: Optional[time] = None
     tipo: Optional[str] = None
     descripcion: Optional[str] = None
     cupos_disponibles: Optional[int] = None
@@ -68,3 +68,8 @@ class FiltroOpcion(BaseModel):
 class FiltrosDisponibles(BaseModel):
     zonas: List[FiltroOpcion]
     modalidades: List[FiltroOpcion]
+
+class ReprogramarReserva(BaseModel):
+    fecha: date
+    horario: time
+    cancha_id: Optional[int] = None

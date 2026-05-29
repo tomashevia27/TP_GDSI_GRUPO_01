@@ -246,7 +246,7 @@ export default function PartidoDetallePage() {
             <Clock className="w-4 h-4" />
             <span className="text-xs font-medium uppercase tracking-wide">Horario</span>
           </div>
-          <p className="font-semibold text-foreground">{formatearHorarioTurno(partido.horario, 60)}</p>
+          <p className="font-semibold text-foreground">{formatearHorarioTurno(partido.horario, partido.cancha?.duracion_turno || 60)}</p>
         </div>
       </div>
 
