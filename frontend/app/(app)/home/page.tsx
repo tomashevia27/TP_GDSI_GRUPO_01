@@ -246,12 +246,20 @@ export default function HomePage() {
               Administrá y gestioná tus espacios
             </p>
           </div>
-          <Button className="font-semibold" asChild>
-            <Link href="/canchas/nueva">
-              <Plus className="mr-2 h-4 w-4" />
-              Crear Cancha
-            </Link>
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" className="font-semibold" asChild>
+              <Link href="/agenda">
+                <Calendar className="mr-2 h-4 w-4" />
+                Mi Agenda
+              </Link>
+            </Button>
+            <Button className="font-semibold" asChild>
+              <Link href="/canchas/nueva">
+                <Plus className="mr-2 h-4 w-4" />
+                Crear Cancha
+              </Link>
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (

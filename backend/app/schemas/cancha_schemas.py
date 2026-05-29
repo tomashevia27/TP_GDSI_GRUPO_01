@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field, ConfigDict, model_validator
 from typing import Optional
+from datetime import date
 
 # -----------------------------------------
 # US 4: Crear Cancha
@@ -75,3 +76,34 @@ class CanchaUpdate(BaseModel):
     hora_cierre: str = Field(..., min_length=1)
     duracion_turno: int = Field(60, gt=0, description="Duración del turno en minutos")
     fotos: Optional[str] = None
+
+# -----------------------------------------
+# US 24: Agenda de la Cancha
+# -----------------------------------------
+class AgendaSlot(BaseModel):
+    horario: str
+    estado: str  # "disponible" | "ocupado" | "bloqueado"
+    partido_id: Optional[int] = None
+    cliente_nombre: Optional[str] = None
+    cliente_apellido: Optional[str] = None
+    cliente_telefono: Optional[str] = None
+    organizador_nombre: Optional[str] = None
+    organizador_apellido: Optional[str] = None
+    es_reserva_manual: Optional[bool] = False
+
+class AgendaRespuesta(BaseModel):
+    cancha: CanchaRespuesta
+    fecha: date
+    slots: list[AgendaSlot]
+
+# -----------------------------------------
+# Turnos públicos (sin datos sensibles)
+# -----------------------------------------
+class TurnoSlot(BaseModel):
+    horario: str
+    estado: str  # "disponible" | "ocupado" | "bloqueado"
+
+class TurnosRespuesta(BaseModel):
+    cancha_id: int
+    fecha: date
+    slots: list[TurnoSlot]

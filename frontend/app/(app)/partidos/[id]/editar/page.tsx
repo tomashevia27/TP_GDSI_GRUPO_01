@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MapPin, Info, ArrowLeft, Clock, DollarSign, Zap } from "lucide-react"
 import Swal from "sweetalert2"
-import { editarPartido, getPartido, type PartidoData, API_URL } from "@/hooks/use-api"
+import { editarPartido, getPartido, getTurnos, type PartidoData, API_URL } from "@/hooks/use-api"
 
 function EditarPartidoForm() {
   const router = useRouter()
@@ -27,7 +27,7 @@ function EditarPartidoForm() {
   const [tipo, setTipo] = useState("abierto")
   const [cuposDisponibles, setCuposDisponibles] = useState("")
   const [descripcion, setDescripcion] = useState("")
-  const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string }[]>([])
+  const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string; estado: string }[]>([])
 
   useEffect(() => {
     async function fetchPartido() {
@@ -63,7 +63,25 @@ function EditarPartidoForm() {
   }, [partidoId, router])
 
   useEffect(() => {
-    if (cancha) {
+    if (!cancha) {
+      setTurnosDisponibles([])
+      return
+    }
+
+    if (fecha) {
+      getTurnos(cancha.id, fecha, Number(partidoId))
+        .then(data => {
+          const duracion = cancha.duracion_turno || 60
+          const turnos = data.slots.map(s => {
+            const [h, m] = s.horario.split(":").map(Number)
+            const d = new Date()
+            d.setHours(h, m + duracion, 0, 0)
+            return { inicio: s.horario, fin: d.toTimeString().slice(0, 5), estado: s.estado }
+          })
+          setTurnosDisponibles(turnos)
+        })
+        .catch(err => console.warn("Error al cargar turnos:", err))
+    } else {
       const turnos = []
       const [aperturaH, aperturaM] = cancha.hora_apertura.split(":").map(Number)
       const [cierreH, cierreM] = cancha.hora_cierre.split(":").map(Number)
@@ -81,14 +99,12 @@ function EditarPartidoForm() {
         const finStr = actual.toTimeString().slice(0, 5)
         
         if (actual <= fin) {
-          turnos.push({ inicio: inicioStr, fin: finStr })
+          turnos.push({ inicio: inicioStr, fin: finStr, estado: "disponible" })
         }
       }
       setTurnosDisponibles(turnos)
-    } else {
-      setTurnosDisponibles([])
     }
-  }, [cancha])
+  }, [cancha, fecha, partidoId])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,7 +153,7 @@ function EditarPartidoForm() {
       })
       
     } catch (error: any) {
-      Swal.fire({ title: "Error", text: error.message || "No se pudo editar el partido", icon: "error", confirmButtonColor: "#FF6B4A" })
+      console.error("Error al editar el partido:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -255,11 +271,10 @@ function EditarPartidoForm() {
                 >
                   <option value="" disabled>Seleccioná un turno</option>
                   {turnosDisponibles.map((turno) => (
-                    <option key={turno.inicio} value={turno.inicio}>
-                      De {turno.inicio} a {turno.fin} hs
+                    <option key={turno.inicio} value={turno.inicio} disabled={turno.estado !== "disponible"}>
+                      De {turno.inicio} a {turno.fin} hs{turno.estado !== "disponible" ? " (Ocupado)" : ""}
                     </option>
                   ))}
-                  {/* Fallback option if current time is not in available slots (e.g. past time or custom) */}
                   {!turnosDisponibles.some(t => t.inicio === horario) && horario && (
                      <option value={horario}>De {horario} hs</option>
                   )}

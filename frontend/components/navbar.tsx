@@ -52,6 +52,19 @@ export function Navbar({ onLogout }: NavbarProps) {
                 Partidos
               </Link>
             )}
+            {role === "admin" && (
+              <Link
+                href="/agenda"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-foreground",
+                  pathname?.startsWith("/agenda")
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                Agenda
+              </Link>
+            )}
             <Link
               href="/canchas"
               className={cn(

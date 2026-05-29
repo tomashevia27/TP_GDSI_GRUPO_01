@@ -122,8 +122,39 @@ export default function EditarCanchaPage() {
       return
     }
 
+    const MINUTOS_VALIDOS = ["00", "15", "30", "45"]
+    if (!MINUTOS_VALIDOS.includes(apertura_m) || !MINUTOS_VALIDOS.includes(cierre_m)) {
+      Swal.fire({
+        title: "Atención",
+        text: "Los minutos deben ser 00, 15, 30 o 45.",
+        icon: "warning",
+        confirmButtonColor: "#FF6B4A",
+      })
+      return
+    }
+
+    if (apertura_m !== cierre_m) {
+      Swal.fire({
+        title: "Atención",
+        text: "Los minutos de apertura y cierre deben coincidir para evitar turnos incompletos.",
+        icon: "warning",
+        confirmButtonColor: "#FF6B4A",
+      })
+      return
+    }
+
     const hora_apertura = `${apertura_h.padStart(2, '0')}:${apertura_m.padStart(2, '0')}`
     const hora_cierre = `${cierre_h.padStart(2, '0')}:${cierre_m.padStart(2, '0')}`
+
+    if (hora_cierre <= hora_apertura) {
+      Swal.fire({
+        title: "Atención",
+        text: "La hora de cierre debe ser posterior a la de apertura.",
+        icon: "warning",
+        confirmButtonColor: "#FF6B4A",
+      })
+      return
+    }
 
     setIsLoading(true)
 
@@ -304,17 +335,29 @@ export default function EditarCanchaPage() {
               <div className="space-y-2">
                 <Label className="font-medium text-sm">Apertura (24hs) *</Label>
                 <div className="flex items-center space-x-2">
-                  <Input name="apertura_h" type="number" min="0" max="23" placeholder="HH" value={formData.apertura_h} onChange={handleChange} className="bg-input border-0 text-center h-11" />
+                  <Input name="apertura_h" type="number" min="0" max="23" placeholder="HH" value={formData.apertura_h} onChange={handleChange} className="bg-input border-0 text-center h-11 w-[80px]" />
                   <span className="font-bold text-muted-foreground">:</span>
-                  <Input name="apertura_m" type="number" min="0" max="59" placeholder="MM" value={formData.apertura_m} onChange={handleChange} className="bg-input border-0 text-center h-11" />
+                  <select name="apertura_m" value={formData.apertura_m} onChange={(e) => setFormData(p => ({ ...p, apertura_m: e.target.value }))} className="flex h-11 w-[80px] rounded-lg bg-input px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option value="" disabled>MM</option>
+                    <option value="00">00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                  </select>
                 </div>
               </div>
               <div className="space-y-2">
                 <Label className="font-medium text-sm">Cierre (24hs) *</Label>
                 <div className="flex items-center space-x-2">
-                  <Input name="cierre_h" type="number" min="0" max="23" placeholder="HH" value={formData.cierre_h} onChange={handleChange} className="bg-input border-0 text-center h-11" />
+                  <Input name="cierre_h" type="number" min="0" max="23" placeholder="HH" value={formData.cierre_h} onChange={handleChange} className="bg-input border-0 text-center h-11 w-[80px]" />
                   <span className="font-bold text-muted-foreground">:</span>
-                  <Input name="cierre_m" type="number" min="0" max="59" placeholder="MM" value={formData.cierre_m} onChange={handleChange} className="bg-input border-0 text-center h-11" />
+                  <select name="cierre_m" value={formData.cierre_m} onChange={(e) => setFormData(p => ({ ...p, cierre_m: e.target.value }))} className="flex h-11 w-[80px] rounded-lg bg-input px-2 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-ring">
+                    <option value="" disabled>MM</option>
+                    <option value="00">00</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="45">45</option>
+                  </select>
                 </div>
               </div>
             </div>
