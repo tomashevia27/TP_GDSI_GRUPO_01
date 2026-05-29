@@ -33,4 +33,7 @@ pnpm-debug.log*
 # Archivos del sistema
 .DS_Store
 
+# Base de datos SQLite
+*.db
+
 
