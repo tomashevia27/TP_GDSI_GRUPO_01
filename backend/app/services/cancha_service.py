@@ -8,11 +8,32 @@ from ..repositories import cancha_repository
 from ..repositories import partido_repository
 from ..schemas.cancha_schemas import CanchaCreate, CanchaUpdate, AgendaSlot, AgendaRespuesta
 
+MINUTOS_VALIDOS = {0, 15, 30, 45}
+
 def parse_time(time_str: str):
     try:
         return datetime.strptime(time_str, "%H:%M").time()
     except ValueError:
         raise HTTPException(status_code=400, detail="El formato de hora debe ser HH:MM")
+
+
+def validar_minutos_cancha(hora_apertura: str, hora_cierre: str):
+    """Valida que los minutos sean 00/15/30/45 y que ambos coincidan para evitar turnos incompletos."""
+    try:
+        ap_min = int(hora_apertura.split(":")[1])
+        ci_min = int(hora_cierre.split(":")[1])
+    except (IndexError, ValueError):
+        raise HTTPException(status_code=400, detail="El formato de hora debe ser HH:MM")
+
+    if ap_min not in MINUTOS_VALIDOS:
+        raise HTTPException(status_code=400, detail="Los minutos de apertura deben ser 00, 15, 30 o 45")
+    if ci_min not in MINUTOS_VALIDOS:
+        raise HTTPException(status_code=400, detail="Los minutos de cierre deben ser 00, 15, 30 o 45")
+    if ap_min != ci_min:
+        raise HTTPException(
+            status_code=400,
+            detail="Los minutos de apertura y cierre deben coincidir para evitar turnos incompletos"
+        )
 
 
 def crear_cancha(db: Session, current_user: Usuario, datos: CanchaCreate) -> dict:
@@ -24,14 +45,17 @@ def crear_cancha(db: Session, current_user: Usuario, datos: CanchaCreate) -> dic
 
     propietario_id = current_user.id
 
-    # 1. Validar que la hora de cierre sea posterior a la de apertura
+    # 1. Validar minutos de apertura/cierre (00/15/30/45, ambos iguales)
+    validar_minutos_cancha(datos.hora_apertura, datos.hora_cierre)
+
+    # 2. Validar que la hora de cierre sea posterior a la de apertura
     hora_apertura = parse_time(datos.hora_apertura)
     hora_cierre = parse_time(datos.hora_cierre)
     
     if hora_cierre <= hora_apertura:
         raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
         
-    # 2. Validar que el precio sea mayor a cero (aunque Pydantic lo hace, doble validación por las dudas)
+    # 3. Validar que el precio sea mayor a cero (aunque Pydantic lo hace, doble validación por las dudas)
     if datos.precio_por_turno <= 0:
         raise HTTPException(status_code=400, detail="El precio por turno debe ser mayor a cero")
 
@@ -73,6 +97,9 @@ def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: Can
     # Validar que el usuario autenticado sea el propietario de la cancha
     if current_user.rol != RolUsuario.admin or cancha.propietario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Solo los dueños de cancha pueden editar canchas")
+
+    # Validar minutos de apertura/cierre (00/15/30/45, ambos iguales)
+    validar_minutos_cancha(datos.hora_apertura, datos.hora_cierre)
 
     # Validar que la hora de cierre sea posterior a la de apertura
     hora_apertura = parse_time(datos.hora_apertura)
