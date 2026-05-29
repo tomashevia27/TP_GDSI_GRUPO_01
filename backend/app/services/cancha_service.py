@@ -141,6 +141,57 @@ def eliminar_canchas_por_admin(db: Session, current_user: Usuario):
     return {"mensaje": "Todas las canchas del administrador han sido eliminadas"}
 
 
+def obtener_turnos_disponibles(db: Session, cancha_id: int, fecha: date, excluir_partido_id: int = None):
+    """Genera los turnos de una cancha para una fecha con su estado.
+    Versión pública (sin verificación de propietario) para usar al crear/editar partidos."""
+    cancha = cancha_repository.obtener_por_id(db, cancha_id)
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+
+    dia_semana = fecha.weekday()
+    if not (cancha.dias_operativos & DIAS_SEMANA_MAP[dia_semana]):
+        return []
+
+    duracion = cancha.duracion_turno
+    apertura = datetime.strptime(cancha.hora_apertura, "%H:%M")
+    if cancha.hora_cierre == "24:00":
+        cierre = datetime.strptime("00:00", "%H:%M") + timedelta(days=1)
+    else:
+        cierre = datetime.strptime(cancha.hora_cierre, "%H:%M")
+
+    turnos = []
+    actual = apertura
+    while actual < cierre:
+        fin_slot = actual + timedelta(minutes=duracion)
+        if fin_slot > cierre:
+            break
+        turnos.append({
+            "horario": actual.strftime("%H:%M"),
+            "estado": "disponible",
+        })
+        actual = fin_slot
+
+    partidos = partido_repository.obtener_partidos_por_cancha_y_fecha(db, cancha_id, fecha)
+
+    duracion_td = timedelta(minutes=duracion)
+
+    for turno in turnos:
+        turno_inicio = datetime.combine(fecha, datetime.strptime(turno["horario"], "%H:%M").time())
+        turno_fin = turno_inicio + duracion_td
+
+        for p in partidos:
+            if excluir_partido_id is not None and p.id == excluir_partido_id:
+                continue
+            p_inicio = datetime.combine(p.fecha, p.horario)
+            p_fin = p_inicio + duracion_td
+
+            if turno_inicio < p_fin and turno_fin > p_inicio:
+                turno["estado"] = "bloqueado" if p.estado == "bloqueado" else "ocupado"
+                break
+
+    return turnos
+
+
 DIAS_SEMANA_MAP = {
     0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64
 }

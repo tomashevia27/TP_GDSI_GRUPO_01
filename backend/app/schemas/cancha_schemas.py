@@ -95,3 +95,15 @@ class AgendaRespuesta(BaseModel):
     cancha: CanchaRespuesta
     fecha: date
     slots: list[AgendaSlot]
+
+# -----------------------------------------
+# Turnos públicos (sin datos sensibles)
+# -----------------------------------------
+class TurnoSlot(BaseModel):
+    horario: str
+    estado: str  # "disponible" | "ocupado" | "bloqueado"
+
+class TurnosRespuesta(BaseModel):
+    cancha_id: int
+    fecha: date
+    slots: list[TurnoSlot]

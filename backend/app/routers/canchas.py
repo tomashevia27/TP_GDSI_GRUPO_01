@@ -5,7 +5,7 @@ from datetime import date
 
 from ..db import get_db
 from ..models.usuario_model import Usuario
-from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta, CanchaUpdate, AgendaRespuesta
+from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta, CanchaUpdate, AgendaRespuesta, TurnosRespuesta, TurnoSlot
 from ..services import cancha_service
 from ..security import get_current_user
 
@@ -79,3 +79,20 @@ def obtener_agenda_cancha(
 ):
     """Obtiene la agenda de una cancha para una fecha específica (turnos disponible/ocupado)."""
     return cancha_service.obtener_agenda(db, current_user, cancha_id, fecha)
+
+
+@router.get("/{cancha_id}/turnos", response_model=TurnosRespuesta)
+def obtener_turnos_cancha(
+    cancha_id: int,
+    fecha: date = Query(...),
+    excluir_partido_id: int = Query(None),
+    db: Session = Depends(get_db),
+):
+    """Obtiene los turnos de una cancha para una fecha con su estado (disponible/ocupado/bloqueado).
+    Endpoint público para usar al crear o editar partidos."""
+    turnos = cancha_service.obtener_turnos_disponibles(db, cancha_id, fecha, excluir_partido_id)
+    return TurnosRespuesta(
+        cancha_id=cancha_id,
+        fecha=fecha,
+        slots=[TurnoSlot(**t) for t in turnos]
+    )

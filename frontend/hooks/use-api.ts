@@ -585,6 +585,30 @@ export interface AgendaData {
   slots: AgendaSlot[]
 }
 
+export interface TurnoSlot {
+  horario: string
+  estado: "disponible" | "ocupado" | "bloqueado"
+}
+
+export interface TurnosRespuesta {
+  cancha_id: number
+  fecha: string
+  slots: TurnoSlot[]
+}
+
+export async function getTurnos(canchaId: number | string, fecha: string, excluirPartidoId?: number): Promise<TurnosRespuesta> {
+  let url = `${API_URL}/canchas/${canchaId}/turnos?fecha=${fecha}`
+  if (excluirPartidoId !== undefined) {
+    url += `&excluir_partido_id=${excluirPartidoId}`
+  }
+  const response = await fetch(url)
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar los turnos")
+  }
+  return data
+}
+
 export async function getAgenda(canchaId: number | string, fecha: string): Promise<AgendaData> {
   const response = await fetch(`${API_URL}/canchas/${canchaId}/agenda?fecha=${fecha}`, {
     headers: {

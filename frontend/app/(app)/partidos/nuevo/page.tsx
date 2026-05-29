@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { MapPin, Info, ArrowLeft, Clock, DollarSign, Zap } from "lucide-react"
 import Swal from "sweetalert2"
-import { crearPartido } from "@/hooks/use-api"
+import { crearPartido, getTurnos } from "@/hooks/use-api"
 
 const API_URL = "http://localhost:8000"
 
@@ -27,10 +27,29 @@ function NuevoPartidoForm() {
   const [tipo, setTipo] = useState("abierto")
   const [cuposDisponibles, setCuposDisponibles] = useState("")
   const [descripcion, setDescripcion] = useState("")
-  const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string }[]>([])
+  const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string; estado: string }[]>([])
 
   useEffect(() => {
-    if (cancha) {
+    if (!cancha) {
+      setTurnosDisponibles([])
+      setHorario("")
+      return
+    }
+
+    if (fecha) {
+      getTurnos(cancha.id, fecha)
+        .then(data => {
+          const duracion = cancha.duracion_turno || 60
+          const turnos = data.slots.map(s => {
+            const [h, m] = s.horario.split(":").map(Number)
+            const d = new Date()
+            d.setHours(h, m + duracion, 0, 0)
+            return { inicio: s.horario, fin: d.toTimeString().slice(0, 5), estado: s.estado }
+          })
+          setTurnosDisponibles(turnos)
+        })
+        .catch(err => console.warn("Error al cargar turnos:", err))
+    } else {
       const turnos = []
       const [aperturaH, aperturaM] = cancha.hora_apertura.split(":").map(Number)
       const [cierreH, cierreM] = cancha.hora_cierre.split(":").map(Number)
@@ -48,15 +67,13 @@ function NuevoPartidoForm() {
         const finStr = actual.toTimeString().slice(0, 5)
         
         if (actual <= fin) {
-          turnos.push({ inicio: inicioStr, fin: finStr })
+          turnos.push({ inicio: inicioStr, fin: finStr, estado: "disponible" })
         }
       }
       setTurnosDisponibles(turnos)
-    } else {
-      setTurnosDisponibles([])
     }
     setHorario("")
-  }, [cancha])
+  }, [cancha, fecha])
 
   useEffect(() => {
     async function fetchData() {
@@ -148,7 +165,7 @@ function NuevoPartidoForm() {
       })
       
     } catch (error: any) {
-      Swal.fire({ title: "Error", text: error.message || "No se pudo crear el partido", icon: "error", confirmButtonColor: "#FF6B4A" })
+      console.error("Error al crear el partido:", error)
     } finally {
       setIsSubmitting(false)
     }
@@ -266,7 +283,7 @@ function NuevoPartidoForm() {
                 >
                   <option value="" disabled>Seleccioná un turno</option>
                   {turnosDisponibles.map((turno) => (
-                    <option key={turno.inicio} value={turno.inicio}>
+                    <option key={turno.inicio} value={turno.inicio} disabled={turno.estado !== "disponible"}>
                       De {turno.inicio} a {turno.fin} hs
                     </option>
                   ))}
