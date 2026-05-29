@@ -1,5 +1,5 @@
 from datetime import datetime, date, timedelta, timezone
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from ..models.partido_model import Partido
 from ..models.usuario_model import Usuario
 from sqlalchemy import or_, and_, func
@@ -90,7 +90,7 @@ def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime
     query = db.query(Partido).filter(
         Partido.cancha_id == cancha_id,
         Partido.fecha == fecha,
-        Partido.estado.in_(["confirmado", "pendiente"])
+        Partido.estado.in_(["confirmado", "pendiente", "bloqueado"])
     )
     
     if excluir_partido_id is not None:
@@ -110,6 +110,16 @@ def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime
             return False
 
     return True
+
+def obtener_partidos_por_cancha_y_fecha(db: Session, cancha_id: int, fecha: date):
+    """Obtiene todos los partidos no cancelados de una cancha en una fecha."""
+    return db.query(Partido).options(
+        joinedload(Partido.organizador)
+    ).filter(
+        Partido.cancha_id == cancha_id,
+        Partido.fecha == fecha,
+        Partido.estado != "Cancelado"
+    ).all()
 
 def guardar_partido(db: Session, partido: Partido):
     """Guarda un nuevo partido en la base de datos."""

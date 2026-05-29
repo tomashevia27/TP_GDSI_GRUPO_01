@@ -6,9 +6,10 @@ from datetime import datetime, date, timedelta, timezone
 TZ_LOCAL = timezone(timedelta(hours=-3))
 
 from ..models.partido_model import Partido
+from ..models.usuario_model import Usuario, RolUsuario
 from ..repositories import partido_repository
 from ..repositories import usuario_repository
-from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate
+from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, ReservaManualCreate
 from ..repositories import cancha_repository
 from ..services import notificacion_service
 
@@ -506,3 +507,225 @@ def editar_partido(
     db.commit()
     db.refresh(partido)
     return partido
+
+
+def crear_reserva_manual(
+    db: Session,
+    current_user: Usuario,
+    datos: ReservaManualCreate,
+):
+    """Crea una reserva manual en nombre de un dueño de cancha."""
+    if current_user.rol != RolUsuario.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los dueños de cancha pueden cargar reservas manuales"
+        )
+
+    # Validar que no sea un turno pasado o en curso
+    hora_partido = datos.horario.replace(tzinfo=None)
+    now = datetime.now(TZ_LOCAL).replace(tzinfo=None)
+
+    if (
+        datos.fecha < now.date()
+        or (
+            datos.fecha == now.date()
+            and hora_partido <= now.time()
+        )
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede reservar un turno que ya pasó o está en curso"
+        )
+
+    cancha = cancha_repository.obtener_por_id(db, datos.cancha_id)
+
+    if cancha.propietario_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés cargar una reserva en una cancha que no te pertenece"
+        )
+
+    if not cancha.activa:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está activa"
+        )
+
+    # Validar día operativo
+    dia_semana = datos.fecha.weekday()
+    if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no opera ese día"
+        )
+
+    # Validar horario dentro del rango
+    hora_apertura = datetime.strptime(cancha.hora_apertura, "%H:%M").time()
+    if cancha.hora_cierre == "24:00":
+        hora_cierre = datetime.strptime("23:59", "%H:%M").time()
+    else:
+        hora_cierre = datetime.strptime(cancha.hora_cierre, "%H:%M").time()
+
+    if hora_partido < hora_apertura or hora_partido >= hora_cierre:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está disponible en ese horario"
+        )
+
+    # Validar disponibilidad (sin solapamiento)
+    cancha_disponible = partido_repository.verificar_disponibilidad_cancha(
+        db, datos.cancha_id, datos.fecha, datos.horario, cancha.duracion_turno
+    )
+    if not cancha_disponible:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está disponible en la fecha y horario seleccionados"
+        )
+
+    modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
+    if not modalidad:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha tiene un tamaño inválido"
+        )
+
+    cantidad_jugadores = cancha.tamano * 2
+
+    nuevo_partido = Partido(
+        cancha_id=datos.cancha_id,
+        fecha=datos.fecha,
+        horario=datos.horario,
+        modalidad=modalidad,
+        tipo="cerrado",
+        cantidad_jugadores=cantidad_jugadores,
+        cupos_disponibles=0,
+        descripcion=None,
+        estado="pendiente",
+        organizador_id=current_user.id,
+        cliente_nombre=datos.cliente_nombre,
+        cliente_apellido=datos.cliente_apellido,
+        cliente_telefono=datos.cliente_telefono,
+        reserva_manual=True,
+    )
+
+    resultado = partido_repository.guardar_partido(db, nuevo_partido)
+    db.commit()
+
+    return resultado
+
+
+def crear_bloqueo_turno(
+    db: Session,
+    current_user: Usuario,
+    datos: ReservaManualCreate,
+):
+    """Bloquea un turno para que no esté disponible."""
+    if current_user.rol != RolUsuario.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los dueños de cancha pueden bloquear turnos"
+        )
+
+    cancha = cancha_repository.obtener_por_id(db, datos.cancha_id)
+
+    if cancha.propietario_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés bloquear un turno en una cancha que no te pertenece"
+        )
+
+    if not cancha.activa:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está activa"
+        )
+
+    # Validar día operativo
+    dia_semana = datos.fecha.weekday()
+    if not (cancha.dias_operativos & DIAS_SEMANA[dia_semana]):
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no opera ese día"
+        )
+
+    # Validar horario dentro del rango
+    hora_partido = datos.horario.replace(tzinfo=None)
+    hora_apertura = datetime.strptime(cancha.hora_apertura, "%H:%M").time()
+    if cancha.hora_cierre == "24:00":
+        hora_cierre = datetime.strptime("23:59", "%H:%M").time()
+    else:
+        hora_cierre = datetime.strptime(cancha.hora_cierre, "%H:%M").time()
+
+    if hora_partido < hora_apertura or hora_partido >= hora_cierre:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está disponible en ese horario"
+        )
+
+    # Validar disponibilidad (sin solapamiento)
+    cancha_disponible = partido_repository.verificar_disponibilidad_cancha(
+        db, datos.cancha_id, datos.fecha, datos.horario, cancha.duracion_turno
+    )
+    if not cancha_disponible:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha no está disponible en la fecha y horario seleccionados"
+        )
+
+    modalidad = TAMANOS_MODALIDAD.get(cancha.tamano)
+    if not modalidad:
+        raise HTTPException(
+            status_code=400,
+            detail="La cancha tiene un tamaño inválido"
+        )
+
+    cantidad_jugadores = cancha.tamano * 2
+
+    nuevo_partido = Partido(
+        cancha_id=datos.cancha_id,
+        fecha=datos.fecha,
+        horario=datos.horario,
+        modalidad=modalidad,
+        tipo="cerrado",
+        cantidad_jugadores=cantidad_jugadores,
+        cupos_disponibles=0,
+        descripcion=None,
+        estado="bloqueado",
+        organizador_id=current_user.id,
+        reserva_manual=True,
+    )
+
+    resultado = partido_repository.guardar_partido(db, nuevo_partido)
+    db.commit()
+
+    return resultado
+
+
+def eliminar_bloqueo_turno(
+    db: Session,
+    current_user: Usuario,
+    partido_id: int,
+):
+    """Elimina el bloqueo de un turno."""
+    partido = partido_repository.obtener_por_id(db, partido_id)
+
+    if not partido:
+        raise HTTPException(status_code=404, detail="Bloqueo no encontrado")
+
+    if partido.estado != "bloqueado":
+        raise HTTPException(
+            status_code=400,
+            detail="El turno no está bloqueado"
+        )
+
+    cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
+    if cancha.propietario_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No podés desbloquear un turno en una cancha que no te pertenece"
+        )
+
+    db.delete(partido)
+    db.commit()
+
+    return {"mensaje": "Bloqueo eliminado exitosamente"}

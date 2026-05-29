@@ -20,6 +20,14 @@ class PartidoCreate(BaseModel):
     descripcion: Optional[str] = None
     cupos_disponibles: Optional[int] = None
 
+class ReservaManualCreate(BaseModel):
+    cancha_id: int
+    fecha: date
+    horario: time
+    cliente_nombre: Optional[str] = None
+    cliente_apellido: Optional[str] = None
+    cliente_telefono: Optional[str] = None
+
 class PartidoUpdate(BaseModel):
     cancha_id: int
     fecha: date
@@ -42,6 +50,10 @@ class PartidoRespuesta(BaseModel):
     cancha: Optional[CanchaBasica] = None
     organizador: Optional[UsuarioRespuesta] = None
     jugadores: List[UsuarioRespuesta] = []
+    cliente_nombre: Optional[str] = None
+    cliente_apellido: Optional[str] = None
+    cliente_telefono: Optional[str] = None
+    reserva_manual: Optional[bool] = False
 
     model_config = ConfigDict(from_attributes=True)
 

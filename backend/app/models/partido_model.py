@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date, Time, Table
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Time, Table
 from sqlalchemy.orm import relationship
 from ..db import Base
 
@@ -23,6 +23,10 @@ class Partido(Base):
     descripcion = Column(String, nullable=True)
     estado = Column(String, nullable=False, default="pendiente")
     organizador_id = Column(Integer, ForeignKey("usuarios.id")) # hay que agregar nullable=False luego
+    cliente_nombre = Column(String(200), nullable=True)
+    cliente_apellido = Column(String(200), nullable=True)
+    cliente_telefono = Column(String(50), nullable=True)
+    reserva_manual = Column(Boolean, default=False)
 
     cancha = relationship("Cancha", back_populates="partidos")
     organizador = relationship("Usuario", back_populates="partidos_organizados")

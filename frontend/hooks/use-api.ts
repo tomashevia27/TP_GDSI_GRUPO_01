@@ -564,3 +564,97 @@ export async function eliminarTodasNotificaciones(): Promise<{ mensaje: string }
   }
   return data
 }
+
+// ─────────────────────────────────────────────
+// US Sprint 4: Agenda y Reserva Manual
+// ─────────────────────────────────────────────
+
+export interface AgendaSlot {
+  horario: string
+  estado: "disponible" | "ocupado" | "bloqueado"
+  partido_id?: number
+  cliente_nombre?: string
+  cliente_telefono?: string
+  organizador_nombre?: string
+  es_manual?: boolean
+}
+
+export interface AgendaData {
+  cancha: CanchaData & { id: number }
+  fecha: string
+  slots: AgendaSlot[]
+}
+
+export async function getAgenda(canchaId: number | string, fecha: string): Promise<AgendaData> {
+  const response = await fetch(`${API_URL}/canchas/${canchaId}/agenda?fecha=${fecha}`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar la agenda")
+  }
+  return data
+}
+
+export interface ReservaManualData {
+  cancha_id: number
+  fecha: string
+  horario: string
+  cliente_nombre?: string
+  cliente_apellido?: string
+  cliente_telefono?: string
+}
+
+export async function crearReservaManual(reservaData: ReservaManualData): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/reservas/manual`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(reservaData),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al crear la reserva manual")
+  }
+  return data
+}
+
+export async function bloquearTurno(data: ReservaManualData): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/reservas/bloquear`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(data),
+  })
+  const result = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(result.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(result.detail || "Error al bloquear el turno")
+  }
+  return result
+}
+
+export async function desbloquearTurno(partidoId: number): Promise<{ mensaje: string }> {
+  const response = await fetch(`${API_URL}/reservas/bloquear/${partidoId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al desbloquear el turno")
+  }
+  return data
+}
