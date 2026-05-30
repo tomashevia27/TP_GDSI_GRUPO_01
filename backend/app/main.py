@@ -1,9 +1,12 @@
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
+from .core.exceptions import DomainRuleError, DomainPermissionError
+
 from .routers import auth, canchas, users, partidos, notificaciones, reservas
-from .db import engine, Base
+from .core.db import engine, Base
 
 # Crear tablas
 Base.metadata.create_all(bind=engine)
@@ -22,6 +25,20 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"mensaje": "El backend esta vivo"}
+
+@app.exception_handler(DomainRuleError)
+async def domain_rule_exception_handler(request: Request, exc: DomainRuleError):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": str(exc)},
+    )
+
+@app.exception_handler(DomainPermissionError)
+async def domain_permission_exception_handler(request: Request, exc: DomainPermissionError):
+    return JSONResponse(
+        status_code=403,
+        content={"detail": str(exc)},
+    )
 
 # Incluir routers
 app.include_router(auth.router)

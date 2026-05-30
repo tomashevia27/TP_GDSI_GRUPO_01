@@ -3,7 +3,7 @@ import enum
 from sqlalchemy import Column, Integer, String, Text, Boolean, Enum
 from sqlalchemy.orm import relationship
 
-from ..db import Base
+from ..core.db import Base
 
 class RolUsuario(str, enum.Enum):
     jugador = "jugador"

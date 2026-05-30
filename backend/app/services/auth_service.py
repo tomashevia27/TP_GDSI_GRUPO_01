@@ -6,7 +6,7 @@ from ..models.usuario_model import Usuario
 from ..repositories import usuario_repository
 from ..schemas.usuario_schemas import UsuarioRegistro, UsuarioLogin
 from . import email_service
-from ..security import create_access_token
+from ..core.security import create_access_token
 
 
 def registrar(db: Session, usuario: UsuarioRegistro) -> dict:

@@ -2,7 +2,7 @@ from datetime import datetime, date, timedelta
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
-from ..db import Base
+from ..core.db import Base
 
 DIAS_SEMANA_MAP = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64}
 
@@ -55,4 +55,4 @@ class Cancha(Base):
     def verificar_propietario(self, usuario_id, mensaje_error):
         """Verifica si el usuario es el propietario de la cancha."""
         if self.propietario_id != usuario_id:
-            raise PermissionError(mensaje_error)
+            raise DomainPermissionError(mensaje_error)

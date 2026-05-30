@@ -1,9 +1,7 @@
 from sqlalchemy.orm import Session
 from . import notificacion_service
 
-def _formatear_fecha_hora(fecha, horario):
-    """Devuelve tupla (fecha_str, hora_str) formateada."""
-    return fecha.strftime("%d/%m/%Y"), horario.strftime("%H:%M")
+
 
 def _obtener_nombre_completo(usuario):
     """Devuelve el nombre completo del usuario, manejando nulos."""
@@ -14,7 +12,7 @@ def _obtener_nombre_cancha(partido):
 
 def _obtener_datos_base_partido(partido):
     """Devuelve (nombre_organizador, cancha_nombre, fecha_str, hora_str)"""
-    fecha_str, hora_str = _formatear_fecha_hora(partido.fecha, partido.horario)
+    fecha_str, hora_str = partido.obtener_fecha_hora_legible()
     return (
         _obtener_nombre_completo(partido.organizador),
         _obtener_nombre_cancha(partido),
@@ -140,7 +138,7 @@ def notificar_reserva_cancelada_por_dueno(db: Session, cancha, partido):
 
 
 def notificar_reserva_reprogramada(db: Session, cancha, partido, fecha_ant, horario_ant, cancha_id_ant):
-    f_ant_str, h_ant_str = _formatear_fecha_hora(fecha_ant, horario_ant)
+    f_ant_str, h_ant_str = fecha_ant.strftime("%d/%m/%Y"), horario_ant.strftime("%H:%M")
     _, _, f_nueva_str, h_nueva_str = _obtener_datos_base_partido(partido)
     
     mensaje = f"El complejo reprogramó tu reserva en {cancha.nombre}: del {f_ant_str} a las {h_ant_str}hs al {f_nueva_str} a las {h_nueva_str}hs."

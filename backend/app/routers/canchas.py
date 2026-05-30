@@ -3,11 +3,11 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import date
 
-from ..db import get_db
+from ..core.dependencies import get_db
 from ..models.usuario_model import Usuario
 from ..schemas.cancha_schemas import CanchaCreate, CanchaRespuesta, CanchaUpdate, AgendaRespuesta, TurnosRespuesta, TurnoSlot
 from ..services import cancha_service
-from ..security import get_current_user
+from ..core.dependencies import get_current_user
 
 router = APIRouter(prefix="/canchas", tags=["Canchas"])
 

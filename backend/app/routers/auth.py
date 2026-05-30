@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..core.dependencies import get_db
 from ..schemas.usuario_schemas import UsuarioRegistro, UsuarioLogin
 from ..services import auth_service
 

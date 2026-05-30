@@ -26,15 +26,6 @@ TAMANOS_MODALIDAD = {
 # Helpers Internos
 # ─────────────────────────────────────────────
 
-def _ejecutar_metodo_dominio(metodo, *args, **kwargs):
-    """Ejecuta un método del modelo de dominio y captura errores para retornar HTTPExceptions."""
-    try:
-        return metodo(*args, **kwargs)
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
 def _obtener_ahora_local():
     """Obtiene la fecha y hora actual en la zona horaria local, sin información de zona."""
     return datetime.now(TZ_LOCAL).replace(tzinfo=None)
@@ -118,7 +109,7 @@ def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
     if usuario.rol == RolUsuario.admin:
         raise HTTPException(status_code=403, detail="Los dueños de cancha no pueden inscribirse a partidos")
 
-    _ejecutar_metodo_dominio(partido.inscribir_jugador, usuario)
+    partido.inscribir_jugador(usuario)
 
     resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
     partido_notificador.notificar_inscripcion(db, partido, usuario)
@@ -134,7 +125,7 @@ def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    _ejecutar_metodo_dominio(partido.bajar_jugador, usuario, _obtener_ahora_local())
+    partido.bajar_jugador(usuario, _obtener_ahora_local())
 
     resultado = partido_repository.guardar_baja_inscripcion(db, partido, usuario)
     partido_notificador.notificar_baja(db, partido, usuario)
@@ -157,11 +148,8 @@ def crear_partido(db: Session, organizador_id: int, datos: PartidoCreate):
     )
 
     if datos.tipo == "abierto":
-        nuevo_partido = _ejecutar_metodo_dominio(
-            Partido.crear_abierto,
-            cancha.id, datos.fecha, datos.horario, modalidad, cantidad_jugadores, 
-            datos.cupos_disponibles, datos.descripcion, organizador_id
-        )
+        nuevo_partido = Partido.crear_abierto(cancha.id, datos.fecha, datos.horario, modalidad, cantidad_jugadores, 
+            datos.cupos_disponibles, datos.descripcion, organizador_id)
     else:
         nuevo_partido = Partido.crear_cerrado(
             cancha.id, datos.fecha, datos.horario, modalidad, cantidad_jugadores, 
@@ -178,7 +166,7 @@ def editar_partido(db: Session, partido_id: int, usuario_id: int, datos: Partido
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
         
-    _ejecutar_metodo_dominio(partido.verificar_edicion, usuario_id)
+    partido.verificar_edicion(usuario_id)
     _validar_fecha_futura(partido.fecha, partido.horario, "No se puede editar un partido que ya pasó")
     
     nueva_fecha = datos.fecha if datos.fecha is not None else partido.fecha
@@ -204,10 +192,7 @@ def editar_partido(db: Session, partido_id: int, usuario_id: int, datos: Partido
     descripcion_anterior = partido.descripcion
     cupos_anterior = partido.cupos_disponibles
 
-    _ejecutar_metodo_dominio(
-        partido.actualizar_datos,
-        nueva_cancha_id, nueva_fecha, nuevo_horario, modalidad, cantidad_jugadores, nuevo_tipo, nuevo_cupos, datos.descripcion
-    )
+    partido.actualizar_datos(nueva_cancha_id, nueva_fecha, nuevo_horario, modalidad, cantidad_jugadores, nuevo_tipo, nuevo_cupos, datos.descripcion)
 
     cambios = {}
     if fecha_anterior != nueva_fecha:
@@ -242,7 +227,7 @@ def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
         
-    _ejecutar_metodo_dominio(partido.cancelar_por_organizador, usuario_id)
+    partido.cancelar_por_organizador(usuario_id)
     _validar_fecha_futura(partido.fecha, partido.horario, "No se puede cancelar un partido que ya pasó")
 
     partido_notificador.notificar_partido_cancelado(db, partido)
@@ -270,7 +255,7 @@ def crear_reserva_manual(db: Session, current_user: Usuario, datos: ReservaManua
         db, datos.cancha_id, datos.fecha, datos.horario
     )
 
-    _ejecutar_metodo_dominio(cancha.verificar_propietario, current_user.id, "No podés cargar una reserva en una cancha que no te pertenece")
+    cancha.verificar_propietario(current_user.id, "No podés cargar una reserva en una cancha que no te pertenece")
 
     nuevo_partido = Partido.crear_reserva_manual(
         cancha.id, datos.fecha, datos.horario, modalidad, cantidad_jugadores,
@@ -289,7 +274,7 @@ def crear_bloqueo_turno(db: Session, current_user: Usuario, datos: ReservaManual
         db, datos.cancha_id, datos.fecha, datos.horario
     )
 
-    _ejecutar_metodo_dominio(cancha.verificar_propietario, current_user.id, "No podés bloquear un turno en una cancha que no te pertenece")
+    cancha.verificar_propietario(current_user.id, "No podés bloquear un turno en una cancha que no te pertenece")
 
     nuevo_partido = Partido.crear_bloqueo(
         cancha.id, datos.fecha, datos.horario, modalidad, cantidad_jugadores, current_user.id
@@ -304,10 +289,10 @@ def eliminar_bloqueo_turno(db: Session, current_user: Usuario, partido_id: int):
     if not partido:
         raise HTTPException(status_code=404, detail="Bloqueo no encontrado")
         
-    _ejecutar_metodo_dominio(partido.verificar_desbloqueo)
+    partido.verificar_desbloqueo()
 
     cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
-    _ejecutar_metodo_dominio(cancha.verificar_propietario, current_user.id, "No podés desbloquear un turno en una cancha que no te pertenece")
+    cancha.verificar_propietario(current_user.id, "No podés desbloquear un turno en una cancha que no te pertenece")
 
     db.delete(partido)
     db.commit()
@@ -323,8 +308,8 @@ def cancelar_reserva_dueno(db: Session, current_user: Usuario, partido_id: int):
 
     cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
     
-    _ejecutar_metodo_dominio(cancha.verificar_propietario, current_user.id, "No podés cancelar reservas de canchas que no te pertenecen")
-    _ejecutar_metodo_dominio(partido.cancelar_por_admin)
+    cancha.verificar_propietario(current_user.id, "No podés cancelar reservas de canchas que no te pertenecen")
+    partido.cancelar_por_admin()
 
     if not partido.reserva_manual and partido.organizador_id:
         partido_notificador.notificar_reserva_cancelada_por_dueno(db, cancha, partido)
@@ -341,7 +326,7 @@ def reprogramar_reserva(db: Session, current_user: Usuario, partido_id: int, dat
     if not partido:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
 
-    _ejecutar_metodo_dominio(partido.verificar_reprogramacion)
+    partido.verificar_reprogramacion()
 
     cancha_id_destino = datos.cancha_id if datos.cancha_id else partido.cancha_id
     
@@ -351,11 +336,11 @@ def reprogramar_reserva(db: Session, current_user: Usuario, partido_id: int, dat
         db, cancha_id_destino, datos.fecha, datos.horario, excluir_partido_id=partido.id
     )
 
-    _ejecutar_metodo_dominio(cancha.verificar_propietario, current_user.id, "No podés reprogramar reservas en canchas que no te pertenecen")
+    cancha.verificar_propietario(current_user.id, "No podés reprogramar reservas en canchas que no te pertenecen")
 
     if datos.cancha_id and datos.cancha_id != partido.cancha_id:
         cancha_original = cancha_repository.obtener_por_id(db, partido.cancha_id)
-        _ejecutar_metodo_dominio(cancha_original.verificar_propietario, current_user.id, "No podés mover reservas desde canchas que no te pertenecen")
+        cancha_original.verificar_propietario(current_user.id, "No podés mover reservas desde canchas que no te pertenecen")
 
     fecha_anterior = partido.fecha
     horario_anterior = partido.horario

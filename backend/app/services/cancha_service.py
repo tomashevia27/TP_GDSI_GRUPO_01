@@ -48,11 +48,9 @@ def _validar_horarios_apertura_cierre(hora_apertura: str, hora_cierre: str):
     if min_cierre <= min_apertura:
         raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
 
-def _verificar_permisos_admin(current_user: Usuario, propietario_cancha_id: int = None):
+def _verificar_rol_admin(current_user: Usuario):
     if current_user.rol != RolUsuario.admin:
         raise HTTPException(status_code=403, detail="Acción permitida solo para dueños de canchas")
-    if propietario_cancha_id is not None and propietario_cancha_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Solo el propietario puede modificar o ver esta información")
 
 def _obtener_cancha_existente(db: Session, cancha_id: int) -> Cancha:
     """Obtiene la cancha por ID o lanza error 404 si no existe."""
@@ -67,7 +65,7 @@ def _obtener_cancha_existente(db: Session, cancha_id: int) -> Cancha:
 # ─────────────────────────────────────────────
 
 def crear_cancha(db: Session, current_user: Usuario, datos: CanchaCreate) -> dict:
-    _verificar_permisos_admin(current_user)
+    _verificar_rol_admin(current_user)
     _validar_horarios_apertura_cierre(datos.hora_apertura, datos.hora_cierre)
     
     if datos.precio_por_turno <= 0:
@@ -92,7 +90,7 @@ def obtener_activas(db: Session):
     return cancha_repository.obtener_activas(db)
 
 def obtener_mis_canchas(db: Session, current_user: Usuario):
-    _verificar_permisos_admin(current_user)
+    _verificar_rol_admin(current_user)
     return cancha_repository.obtener_por_admin(db, current_user.id)
 
 def obtener_por_id(db: Session, cancha_id: int):
@@ -101,7 +99,8 @@ def obtener_por_id(db: Session, cancha_id: int):
 def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: CanchaUpdate):
     cancha = _obtener_cancha_existente(db, cancha_id)
 
-    _verificar_permisos_admin(current_user, cancha.propietario_id)
+    _verificar_rol_admin(current_user)
+    cancha.verificar_propietario(current_user.id, "Solo el propietario puede modificar o ver esta información")
     _validar_horarios_apertura_cierre(datos.hora_apertura, datos.hora_cierre)
 
     cambia_horarios = (
@@ -126,7 +125,8 @@ def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: Can
 def eliminar_cancha(db: Session, current_user: Usuario, cancha_id: int):
     cancha = _obtener_cancha_existente(db, cancha_id)
 
-    _verificar_permisos_admin(current_user, cancha.propietario_id)
+    _verificar_rol_admin(current_user)
+    cancha.verificar_propietario(current_user.id, "Solo el propietario puede modificar o ver esta información")
 
     if cancha_repository.tiene_reservas_activas(db, cancha_id):
         raise HTTPException(
@@ -138,7 +138,7 @@ def eliminar_cancha(db: Session, current_user: Usuario, cancha_id: int):
     return {"mensaje": "Cancha eliminada exitosamente"}
 
 def eliminar_canchas_por_admin(db: Session, current_user: Usuario):
-    _verificar_permisos_admin(current_user)
+    _verificar_rol_admin(current_user)
 
     canchas = cancha_repository.obtener_por_admin(db, current_user.id)
     if not canchas:
@@ -172,7 +172,8 @@ def obtener_turnos_disponibles(db: Session, cancha_id: int, fecha: date, excluir
 def obtener_agenda(db: Session, current_user: Usuario, cancha_id: int, fecha: date):
     cancha = _obtener_cancha_existente(db, cancha_id)
 
-    _verificar_permisos_admin(current_user, cancha.propietario_id)
+    _verificar_rol_admin(current_user)
+    cancha.verificar_propietario(current_user.id, "Solo el propietario puede modificar o ver esta información")
 
     partidos = partido_repository.obtener_partidos_por_cancha_y_fecha(db, cancha_id, fecha)
     

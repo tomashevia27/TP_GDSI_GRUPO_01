@@ -1,7 +1,8 @@
+from ..core.exceptions import DomainRuleError, DomainPermissionError
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Date, Time, Table
 from sqlalchemy.orm import relationship
 from datetime import datetime, timedelta
-from ..db import Base
+from ..core.db import Base
 
 partido_jugadores = Table(
     "partido_jugadores",
@@ -39,7 +40,7 @@ class Partido(Base):
     @classmethod
     def crear_abierto(cls, cancha_id, fecha, horario, modalidad, cantidad_jugadores, cupos_disponibles, descripcion, organizador_id):
         if cupos_disponibles is None or cupos_disponibles < 1 or cupos_disponibles >= cantidad_jugadores:
-            raise ValueError(f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles")
+            raise DomainRuleError(f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles")
         return cls(
             cancha_id=cancha_id, fecha=fecha, horario=horario, modalidad=modalidad,
             tipo="abierto", cantidad_jugadores=cantidad_jugadores, cupos_disponibles=cupos_disponibles,
@@ -77,67 +78,67 @@ class Partido(Base):
     # ─────────────────────────────────────────────
     def inscribir_jugador(self, usuario):
         if self.organizador_id == usuario.id:
-            raise ValueError("El organizador no puede inscribirse nuevamente en su propio partido")
+            raise DomainRuleError("El organizador no puede inscribirse nuevamente en su propio partido")
         if self.tipo != "abierto":
-            raise ValueError("Solo te podés inscribir en partidos abiertos")
+            raise DomainRuleError("Solo te podés inscribir en partidos abiertos")
         if self.estado == "Cancelado":
-            raise ValueError("No te podés inscribir a un partido cancelado")
+            raise DomainRuleError("No te podés inscribir a un partido cancelado")
         if any(jugador.id == usuario.id for jugador in self.jugadores):
-            raise ValueError("Ya estás inscripto en este partido")
+            raise DomainRuleError("Ya estás inscripto en este partido")
         if self.cupos_disponibles <= 0:
-            raise ValueError("El partido ya no tiene cupos disponibles")
+            raise DomainRuleError("El partido ya no tiene cupos disponibles")
             
         self.cupos_disponibles -= 1
         self.jugadores.append(usuario)
 
     def bajar_jugador(self, usuario, hora_actual):
         if self.tipo != "abierto":
-            raise ValueError("Solo te podés bajar de partidos abiertos")
+            raise DomainRuleError("Solo te podés bajar de partidos abiertos")
         if self.estado == "Cancelado":
-            raise ValueError("No te podés bajar de un partido cancelado")
+            raise DomainRuleError("No te podés bajar de un partido cancelado")
         if not any(jugador.id == usuario.id for jugador in self.jugadores):
-            raise ValueError("No estás inscripto en este partido")
+            raise DomainRuleError("No estás inscripto en este partido")
 
         hora_partido_limpia = self.horario.replace(tzinfo=None) if hasattr(self.horario, 'replace') else self.horario
         partido_inicio = datetime.combine(self.fecha, hora_partido_limpia)
 
         if partido_inicio - hora_actual <= timedelta(hours=2):
-            raise ValueError("El plazo para bajarse de este partido expiró")
+            raise DomainRuleError("El plazo para bajarse de este partido expiró")
             
         self.cupos_disponibles += 1
         self.jugadores = [j for j in self.jugadores if j.id != usuario.id]
 
     def cancelar_por_organizador(self, usuario_id):
         if self.organizador_id != usuario_id:
-            raise PermissionError("Solo el organizador puede cancelar este partido")
+            raise DomainPermissionError("Solo el organizador puede cancelar este partido")
         if self.estado == "Cancelado":
-            raise ValueError("El partido ya se encuentra cancelado")
+            raise DomainRuleError("El partido ya se encuentra cancelado")
         self.estado = "Cancelado"
 
     def cancelar_por_admin(self):
         if self.estado == "Cancelado":
-            raise ValueError("La reserva ya se encuentra cancelada")
+            raise DomainRuleError("La reserva ya se encuentra cancelada")
         if self.estado == "bloqueado":
-            raise ValueError("Para desbloquear un turno, usá la función de desbloqueo")
+            raise DomainRuleError("Para desbloquear un turno, usá la función de desbloqueo")
         self.estado = "Cancelado"
 
     def verificar_desbloqueo(self):
         if self.estado != "bloqueado":
-            raise ValueError("El turno no está bloqueado")
+            raise DomainRuleError("El turno no está bloqueado")
 
     def verificar_edicion(self, usuario_id):
         if self.organizador_id != usuario_id:
-            raise PermissionError("Solo el organizador puede editar este partido")
+            raise DomainPermissionError("Solo el organizador puede editar este partido")
         if self.estado == "Cancelado":
-            raise ValueError("No se puede editar un partido cancelado")
+            raise DomainRuleError("No se puede editar un partido cancelado")
 
     def actualizar_datos(self, cancha_id, fecha, horario, modalidad, cantidad_jugadores, tipo, cupos_disponibles, descripcion):
         if self.cantidad_jugadores != cantidad_jugadores:
-            raise ValueError("No se puede cambiar la modalidad del partido. Si deseas jugar en otra modalidad, cancelá el partido y creá uno nuevo.")
+            raise DomainRuleError("No se puede cambiar la modalidad del partido. Si deseas jugar en otra modalidad, cancelá el partido y creá uno nuevo.")
             
         if tipo == "abierto":
             if cupos_disponibles is None or cupos_disponibles < 1 or cupos_disponibles >= cantidad_jugadores:
-                raise ValueError(f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles")
+                raise DomainRuleError(f"Para partidos abiertos, debes especificar entre 1 y {cantidad_jugadores - 1} cupos disponibles")
         else:
             cupos_disponibles = 0
 
@@ -152,9 +153,12 @@ class Partido(Base):
 
     def verificar_reprogramacion(self):
         if self.estado == "Cancelado":
-            raise ValueError("No se puede reprogramar una reserva cancelada")
+            raise DomainRuleError("No se puede reprogramar una reserva cancelada")
         if self.estado == "bloqueado":
-            raise ValueError("No se puede reprogramar un turno bloqueado")
+            raise DomainRuleError("No se puede reprogramar un turno bloqueado")
+
+    def obtener_fecha_hora_legible(self):
+        return self.fecha.strftime("%d/%m/%Y"), self.horario.strftime("%H:%M")
 
     def reprogramar(self, cancha_id, fecha, horario, modalidad=None, cantidad_jugadores=None):
         self.cancha_id = cancha_id
