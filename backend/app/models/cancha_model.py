@@ -38,3 +38,21 @@ class Cancha(Base):
         else:
             cierre = datetime.strptime(self.hora_cierre, "%H:%M")
         return apertura, cierre
+
+    def opera_en_horario(self, horario) -> bool:
+        """Verifica si el horario matemático se encuentra dentro del rango de la cancha."""
+        hora_limpia = horario.replace(tzinfo=None) if hasattr(horario, 'replace') else horario
+        min_partido = hora_limpia.hour * 60 + hora_limpia.minute
+        min_apertura = int(self.hora_apertura.split(':')[0]) * 60 + int(self.hora_apertura.split(':')[1])
+        
+        if self.hora_cierre == "24:00":
+            min_cierre = 24 * 60
+        else:
+            min_cierre = int(self.hora_cierre.split(':')[0]) * 60 + int(self.hora_cierre.split(':')[1])
+            
+        return min_apertura <= min_partido < min_cierre
+
+    def verificar_propietario(self, usuario_id, mensaje_error):
+        """Verifica si el usuario es el propietario de la cancha."""
+        if self.propietario_id != usuario_id:
+            raise PermissionError(mensaje_error)

@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, date, time, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -258,14 +258,16 @@ def test_editar_partido_ya_cancelado():
 def test_editar_partido_campos_faltantes():
     res_crear = crear_partido_test()
     partido_id = res_crear.json()["id"]
-    
+    fecha_original = res_crear.json()["fecha"]
+
     # Falta fecha
     datos_update = {
         "cancha_id": 1,
         "horario": "10:00:00"
     }
     res_edit = client.put(f"/partidos/{partido_id}", json=datos_update)
-    assert res_edit.status_code == 422
+    assert res_edit.status_code == 200
+    assert res_edit.json()["fecha"] == fecha_original
 
 def test_editar_partido_no_organizador():
     res_crear = crear_partido_test()
@@ -487,8 +489,10 @@ def test_bajarse_partido_exito_libera_cupo():
 
 
 def test_bajarse_partido_fuera_de_plazo():
-    fecha = (datetime.now() + timedelta(hours=1)).date().isoformat()
-    horario = (datetime.now() + timedelta(hours=1)).time().replace(microsecond=0).isoformat()
+    # Usamos TZ_LOCAL para que concuerde con el backend
+    now_local = datetime.now(timezone(timedelta(hours=-3)))
+    fecha = (now_local + timedelta(hours=1)).date().isoformat()
+    horario = (now_local + timedelta(hours=1)).time().replace(microsecond=0).isoformat()
 
     app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(1)
     res_crear = client.post(

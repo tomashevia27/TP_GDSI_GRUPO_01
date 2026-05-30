@@ -1,0 +1,1211 @@
+============================= test session starts ==============================
+platform linux -- Python 3.11.15, pytest-9.0.3, pluggy-1.6.0 -- /usr/local/bin/python
+cachedir: .pytest_cache
+rootdir: /app
+plugins: anyio-4.13.0
+collecting ... collected 23 items
+
+backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_exito PASSED [  4%]
+backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_no_organizador FAILED [  8%]
+backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_libera_turno PASSED [ 13%]
+backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_inexistente PASSED [ 17%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_exito PASSED [ 21%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_mismo_horario PASSED [ 26%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_ocupado PASSED [ 30%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_fecha_pasada PASSED [ 34%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_ya_cancelado PASSED [ 39%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_campos_faltantes PASSED [ 43%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_no_organizador FAILED [ 47%]
+backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_ya_pasado PASSED [ 52%]
+backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_doble PASSED [ 56%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_ya_pasado PASSED [ 60%]
+backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_horario_cancha_cerrada PASSED [ 65%]
+backend/tests/partidos/test_partidos_acciones.py::test_mis_partidos_incluye_inscritos PASSED [ 69%]
+backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_exito_descuenta_cupo FAILED [ 73%]
+backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_duplicada FAILED [ 78%]
+backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_sin_cupo PASSED [ 82%]
+backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_cerrado PASSED [ 86%]
+backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_pasado PASSED [ 91%]
+backend/tests/partidos/test_partidos_acciones.py::test_bajarse_partido_exito_libera_cupo FAILED [ 95%]
+backend/tests/partidos/test_partidos_acciones.py::test_bajarse_partido_fuera_de_plazo FAILED [100%]
+
+=================================== FAILURES ===================================
+_____________________ test_cancelar_partido_no_organizador _____________________
+
+    def test_cancelar_partido_no_organizador():
+        res_crear = crear_partido_test()
+        partido_id = res_crear.json()["id"]
+    
+        # Cambiar a otro usuario
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+        res_cancelar = client.patch(f"/partidos/{partido_id}/cancelar")
+>       assert res_cancelar.status_code == 403
+E       assert 400 == 403
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+backend/tests/partidos/test_partidos_acciones.py:145: AssertionError
+______________________ test_editar_partido_no_organizador ______________________
+
+    def test_editar_partido_no_organizador():
+        res_crear = crear_partido_test()
+        partido_id = res_crear.json()["id"]
+    
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+        fecha_futura = (datetime.now() + timedelta(days=2)).date().isoformat()
+        datos_update = {
+            "cancha_id": 1,
+            "fecha": fecha_futura,
+            "horario": "10:00:00"
+        }
+        res_edit = client.put(f"/partidos/{partido_id}", json=datos_update)
+>       assert res_edit.status_code == 403
+E       assert 400 == 403
+E        +  where 400 = <Response [400 Bad Request]>.status_code
+
+backend/tests/partidos/test_partidos_acciones.py:284: AssertionError
+________________ test_inscribirse_partido_exito_descuenta_cupo _________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x7dbfa99e2250>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa9957410>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7dbfa9957890>
+parameters = [(1, 2), (1, 2)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa9922f40>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa9957410>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_inscribirse_partido_exito_descuenta_cupo():
+        res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=3)
+        assert res_crear.status_code == 200
+        partido_id = res_crear.json()["id"]
+    
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+>       res_inscripcion = client.post(f"/partidos/{partido_id}/inscribirse")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/partidos/test_partidos_acciones.py:405: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:330: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/routers/partidos.py:54: in inscribirse_a_partido
+    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/services/partido_service.py:130: in inscribirse_a_partido
+    resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/repositories/partido_repository.py:136: in guardar_inscripcion
+    db.commit()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2030: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1311: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1286: in _prepare_impl
+    self.session.flush()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4331: in flush
+    self._flush(objects)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4466: in _flush
+    with util.safe_reraise():
+/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py:121: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4427: in _flush
+    flush_context.execute()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:591: in execute
+    self.dependency_processor.process_saves(uow, states)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1195: in process_saves
+    self._run_crud(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1258: in _run_crud
+    connection.execute(statement, secondary_insert)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa9922f40>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa9957410>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+E       [SQL: INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)]
+E       [parameters: [(1, 2), (1, 2)]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+______________________ test_inscribirse_partido_duplicada ______________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x7dbfa2b63f90>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa2a48a10>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7dbfa9957890>
+parameters = [(1, 2), (1, 2)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa2170dc0>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa2a48a10>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_inscribirse_partido_duplicada():
+        res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=3)
+        partido_id = res_crear.json()["id"]
+    
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+>       res_1 = client.post(f"/partidos/{partido_id}/inscribirse")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/partidos/test_partidos_acciones.py:416: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:330: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/routers/partidos.py:54: in inscribirse_a_partido
+    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/services/partido_service.py:130: in inscribirse_a_partido
+    resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/repositories/partido_repository.py:136: in guardar_inscripcion
+    db.commit()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2030: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1311: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1286: in _prepare_impl
+    self.session.flush()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4331: in flush
+    self._flush(objects)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4466: in _flush
+    with util.safe_reraise():
+/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py:121: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4427: in _flush
+    flush_context.execute()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:591: in execute
+    self.dependency_processor.process_saves(uow, states)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1195: in process_saves
+    self._run_crud(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1258: in _run_crud
+    connection.execute(statement, secondary_insert)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa2170dc0>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa2a48a10>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+E       [SQL: INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)]
+E       [parameters: [(1, 2), (1, 2)]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+____________________ test_bajarse_partido_exito_libera_cupo ____________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x7dbfa3455810>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa381ac10>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7dbfa9957890>
+parameters = [(1, 2), (1, 2)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa3efc0c0>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa381ac10>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_bajarse_partido_exito_libera_cupo():
+        res_crear = crear_partido_abierto_test(fecha_offset_days=2, horario_str="18:00:00", cupos_disponibles=3)
+        assert res_crear.status_code == 200
+        partido_id = res_crear.json()["id"]
+    
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+>       res_inscripcion = client.post(f"/partidos/{partido_id}/inscribirse")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/partidos/test_partidos_acciones.py:481: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:330: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/routers/partidos.py:54: in inscribirse_a_partido
+    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/services/partido_service.py:130: in inscribirse_a_partido
+    resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/repositories/partido_repository.py:136: in guardar_inscripcion
+    db.commit()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2030: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1311: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1286: in _prepare_impl
+    self.session.flush()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4331: in flush
+    self._flush(objects)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4466: in _flush
+    with util.safe_reraise():
+/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py:121: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4427: in _flush
+    flush_context.execute()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:591: in execute
+    self.dependency_processor.process_saves(uow, states)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1195: in process_saves
+    self._run_crud(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1258: in _run_crud
+    connection.execute(statement, secondary_insert)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa3efc0c0>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa381ac10>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+E       [SQL: INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)]
+E       [parameters: [(1, 2), (1, 2)]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+_____________________ test_bajarse_partido_fuera_de_plazo ______________________
+
+self = <sqlalchemy.engine.base.Connection object at 0x7dbfa2b6b0d0>
+dialect = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa2bf6010>
+statement = <sqlalchemy.dialects.sqlite.base.SQLiteCompiler object at 0x7dbfa9957890>
+parameters = [(1, 2), (1, 2)]
+
+    def _exec_single_context(
+        self,
+        dialect: Dialect,
+        context: ExecutionContext,
+        statement: Union[str, Compiled],
+        parameters: Optional[_AnyMultiExecuteParams],
+    ) -> CursorResult[Any]:
+        """continue the _execute_context() method for a single DBAPI
+        cursor.execute() or cursor.executemany() call.
+    
+        """
+        if dialect.bind_typing is BindTyping.SETINPUTSIZES:
+            generic_setinputsizes = context._prepare_set_input_sizes()
+    
+            if generic_setinputsizes:
+                try:
+                    dialect.do_set_input_sizes(
+                        context.cursor, generic_setinputsizes, context
+                    )
+                except BaseException as e:
+                    self._handle_dbapi_exception(
+                        e, str(statement), parameters, None, context
+                    )
+    
+        cursor, str_statement, parameters = (
+            context.cursor,
+            context.statement,
+            context.parameters,
+        )
+    
+        effective_parameters: Optional[_AnyExecuteParams]
+    
+        if not context.executemany:
+            effective_parameters = parameters[0]
+        else:
+            effective_parameters = parameters
+    
+        if self._has_events or self.engine._has_events:
+            for fn in self.dispatch.before_cursor_execute:
+                str_statement, effective_parameters = fn(
+                    self,
+                    cursor,
+                    str_statement,
+                    effective_parameters,
+                    context,
+                    context.executemany,
+                )
+    
+        if self._echo:
+            self._log_info(str_statement)
+    
+            stats = context._get_cache_stats()
+    
+            if not self.engine.hide_parameters:
+                self._log_info(
+                    "[%s] %r",
+                    stats,
+                    sql_util._repr_params(
+                        effective_parameters,
+                        batches=10,
+                        ismulti=context.executemany,
+                    ),
+                )
+            else:
+                self._log_info(
+                    "[%s] [SQL parameters hidden due to hide_parameters=True]",
+                    stats,
+                )
+    
+        evt_handled: bool = False
+        try:
+            if context.execute_style is ExecuteStyle.EXECUTEMANY:
+                effective_parameters = cast(
+                    "_CoreMultiExecuteParams", effective_parameters
+                )
+                if self.dialect._has_events:
+                    for fn in self.dialect.dispatch.do_executemany:
+                        if fn(
+                            cursor,
+                            str_statement,
+                            effective_parameters,
+                            context,
+                        ):
+                            evt_handled = True
+                            break
+                if not evt_handled:
+>                   self.dialect.do_executemany(
+                        cursor,
+                        str_statement,
+                        effective_parameters,
+                        context,
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa39a9240>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa2bf6010>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlite3.IntegrityError: UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+
+The above exception was the direct cause of the following exception:
+
+    def test_bajarse_partido_fuera_de_plazo():
+        # Usamos TZ_LOCAL para que concuerde con el backend
+        now_local = datetime.now(timezone(timedelta(hours=-3)))
+        fecha = (now_local + timedelta(hours=1)).date().isoformat()
+        horario = (now_local + timedelta(hours=1)).time().replace(microsecond=0).isoformat()
+    
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(1)
+        res_crear = client.post(
+            "/partidos",
+            json={
+                "cancha_id": 1,
+                "fecha": fecha,
+                "horario": horario,
+                "tipo": "abierto",
+                "cupos_disponibles": 3,
+            },
+        )
+        assert res_crear.status_code == 200
+        partido_id = res_crear.json()["id"]
+    
+        app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2)
+>       res_inscripcion = client.post(f"/partidos/{partido_id}/inscribirse")
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+backend/tests/partidos/test_partidos_acciones.py:512: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:546: in post
+    return super().post(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:445: in request
+    return super().request(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:348: in handle_request
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/testclient.py:345: in handle_request
+    portal.call(self.app, scope, receive, send)
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:334: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/usr/local/lib/python3.11/site-packages/anyio/from_thread.py:259: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/applications.py:1159: in __call__
+    await super().__call__(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/applications.py:90: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py:88: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:660: in __call__
+    await self.middleware_stack(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:680: in app
+    await route.handle(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/routing.py:276: in handle
+    await self.app(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:134: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:120: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:674: in app
+    raw_response = await run_endpoint_function(
+/usr/local/lib/python3.11/site-packages/fastapi/routing.py:330: in run_endpoint_function
+    return await run_in_threadpool(dependant.call, **values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/starlette/concurrency.py:32: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/to_thread.py:63: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:2518: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/anyio/_backends/_asyncio.py:1002: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/routers/partidos.py:54: in inscribirse_a_partido
+    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/services/partido_service.py:130: in inscribirse_a_partido
+    resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+backend/app/repositories/partido_repository.py:136: in guardar_inscripcion
+    db.commit()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:2030: in commit
+    trans.commit(_to_root=True)
+<string>:2: in commit
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1311: in commit
+    self._prepare_impl()
+<string>:2: in _prepare_impl
+    ???
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py:137: in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:1286: in _prepare_impl
+    self.session.flush()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4331: in flush
+    self._flush(objects)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4466: in _flush
+    with util.safe_reraise():
+/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py:121: in __exit__
+    raise exc_value.with_traceback(exc_tb)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py:4427: in _flush
+    flush_context.execute()
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:466: in execute
+    rec.execute(self)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py:591: in execute
+    self.dependency_processor.process_saves(uow, states)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1195: in process_saves
+    self._run_crud(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/dependency.py:1258: in _run_crud
+    connection.execute(statement, secondary_insert)
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1419: in execute
+    return meth(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py:527: in _execute_on_connection
+    return connection._execute_clauseelement(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1641: in _execute_clauseelement
+    ret = self._execute_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1846: in _execute_context
+    return self._exec_single_context(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1986: in _exec_single_context
+    self._handle_dbapi_exception(
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:2363: in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py:1936: in _exec_single_context
+    self.dialect.do_executemany(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <sqlalchemy.dialects.sqlite.pysqlite.SQLiteDialect_pysqlite object at 0x7dbfab1a46d0>
+cursor = <sqlite3.Cursor object at 0x7dbfa39a9240>
+statement = 'INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)'
+parameters = [(1, 2), (1, 2)]
+context = <sqlalchemy.dialects.sqlite.base.SQLiteExecutionContext object at 0x7dbfa2bf6010>
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+>       cursor.executemany(statement, parameters)
+E       sqlalchemy.exc.IntegrityError: (sqlite3.IntegrityError) UNIQUE constraint failed: partido_jugadores.partido_id, partido_jugadores.usuario_id
+E       [SQL: INSERT INTO partido_jugadores (partido_id, usuario_id) VALUES (?, ?)]
+E       [parameters: [(1, 2), (1, 2)]]
+E       (Background on this error at: https://sqlalche.me/e/20/gkpj)
+
+/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py:949: IntegrityError
+=========================== short test summary info ============================
+FAILED backend/tests/partidos/test_partidos_acciones.py::test_cancelar_partido_no_organizador
+FAILED backend/tests/partidos/test_partidos_acciones.py::test_editar_partido_no_organizador
+FAILED backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_exito_descuenta_cupo
+FAILED backend/tests/partidos/test_partidos_acciones.py::test_inscribirse_partido_duplicada
+FAILED backend/tests/partidos/test_partidos_acciones.py::test_bajarse_partido_exito_libera_cupo
+FAILED backend/tests/partidos/test_partidos_acciones.py::test_bajarse_partido_fuera_de_plazo
+========================= 6 failed, 17 passed in 6.97s =========================

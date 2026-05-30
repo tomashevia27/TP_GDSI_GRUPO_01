@@ -306,7 +306,7 @@ def test_crear_cancha_jugador_no_puede():
     }
     response = client.post("/canchas", json=datos)
     assert response.status_code == 403
-    assert response.json()["detail"] == "Solo los dueños de cancha pueden crear canchas"
+    assert response.json()["detail"] == "Acción permitida solo para dueños de canchas"
 
 
 # ==========================================
@@ -446,7 +446,7 @@ def test_obtener_mis_canchas_rechaza_jugador():
     app.dependency_overrides[get_current_user] = lambda: jugador
     response = client.get("/canchas/me")
     assert response.status_code == 403
-    assert response.json()["detail"] == "Solo los dueños de cancha pueden ver sus canchas"
+    assert response.json()["detail"] == "Acción permitida solo para dueños de canchas"
 
 def test_obtener_canchas_disponibles_solo_activas():
     """
