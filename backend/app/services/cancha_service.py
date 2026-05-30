@@ -15,11 +15,15 @@ MINUTOS_VALIDOS = {0, 15, 30, 45}
 # Helpers Internos
 # ─────────────────────────────────────────────
 
-def _parse_time(time_str: str):
+def _obtener_minutos_totales(hora_str: str) -> int:
+    """Convierte un string 'HH:MM' a minutos totales. Permite '24:00'."""
     try:
-        return datetime.strptime(time_str, "%H:%M").time()
-    except ValueError:
-        raise HTTPException(status_code=400, detail="El formato de hora debe ser HH:MM")
+        horas, minutos = map(int, hora_str.split(":"))
+        if horas < 0 or horas > 24 or (horas == 24 and minutos != 0):
+            raise ValueError
+        return horas * 60 + minutos
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="El formato de hora debe ser HH:MM válido")
 
 def _validar_horarios_apertura_cierre(hora_apertura: str, hora_cierre: str):
     """Valida los minutos y que el cierre sea posterior a la apertura."""
@@ -39,9 +43,9 @@ def _validar_horarios_apertura_cierre(hora_apertura: str, hora_cierre: str):
             detail="Los minutos de apertura y cierre deben coincidir para evitar turnos incompletos"
         )
         
-    hora_ap = _parse_time(hora_apertura)
-    hora_ci = _parse_time(hora_cierre)
-    if hora_ci <= hora_ap:
+    min_apertura = _obtener_minutos_totales(hora_apertura)
+    min_cierre = _obtener_minutos_totales(hora_cierre)
+    if min_cierre <= min_apertura:
         raise HTTPException(status_code=400, detail="La hora de cierre debe ser posterior a la de apertura")
 
 def _verificar_permisos_admin(current_user: Usuario, propietario_cancha_id: int = None):
@@ -49,6 +53,13 @@ def _verificar_permisos_admin(current_user: Usuario, propietario_cancha_id: int 
         raise HTTPException(status_code=403, detail="Acción permitida solo para dueños de canchas")
     if propietario_cancha_id is not None and propietario_cancha_id != current_user.id:
         raise HTTPException(status_code=403, detail="Solo el propietario puede modificar o ver esta información")
+
+def _obtener_cancha_existente(db: Session, cancha_id: int) -> Cancha:
+    """Obtiene la cancha por ID o lanza error 404 si no existe."""
+    cancha = cancha_repository.obtener_por_id(db, cancha_id)
+    if not cancha:
+        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    return cancha
 
 
 # ─────────────────────────────────────────────
@@ -88,9 +99,7 @@ def obtener_por_id(db: Session, cancha_id: int):
     return cancha_repository.obtener_por_id(db, cancha_id)
 
 def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: CanchaUpdate):
-    cancha = cancha_repository.obtener_por_id(db, cancha_id)
-    if not cancha:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    cancha = _obtener_cancha_existente(db, cancha_id)
 
     _verificar_permisos_admin(current_user, cancha.propietario_id)
     _validar_horarios_apertura_cierre(datos.hora_apertura, datos.hora_cierre)
@@ -115,9 +124,7 @@ def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: Can
     return {"mensaje": "Cancha actualizada exitosamente", "cancha": cancha}
 
 def eliminar_cancha(db: Session, current_user: Usuario, cancha_id: int):
-    cancha = cancha_repository.obtener_por_id(db, cancha_id)
-    if not cancha:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    cancha = _obtener_cancha_existente(db, cancha_id)
 
     _verificar_permisos_admin(current_user, cancha.propietario_id)
 
@@ -153,9 +160,7 @@ def eliminar_canchas_por_admin(db: Session, current_user: Usuario):
 # ─────────────────────────────────────────────
 
 def obtener_turnos_disponibles(db: Session, cancha_id: int, fecha: date, excluir_partido_id: int = None):
-    cancha = cancha_repository.obtener_por_id(db, cancha_id)
-    if not cancha:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    cancha = _obtener_cancha_existente(db, cancha_id)
 
     partidos = partido_repository.obtener_partidos_por_cancha_y_fecha(db, cancha_id, fecha)
     
@@ -165,9 +170,7 @@ def obtener_turnos_disponibles(db: Session, cancha_id: int, fecha: date, excluir
             .build())
 
 def obtener_agenda(db: Session, current_user: Usuario, cancha_id: int, fecha: date):
-    cancha = cancha_repository.obtener_por_id(db, cancha_id)
-    if not cancha:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
+    cancha = _obtener_cancha_existente(db, cancha_id)
 
     _verificar_permisos_admin(current_user, cancha.propietario_id)
 
