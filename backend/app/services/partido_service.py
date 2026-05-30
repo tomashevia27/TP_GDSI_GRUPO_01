@@ -115,6 +115,12 @@ def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
+    if usuario.rol == RolUsuario.admin:
+        raise HTTPException(
+            status_code=403,
+            detail="Los dueños de cancha no pueden inscribirse a partidos"
+        )
+
     if partido.cupos_disponibles <= 0:
         raise HTTPException(
             status_code=400,

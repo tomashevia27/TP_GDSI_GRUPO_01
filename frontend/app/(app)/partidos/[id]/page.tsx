@@ -88,7 +88,7 @@ export default function PartidoDetallePage() {
   const isOrganizer = !!(currentUser && partido.organizador && currentUser.id === partido.organizador.id)
   const isJoined = !!(currentUser && partido.jugadores?.some(j => j.id === currentUser.id))
   const canEditOrCancel = isOrganizer && partido.estado?.toLowerCase() !== "cancelado"
-  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && !isJoined && spotsLeft > 0
+  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && !isJoined && spotsLeft > 0 && currentUser?.rol !== "admin"
   const canLeave = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && isJoined
 
   const handleCancel = async () => {
@@ -480,7 +480,7 @@ export default function PartidoDetallePage() {
                 {selectedPlayer.nombre} {selectedPlayer.apellido}
               </h3>
               <span className="inline-block px-3 py-1 mt-2 text-xs font-semibold bg-primary/10 text-primary rounded-full uppercase tracking-wide">
-                {selectedPlayer.rol === "owner" ? "Dueño de Cancha" : "Jugador"}
+                {selectedPlayer.rol === "admin" ? "Dueño de Cancha" : "Jugador"}
               </span>
             </div>
 
