@@ -11,7 +11,7 @@ from ..repositories import partido_repository
 from ..repositories import usuario_repository
 from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, ReservaManualCreate, ReprogramarReserva
 from ..repositories import cancha_repository
-from ..services import notificacion_service
+from ..services import partido_notificador
 
 
 DIAS_SEMANA = {
@@ -124,7 +124,7 @@ def inscribirse_a_partido(db: Session, partido_id: int, usuario_id: int):
     resultado = partido_repository.guardar_inscripcion(db, partido, usuario)
 
     # Notificar a los demás jugadores y al organizador
-    notificacion_service.notificar_inscripcion(db, partido, usuario)
+    partido_notificador.notificar_inscripcion(db, partido, usuario)
     db.commit()
 
     return resultado
@@ -171,7 +171,7 @@ def bajarse_de_partido(db: Session, partido_id: int, usuario_id: int):
     resultado = partido_repository.guardar_baja_inscripcion(db, partido, usuario)
 
     # Notificar a los demás jugadores y al organizador
-    notificacion_service.notificar_baja(db, partido, usuario)
+    partido_notificador.notificar_baja(db, partido, usuario)
     db.commit()
 
     return resultado
@@ -292,7 +292,7 @@ def crear_partido(
     resultado = partido_repository.guardar_partido(db, nuevo_partido)
 
     # Notificar al propietario de la cancha
-    notificacion_service.notificar_propietario_reserva(db, cancha, resultado)
+    partido_notificador.notificar_propietario_reserva(db, cancha, resultado)
     db.commit()
 
     return resultado
@@ -332,12 +332,12 @@ def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
     partido.estado = "Cancelado"
 
     # Notificar a los inscriptos (solo si abierto)
-    notificacion_service.notificar_partido_cancelado(db, partido)
+    partido_notificador.notificar_partido_cancelado(db, partido)
 
     # Notificar al propietario de la cancha
     cancha = cancha_repository.obtener_por_id(db, partido.cancha_id)
     if cancha:
-        notificacion_service.notificar_propietario_cancelacion(db, cancha, partido)
+        partido_notificador.notificar_propietario_cancelacion(db, cancha, partido)
 
     db.commit()
     db.refresh(partido)
@@ -496,13 +496,13 @@ def editar_partido(
 
     # Notificar a los inscriptos sobre los cambios (solo si abierto)
     if cambios:
-        notificacion_service.notificar_partido_editado(db, partido, cambios)
+        partido_notificador.notificar_partido_editado(db, partido, cambios)
 
     # Notificar cambio de cancha a los propietarios
     if cancha_id_anterior != datos.cancha_id:
         cancha_anterior_obj = cancha_repository.obtener_por_id(db, cancha_id_anterior)
         if cancha_anterior_obj:
-            notificacion_service.notificar_cambio_cancha(db, cancha_anterior_obj, cancha, partido)
+            partido_notificador.notificar_cambio_cancha(db, cancha_anterior_obj, cancha, partido)
 
     db.commit()
     db.refresh(partido)
@@ -773,7 +773,7 @@ def cancelar_reserva_dueno(db: Session, current_user: Usuario, partido_id: int):
 
 
     if not partido.reserva_manual and partido.organizador_id:
-        notificacion_service.notificar_reserva_cancelada_por_dueno(db, cancha, partido)
+        partido_notificador.notificar_reserva_cancelada_por_dueno(db, cancha, partido)
 
     db.commit()
     db.refresh(partido)
@@ -896,7 +896,7 @@ def reprogramar_reserva(
 
 
     if not partido.reserva_manual and partido.organizador_id:
-        notificacion_service.notificar_reserva_reprogramada(
+        partido_notificador.notificar_reserva_reprogramada(
             db, cancha, partido,
             fecha_anterior, horario_anterior, cancha_id_anterior
         )
