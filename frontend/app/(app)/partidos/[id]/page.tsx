@@ -135,7 +135,7 @@ export default function PartidoDetallePage() {
       setIsJoining(true)
       try {
         await inscribirseAPartido(partido.id)
-        
+
         await Swal.fire({
           title: "¡Reserva iniciada!",
           text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
@@ -213,24 +213,24 @@ export default function PartidoDetallePage() {
       {/* Match header */}
       <div className="mb-6">
         <div className="flex items-center flex-wrap gap-3 mb-4">
-          
+
           <span className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-lg tracking-wide">
             {partido.estado.toUpperCase()}
           </span>
-          
+
           <span className="px-3 py-1.5 bg-secondary text-secondary-foreground text-sm font-semibold rounded-lg capitalize tracking-wide">
             {partido.tipo}
           </span>
-          
+
           {partido.estado.toLowerCase() !== "cancelado" && (
             <CountdownTimer fecha={partido.fecha} horario={partido.horario} />
           )}
         </div>
-  
-  <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
-    Partido de <span className="capitalize">{partido.modalidad}</span>
-  </h1>
-</div>
+
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
+          Partido de <span className="capitalize">{partido.modalidad}</span>
+        </h1>
+      </div>
 
       {/* Key info cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -309,9 +309,8 @@ export default function PartidoDetallePage() {
               <span className="font-semibold text-foreground">Jugadores</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-lg font-bold ${
-                spotsLeft === 0 ? "text-accent" : "text-primary"
-              }`}>
+              <span className={`text-lg font-bold ${spotsLeft === 0 ? "text-accent" : "text-primary"
+                }`}>
                 {confirmedCount}/{partido.cantidad_jugadores}
               </span>
               {/* Progress ring */}
@@ -344,7 +343,7 @@ export default function PartidoDetallePage() {
 
         <div className="divide-y divide-border">
           {/* Creador del partido */}
-          <div 
+          <div
             className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
             onClick={() => partido.organizador && setSelectedPlayer(partido.organizador)}
           >
@@ -379,8 +378,8 @@ export default function PartidoDetallePage() {
 
           {/* Jugadores que se sumaron al partido */}
           {partido.jugadores?.map((jugador) => (
-            <div 
-              key={`jugador-${jugador.id}`} 
+            <div
+              key={`jugador-${jugador.id}`}
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
               onClick={() => setSelectedPlayer(jugador)}
             >
@@ -410,7 +409,7 @@ export default function PartidoDetallePage() {
               </div>
             </div>
           ))}
-          
+
           {/* Amigos/Invitados del creador */}
           {Array.from({ length: Math.max(0, partido.cantidad_jugadores - partido.cupos_disponibles - 1 - (partido.jugadores?.length || 0)) }).map((_, i) => (
             <div key={`invitado-${i}`} className="flex items-center justify-between p-4">
@@ -428,7 +427,7 @@ export default function PartidoDetallePage() {
               </div>
             </div>
           ))}
-          
+
           {/* Lugares disponibles (solo si es abierto) */}
           {partido.tipo === "abierto" && Array.from({ length: partido.cupos_disponibles }).map((_, i) => (
             <div key={`cupo-${i}`} className="flex items-center justify-between p-4 bg-secondary/30">
@@ -453,7 +452,7 @@ export default function PartidoDetallePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Botón de cerrar */}
-            <button 
+            <button
               onClick={() => setSelectedPlayer(null)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-secondary transition-colors"
             >
