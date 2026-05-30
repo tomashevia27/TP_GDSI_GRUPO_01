@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from ..models.cancha_model import Cancha
-from fastapi import HTTPException
+
 
 def guardar_cancha(db: Session, cancha: Cancha) -> Cancha:
     """Guarda una cancha en la base de datos."""
@@ -30,18 +30,13 @@ def obtener_activas(db: Session):
 
 
 def obtener_por_id(db: Session, cancha_id: int):
-    cancha = db.query(Cancha).filter(Cancha.id == cancha_id).first()
-    if not cancha:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
-    return cancha
+    return db.query(Cancha).filter(Cancha.id == cancha_id).first()
 
 
 def obtener_por_id_bloqueado(db: Session, cancha_id: int):
     """Obtiene una cancha bloqueando su fila para evitar carreras al reservar."""
-    cancha = db.query(Cancha).filter(Cancha.id == cancha_id).with_for_update().first()
-    if not cancha:
-        raise HTTPException(status_code=404, detail="Cancha no encontrada")
-    return cancha
+    return db.query(Cancha).filter(Cancha.id == cancha_id).with_for_update().first()
+
 
 
 def tiene_reservas_activas(db: Session, cancha_id: int) -> bool:
