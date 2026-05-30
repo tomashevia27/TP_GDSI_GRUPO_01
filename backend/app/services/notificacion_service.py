@@ -56,6 +56,55 @@ def eliminar_todas(db: Session, usuario_id: int):
 
 
 # ─────────────────────────────────────────────
+# Helpers Internos
+# ─────────────────────────────────────────────
+
+def _formatear_fecha_hora(fecha, horario):
+    """Devuelve tupla (fecha_str, hora_str) formateada."""
+    return fecha.strftime("%d/%m/%Y"), horario.strftime("%H:%M")
+
+def _obtener_nombre_completo(usuario):
+    """Devuelve el nombre completo del usuario, manejando nulos."""
+    return f"{usuario.nombre} {usuario.apellido}" if usuario else "Usuario Desconocido"
+
+def _obtener_nombre_cancha(partido):
+    return partido.cancha.nombre if partido.cancha else "cancha desconocida"
+
+def _obtener_datos_base_partido(partido):
+    """Devuelve (nombre_organizador, cancha_nombre, fecha_str, hora_str)"""
+    fecha_str, hora_str = _formatear_fecha_hora(partido.fecha, partido.horario)
+    return (
+        _obtener_nombre_completo(partido.organizador),
+        _obtener_nombre_cancha(partido),
+        fecha_str,
+        hora_str
+    )
+
+def _obtener_ids_involucrados(partido, excluir_id=None, incluir_jugadores=True):
+    """Devuelve un set con los IDs del organizador y los jugadores (opcional), excluyendo uno si se especifica."""
+    usuarios_ids = set()
+    if partido.organizador_id and partido.organizador_id != excluir_id:
+        usuarios_ids.add(partido.organizador_id)
+    
+    if incluir_jugadores:
+        for jugador in partido.jugadores:
+            if jugador.id != excluir_id:
+                usuarios_ids.add(jugador.id)
+                
+    return usuarios_ids
+
+def _notificar_multiples_usuarios(db: Session, usuarios_ids: set, tipo: str, mensaje: str, partido_id: int):
+    """Crea notificaciones en bulk para un conjunto de IDs de usuario."""
+    if not usuarios_ids:
+        return
+    notificaciones = [
+        {"usuario_id": uid, "tipo": tipo, "mensaje": mensaje, "partido_id": partido_id}
+        for uid in usuarios_ids
+    ]
+    notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+
+
+# ─────────────────────────────────────────────
 # Funciones para disparar notificaciones
 # desde los eventos de partidos
 # ─────────────────────────────────────────────
@@ -65,27 +114,11 @@ def notificar_partido_cancelado(db: Session, partido):
     if partido.tipo != "abierto":
         return
 
-    nombre_organizador = f"{partido.organizador.nombre} {partido.organizador.apellido}"
-    cancha_nombre = partido.cancha.nombre if partido.cancha else "cancha desconocida"
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"{nombre_organizador} canceló el partido de {partido.modalidad} "
-        f"en {cancha_nombre} del {fecha_str} a las {hora_str}hs."
-    )
-
-    notificaciones = []
-    for jugador in partido.jugadores:
-        notificaciones.append({
-            "usuario_id": jugador.id,
-            "tipo": "partido_cancelado",
-            "mensaje": mensaje,
-            "partido_id": partido.id
-        })
-
-    if notificaciones:
-        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+    org_nom, can_nom, f_str, h_str = _obtener_datos_base_partido(partido)
+    mensaje = f"{org_nom} canceló el partido de {partido.modalidad} en {can_nom} del {f_str} a las {h_str}hs."
+    
+    usuarios_ids = _obtener_ids_involucrados(partido, excluir_id=partido.organizador_id)
+    _notificar_multiples_usuarios(db, usuarios_ids, "partido_cancelado", mensaje, partido.id)
 
 
 def notificar_partido_editado(db: Session, partido, cambios: dict):
@@ -93,261 +126,92 @@ def notificar_partido_editado(db: Session, partido, cambios: dict):
     if partido.tipo != "abierto":
         return
 
-    campos_modificados = []
-    if "fecha" in cambios:
-        campos_modificados.append(f"fecha ({cambios['fecha']['anterior']} → {cambios['fecha']['nuevo']})")
-    if "horario" in cambios:
-        campos_modificados.append(f"horario ({cambios['horario']['anterior']} → {cambios['horario']['nuevo']})")
-    if "cancha" in cambios:
-        campos_modificados.append(f"cancha ({cambios['cancha']['anterior']} → {cambios['cancha']['nuevo']})")
-    if "descripcion" in cambios:
-        campos_modificados.append("descripción")
-    if "cupos_disponibles" in cambios:
-        campos_modificados.append(f"cupos ({cambios['cupos_disponibles']['anterior']} → {cambios['cupos_disponibles']['nuevo']})")
+    campos = []
+    if "fecha" in cambios: campos.append(f"fecha ({cambios['fecha']['anterior']} → {cambios['fecha']['nuevo']})")
+    if "horario" in cambios: campos.append(f"horario ({cambios['horario']['anterior']} → {cambios['horario']['nuevo']})")
+    if "cancha" in cambios: campos.append(f"cancha ({cambios['cancha']['anterior']} → {cambios['cancha']['nuevo']})")
+    if "descripcion" in cambios: campos.append("descripción")
+    if "cupos_disponibles" in cambios: campos.append(f"cupos ({cambios['cupos_disponibles']['anterior']} → {cambios['cupos_disponibles']['nuevo']})")
 
-    if not campos_modificados:
+    if not campos:
         return
 
-    nombre_organizador = f"{partido.organizador.nombre} {partido.organizador.apellido}"
-    detalle = ", ".join(campos_modificados)
-    mensaje = (
-        f"{nombre_organizador} editó el partido de {partido.modalidad}: "
-        f"se modificó {detalle}."
-    )
-
-    notificaciones = []
-    for jugador in partido.jugadores:
-        notificaciones.append({
-            "usuario_id": jugador.id,
-            "tipo": "partido_editado",
-            "mensaje": mensaje,
-            "partido_id": partido.id
-        })
-
-    if notificaciones:
-        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+    org_nom, _, _, _ = _obtener_datos_base_partido(partido)
+    mensaje = f"{org_nom} editó el partido de {partido.modalidad}: se modificó {', '.join(campos)}."
+    
+    usuarios_ids = _obtener_ids_involucrados(partido, excluir_id=partido.organizador_id)
+    _notificar_multiples_usuarios(db, usuarios_ids, "partido_editado", mensaje, partido.id)
 
 
 def notificar_inscripcion(db: Session, partido, jugador_nuevo):
-    """Notifica a los demás jugadores que alguien se inscribió."""
-    nombre_jugador = f"{jugador_nuevo.nombre} {jugador_nuevo.apellido}"
-    cancha_nombre = partido.cancha.nombre if partido.cancha else "cancha desconocida"
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"{nombre_jugador} se inscribió al partido de {partido.modalidad} "
-        f"en {cancha_nombre} del {fecha_str} a las {hora_str}hs."
-    )
-
-    notificaciones = []
-    for jugador in partido.jugadores:
-        if jugador.id != jugador_nuevo.id:
-            notificaciones.append({
-                "usuario_id": jugador.id,
-                "tipo": "jugador_inscripto",
-                "mensaje": mensaje,
-                "partido_id": partido.id
-            })
-
-    # También notificar al organizador si no es el mismo jugador
-    if partido.organizador_id != jugador_nuevo.id:
-        notificaciones.append({
-            "usuario_id": partido.organizador_id,
-            "tipo": "jugador_inscripto",
-            "mensaje": mensaje,
-            "partido_id": partido.id
-        })
-
-    if notificaciones:
-        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+    """Notifica a los demás jugadores y al organizador que alguien se inscribió."""
+    _, can_nom, f_str, h_str = _obtener_datos_base_partido(partido)
+    nom_jugador = _obtener_nombre_completo(jugador_nuevo)
+    
+    mensaje = f"{nom_jugador} se inscribió al partido de {partido.modalidad} en {can_nom} del {f_str} a las {h_str}hs."
+    
+    usuarios_ids = _obtener_ids_involucrados(partido, excluir_id=jugador_nuevo.id)
+    _notificar_multiples_usuarios(db, usuarios_ids, "jugador_inscripto", mensaje, partido.id)
 
 
 def notificar_baja(db: Session, partido, jugador_baja):
-    """Notifica a los demás jugadores que alguien se bajó."""
-    nombre_jugador = f"{jugador_baja.nombre} {jugador_baja.apellido}"
-    cancha_nombre = partido.cancha.nombre if partido.cancha else "cancha desconocida"
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"{nombre_jugador} se bajó del partido de {partido.modalidad} "
-        f"en {cancha_nombre} del {fecha_str} a las {hora_str}hs."
-    )
-
-    notificaciones = []
-    for jugador in partido.jugadores:
-        if jugador.id != jugador_baja.id:
-            notificaciones.append({
-                "usuario_id": jugador.id,
-                "tipo": "jugador_baja",
-                "mensaje": mensaje,
-                "partido_id": partido.id
-            })
-
-    # También notificar al organizador
-    if partido.organizador_id != jugador_baja.id:
-        notificaciones.append({
-            "usuario_id": partido.organizador_id,
-            "tipo": "jugador_baja",
-            "mensaje": mensaje,
-            "partido_id": partido.id
-        })
-
-    if notificaciones:
-        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+    """Notifica a los demás jugadores y al organizador que alguien se bajó."""
+    _, can_nom, f_str, h_str = _obtener_datos_base_partido(partido)
+    nom_jugador = _obtener_nombre_completo(jugador_baja)
+    
+    mensaje = f"{nom_jugador} se bajó del partido de {partido.modalidad} en {can_nom} del {f_str} a las {h_str}hs."
+    
+    usuarios_ids = _obtener_ids_involucrados(partido, excluir_id=jugador_baja.id)
+    _notificar_multiples_usuarios(db, usuarios_ids, "jugador_baja", mensaje, partido.id)
 
 
 def notificar_propietario_reserva(db: Session, cancha, partido):
     """Notifica al propietario de la cancha que se creó un partido."""
-    nombre_organizador = f"{partido.organizador.nombre} {partido.organizador.apellido}"
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"{nombre_organizador} reservó tu cancha {cancha.nombre} "
-        f"para el {fecha_str} a las {hora_str}hs ({partido.modalidad})."
-    )
-
-    notificacion_repository.crear_notificacion(
-        db,
-        usuario_id=cancha.propietario_id,
-        tipo="reserva_cancha",
-        mensaje=mensaje,
-        partido_id=partido.id
-    )
+    org_nom, _, f_str, h_str = _obtener_datos_base_partido(partido)
+    mensaje = f"{org_nom} reservó tu cancha {cancha.nombre} para el {f_str} a las {h_str}hs ({partido.modalidad})."
+    
+    _notificar_multiples_usuarios(db, {cancha.propietario_id}, "reserva_cancha", mensaje, partido.id)
 
 
 def notificar_propietario_cancelacion(db: Session, cancha, partido):
     """Notifica al propietario de la cancha que se canceló un partido."""
-    nombre_organizador = f"{partido.organizador.nombre} {partido.organizador.apellido}"
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"{nombre_organizador} canceló la reserva de tu cancha {cancha.nombre} "
-        f"del {fecha_str} a las {hora_str}hs."
-    )
-
-    notificacion_repository.crear_notificacion(
-        db,
-        usuario_id=cancha.propietario_id,
-        tipo="cancelacion_cancha",
-        mensaje=mensaje,
-        partido_id=partido.id
-    )
+    org_nom, _, f_str, h_str = _obtener_datos_base_partido(partido)
+    mensaje = f"{org_nom} canceló la reserva de tu cancha {cancha.nombre} del {f_str} a las {h_str}hs."
+    
+    _notificar_multiples_usuarios(db, {cancha.propietario_id}, "cancelacion_cancha", mensaje, partido.id)
 
 
 def notificar_cambio_cancha(db: Session, cancha_anterior, cancha_nueva, partido):
     """Notifica a los propietarios cuando se cambia de cancha al editar un partido."""
-    nombre_organizador = f"{partido.organizador.nombre} {partido.organizador.apellido}"
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
+    org_nom, _, f_str, h_str = _obtener_datos_base_partido(partido)
 
-    # Si ambas canchas son del mismo propietario, enviar una sola notificación
     if cancha_anterior.propietario_id == cancha_nueva.propietario_id:
-        mensaje = (
-            f"{nombre_organizador} cambió la reserva del {fecha_str} a las {hora_str}hs "
-            f"de tu cancha {cancha_anterior.nombre} a tu cancha {cancha_nueva.nombre}."
-        )
-        notificacion_repository.crear_notificacion(
-            db,
-            usuario_id=cancha_anterior.propietario_id,
-            tipo="cambio_cancha_ganada",
-            mensaje=mensaje,
-            partido_id=partido.id
-        )
+        mensaje = f"{org_nom} cambió la reserva del {f_str} a las {h_str}hs de tu cancha {cancha_anterior.nombre} a tu cancha {cancha_nueva.nombre}."
+        _notificar_multiples_usuarios(db, {cancha_anterior.propietario_id}, "cambio_cancha_ganada", mensaje, partido.id)
         return
 
-    # Notificar al propietario que pierde el turno
-    mensaje_perdida = (
-        f"{nombre_organizador} movió su partido del {fecha_str} a las {hora_str}hs "
-        f"de tu cancha {cancha_anterior.nombre} a otra cancha."
-    )
-    notificacion_repository.crear_notificacion(
-        db,
-        usuario_id=cancha_anterior.propietario_id,
-        tipo="cambio_cancha_perdida",
-        mensaje=mensaje_perdida,
-        partido_id=partido.id
-    )
+    # Propietario anterior pierde turno
+    mensaje_perdida = f"{org_nom} movió su partido del {f_str} a las {h_str}hs de tu cancha {cancha_anterior.nombre} a otra cancha."
+    _notificar_multiples_usuarios(db, {cancha_anterior.propietario_id}, "cambio_cancha_perdida", mensaje_perdida, partido.id)
 
-    # Notificar al propietario que gana el turno
-    mensaje_ganada = (
-        f"{nombre_organizador} reservó tu cancha {cancha_nueva.nombre} "
-        f"para el {fecha_str} a las {hora_str}hs ({partido.modalidad})."
-    )
-    notificacion_repository.crear_notificacion(
-        db,
-        usuario_id=cancha_nueva.propietario_id,
-        tipo="cambio_cancha_ganada",
-        mensaje=mensaje_ganada,
-        partido_id=partido.id
-    )
+    # Nuevo propietario gana turno
+    mensaje_ganada = f"{org_nom} reservó tu cancha {cancha_nueva.nombre} para el {f_str} a las {h_str}hs ({partido.modalidad})."
+    _notificar_multiples_usuarios(db, {cancha_nueva.propietario_id}, "cambio_cancha_ganada", mensaje_ganada, partido.id)
+
 
 def notificar_reserva_cancelada_por_dueno(db: Session, cancha, partido):
-    fecha_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"El complejo canceló tu reserva en {cancha.nombre} "
-        f"del {fecha_str} a las {hora_str}hs. "
-        f"El turno fue liberado."
-    )
-
-    notificaciones = []
-
-    if partido.organizador_id:
-        notificaciones.append({
-            "usuario_id": partido.organizador_id,
-            "tipo": "reserva_cancelada_por_dueno",
-            "mensaje": mensaje,
-            "partido_id": partido.id
-        })
-
-    if partido.tipo == "abierto":
-        for jugador in partido.jugadores:
-            notificaciones.append({
-                "usuario_id": jugador.id,
-                "tipo": "reserva_cancelada_por_dueno",
-                "mensaje": mensaje,
-                "partido_id": partido.id
-            })
-
-    if notificaciones:
-        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+    _, _, f_str, h_str = _obtener_datos_base_partido(partido)
+    mensaje = f"El complejo canceló tu reserva en {cancha.nombre} del {f_str} a las {h_str}hs. El turno fue liberado."
+    
+    usuarios_ids = _obtener_ids_involucrados(partido, incluir_jugadores=(partido.tipo == "abierto"))
+    _notificar_multiples_usuarios(db, usuarios_ids, "reserva_cancelada_por_dueno", mensaje, partido.id)
 
 
 def notificar_reserva_reprogramada(db: Session, cancha, partido, fecha_ant, horario_ant, cancha_id_ant):
-    fecha_ant_str = fecha_ant.strftime("%d/%m/%Y")
-    hora_ant_str = horario_ant.strftime("%H:%M")
-    fecha_nueva_str = partido.fecha.strftime("%d/%m/%Y")
-    hora_nueva_str = partido.horario.strftime("%H:%M")
-
-    mensaje = (
-        f"El complejo reprogramó tu reserva en {cancha.nombre}: "
-        f"del {fecha_ant_str} a las {hora_ant_str}hs "
-        f"al {fecha_nueva_str} a las {hora_nueva_str}hs."
-    )
-
-    notificaciones = []
-
-    if partido.organizador_id:
-        notificaciones.append({
-            "usuario_id": partido.organizador_id,
-            "tipo": "reserva_reprogramada",
-            "mensaje": mensaje,
-            "partido_id": partido.id
-        })
-
-    if partido.tipo == "abierto":
-        for jugador in partido.jugadores:
-            notificaciones.append({
-                "usuario_id": jugador.id,
-                "tipo": "reserva_reprogramada",
-                "mensaje": mensaje,
-                "partido_id": partido.id
-            })
-
-    if notificaciones:
-        notificacion_repository.crear_notificaciones_bulk(db, notificaciones)
+    f_ant_str, h_ant_str = _formatear_fecha_hora(fecha_ant, horario_ant)
+    _, _, f_nueva_str, h_nueva_str = _obtener_datos_base_partido(partido)
+    
+    mensaje = f"El complejo reprogramó tu reserva en {cancha.nombre}: del {f_ant_str} a las {h_ant_str}hs al {f_nueva_str} a las {h_nueva_str}hs."
+    
+    usuarios_ids = _obtener_ids_involucrados(partido, incluir_jugadores=(partido.tipo == "abierto"))
+    _notificar_multiples_usuarios(db, usuarios_ids, "reserva_reprogramada", mensaje, partido.id)
