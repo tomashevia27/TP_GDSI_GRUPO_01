@@ -94,7 +94,7 @@ def obtener_mis_canchas(db: Session, current_user: Usuario):
     return cancha_repository.obtener_por_admin(db, current_user.id)
 
 def obtener_por_id(db: Session, cancha_id: int):
-    return cancha_repository.obtener_por_id(db, cancha_id)
+    return _obtener_cancha_existente(db, cancha_id)
 
 def editar_cancha(db: Session, current_user: Usuario, cancha_id: int, datos: CanchaUpdate):
     cancha = _obtener_cancha_existente(db, cancha_id)
