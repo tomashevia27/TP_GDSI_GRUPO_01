@@ -1,7 +1,10 @@
+from datetime import datetime, date, timedelta
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
 from ..db import Base
+
+DIAS_SEMANA_MAP = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64}
 
 class Cancha(Base):
     __tablename__ = "canchas"
@@ -22,3 +25,16 @@ class Cancha(Base):
     activa = Column(Boolean, default=True)
     propietario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     partidos = relationship("Partido", back_populates="cancha")
+
+    def opera_en_fecha(self, fecha: date) -> bool:
+        """Verifica si la cancha opera en la fecha solicitada."""
+        return bool(self.dias_operativos & DIAS_SEMANA_MAP[fecha.weekday()])
+
+    def obtener_rango_datetime(self) -> tuple[datetime, datetime]:
+        """Convierte los strings de apertura y cierre en datetimes relativos al mismo día."""
+        apertura = datetime.strptime(self.hora_apertura, "%H:%M")
+        if self.hora_cierre == "24:00":
+            cierre = datetime.strptime("00:00", "%H:%M") + timedelta(days=1)
+        else:
+            cierre = datetime.strptime(self.hora_cierre, "%H:%M")
+        return apertura, cierre

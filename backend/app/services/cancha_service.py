@@ -1,15 +1,15 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 
 from ..models.usuario_model import Usuario, RolUsuario
 from ..models.cancha_model import Cancha
 from ..repositories import cancha_repository
 from ..repositories import partido_repository
 from ..schemas.cancha_schemas import CanchaCreate, CanchaUpdate, AgendaSlot, AgendaRespuesta
+from .agenda_builder import AgendaBuilder
 
 MINUTOS_VALIDOS = {0, 15, 30, 45}
-DIAS_SEMANA_MAP = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64}
 
 # ─────────────────────────────────────────────
 # Helpers Internos
@@ -49,65 +49,6 @@ def _verificar_permisos_admin(current_user: Usuario, propietario_cancha_id: int 
         raise HTTPException(status_code=403, detail="Acción permitida solo para dueños de canchas")
     if propietario_cancha_id is not None and propietario_cancha_id != current_user.id:
         raise HTTPException(status_code=403, detail="Solo el propietario puede modificar o ver esta información")
-
-def _generar_slots_base(cancha, fecha, partidos, excluir_partido_id=None, incluir_detalle=False):
-    dia_semana = fecha.weekday()
-    if not (cancha.dias_operativos & DIAS_SEMANA_MAP[dia_semana]):
-        return []
-
-    duracion = cancha.duracion_turno
-    apertura = datetime.strptime(cancha.hora_apertura, "%H:%M")
-    if cancha.hora_cierre == "24:00":
-        cierre = datetime.strptime("00:00", "%H:%M") + timedelta(days=1)
-    else:
-        cierre = datetime.strptime(cancha.hora_cierre, "%H:%M")
-
-    slots = []
-    actual = apertura
-    while actual < cierre:
-        fin_slot = actual + timedelta(minutes=duracion)
-        if fin_slot > cierre:
-            break
-            
-        slot_data = {"horario": actual.strftime("%H:%M"), "estado": "disponible"}
-        
-        if incluir_detalle:
-            slot_data.update({
-                "partido_id": None, "cliente_nombre": None, "cliente_apellido": None,
-                "cliente_telefono": None, "organizador_nombre": None,
-                "organizador_apellido": None, "es_reserva_manual": False,
-            })
-            
-        slots.append(slot_data)
-        actual = fin_slot
-
-    duracion_td = timedelta(minutes=duracion)
-
-    for slot in slots:
-        slot_inicio = datetime.combine(fecha, datetime.strptime(slot["horario"], "%H:%M").time())
-        slot_fin = slot_inicio + duracion_td
-
-        for p in partidos:
-            if excluir_partido_id is not None and p.id == excluir_partido_id:
-                continue
-            
-            p_inicio = datetime.combine(p.fecha, p.horario)
-            p_fin = p_inicio + duracion_td
-
-            if slot_inicio < p_fin and slot_fin > p_inicio:
-                slot["estado"] = "bloqueado" if p.estado == "bloqueado" else "ocupado"
-                
-                if incluir_detalle:
-                    slot["partido_id"] = p.id
-                    slot["cliente_nombre"] = p.cliente_nombre
-                    slot["cliente_apellido"] = p.cliente_apellido
-                    slot["cliente_telefono"] = p.cliente_telefono
-                    slot["organizador_nombre"] = p.organizador.nombre if p.organizador else None
-                    slot["organizador_apellido"] = p.organizador.apellido if p.organizador else None
-                    slot["es_reserva_manual"] = p.reserva_manual if p.reserva_manual is not None else False
-                break
-
-    return slots
 
 
 # ─────────────────────────────────────────────
@@ -218,13 +159,10 @@ def obtener_turnos_disponibles(db: Session, cancha_id: int, fecha: date, excluir
 
     partidos = partido_repository.obtener_partidos_por_cancha_y_fecha(db, cancha_id, fecha)
     
-    return _generar_slots_base(
-        cancha=cancha, 
-        fecha=fecha, 
-        partidos=partidos, 
-        excluir_partido_id=excluir_partido_id, 
-        incluir_detalle=False
-    )
+    return (AgendaBuilder(cancha, fecha)
+            .generar_slots_vacios(incluir_detalle=False)
+            .inyectar_partidos(partidos, excluir_partido_id=excluir_partido_id, incluir_detalle=False)
+            .build())
 
 def obtener_agenda(db: Session, current_user: Usuario, cancha_id: int, fecha: date):
     cancha = cancha_repository.obtener_por_id(db, cancha_id)
@@ -235,12 +173,10 @@ def obtener_agenda(db: Session, current_user: Usuario, cancha_id: int, fecha: da
 
     partidos = partido_repository.obtener_partidos_por_cancha_y_fecha(db, cancha_id, fecha)
     
-    slots_data = _generar_slots_base(
-        cancha=cancha, 
-        fecha=fecha, 
-        partidos=partidos, 
-        incluir_detalle=True
-    )
+    slots_data = (AgendaBuilder(cancha, fecha)
+                  .generar_slots_vacios(incluir_detalle=True)
+                  .inyectar_partidos(partidos, incluir_detalle=True)
+                  .build())
 
     return AgendaRespuesta(
         cancha=cancha,
