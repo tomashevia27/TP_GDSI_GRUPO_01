@@ -1,4 +1,4 @@
-from app.core.exceptions import DomainPermissionError
+from ..core.exceptions import DomainPermissionError
 from datetime import datetime, date, timedelta
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship

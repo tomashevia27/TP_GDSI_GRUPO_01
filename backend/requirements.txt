@@ -4,4 +4,5 @@ pydantic[email]
 SQLAlchemy
 psycopg2-binary
 PyJWT
-python-dotenvpydantic-settings
+python-dotenv
+pydantic-settings

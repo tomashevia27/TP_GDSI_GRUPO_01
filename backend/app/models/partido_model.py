@@ -101,12 +101,17 @@ class Partido(Base):
 
         hora_partido_limpia = self.horario.replace(tzinfo=None) if hasattr(self.horario, 'replace') else self.horario
         partido_inicio = datetime.combine(self.fecha, hora_partido_limpia)
+        # Se permite bajarse en cualquier momento antes del inicio del partido.
+        if hora_actual >= partido_inicio:
+            raise DomainRuleError("El partido ya comenzó o está en curso")
 
-        if partido_inicio - hora_actual <= timedelta(hours=2):
-            raise DomainRuleError("El plazo para bajarse de este partido expiró")
-            
+        debe_otorgar_partido_a_favor = (partido_inicio - hora_actual) >= timedelta(hours=2)
+
         self.cupos_disponibles += 1
         self.jugadores = [j for j in self.jugadores if j.id != usuario.id]
+
+        # Devuelve True si corresponde otorgar un "partido a favor" por baja anticipada.
+        return debe_otorgar_partido_a_favor
 
     def cancelar_por_organizador(self, usuario_id):
         if self.organizador_id != usuario_id:

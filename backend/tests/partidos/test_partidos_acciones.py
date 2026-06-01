@@ -515,5 +515,12 @@ def test_bajarse_partido_fuera_de_plazo():
 
     res_baja = client.delete(f"/partidos/{partido_id}/bajarse")
 
-    assert res_baja.status_code == 400
-    assert "plazo" in res_baja.json()["detail"]
+    # Ahora se permite bajarse en cualquier momento antes del inicio; no debe otorgarse partido a favor
+    assert res_baja.status_code == 200
+    assert res_baja.json()["cupos_disponibles"] == 3
+
+    # Verificar que no se otorgó partido a favor al usuario 2
+    db = TestingSessionLocal()
+    usuario_2 = db.query(Usuario).filter(Usuario.id == 2).first()
+    assert usuario_2.partidos_a_favor == 0
+    db.close()

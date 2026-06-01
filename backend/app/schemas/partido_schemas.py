@@ -19,6 +19,7 @@ class PartidoCreate(BaseModel):
     tipo: str
     descripcion: Optional[str] = None
     cupos_disponibles: Optional[int] = None
+    use_partido_a_favor: Optional[bool] = False
 
 class ReservaManualCreate(BaseModel):
     cancha_id: int
@@ -68,6 +69,12 @@ class FiltroOpcion(BaseModel):
 class FiltrosDisponibles(BaseModel):
     zonas: List[FiltroOpcion]
     modalidades: List[FiltroOpcion]
+
+
+class PartidosAFavorRespuesta(BaseModel):
+    cantidad: int
+    tiene: bool
+
 
 class ReprogramarReserva(BaseModel):
     fecha: date
