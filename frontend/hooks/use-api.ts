@@ -24,6 +24,11 @@ export interface UserProfile extends UserData {
   id: number
 }
 
+export interface PartidosAFavorData {
+  cantidad: number
+  tiene: boolean
+}
+
 function getAccessToken(): string {
   const token = sessionStorage.getItem("teamup_auth_access_token")
   if (!token) {
@@ -128,6 +133,21 @@ export async function getUserProfile(): Promise<UserProfile> {
 
   if (!response.ok) {
     throw new Error(data.detail || "Error al cargar el perfil")
+  }
+
+  return data
+}
+
+export async function getPartidosAFavor(): Promise<PartidosAFavorData> {
+  const response = await fetch(`${API_URL}/partidos/partidos-a-favor`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar los partidos a favor")
   }
 
   return data
@@ -260,6 +280,7 @@ export interface PartidoCreateData {
   tipo: string;
   descripcion?: string;
   cupos_disponibles?: number;
+  use_partido_a_favor?: boolean;
 }
 
 export interface PartidoData {
@@ -278,6 +299,7 @@ export interface PartidoData {
     nombre: string;
     zona: string;
     direccion: string;
+    duracion_turno?: number;
   };
   organizador?: UserProfile;
   jugadores?: UserProfile[];
@@ -351,8 +373,11 @@ export async function cancelarPartido(partidoId: string | number): Promise<Parti
   return data
 }
 
-export async function inscribirseAPartido(partidoId: string | number): Promise<PartidoData> {
-  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse`, {
+export async function inscribirseAPartido(
+  partidoId: string | number,
+  usePartidoAFavor: boolean = false
+): Promise<PartidoData> {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse?use_partido_a_favor=${usePartidoAFavor ? "true" : "false"}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${getAccessToken()}`,

@@ -4,9 +4,19 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL } from "@/hooks/use-api"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL, getPartidosAFavor } from "@/hooks/use-api"
 import Swal from "sweetalert2"
 import { CountdownTimer } from "@/components/CountdownTimer"
+
+type CanchaDetalle = {
+  id: number
+  nombre: string
+  zona: string
+  direccion: string
+  duracion_turno?: number
+}
 
 export default function PartidoDetallePage() {
   const params = useParams()
@@ -14,13 +24,15 @@ export default function PartidoDetallePage() {
   const partidoId = params.id as string
 
   const [partido, setPartido] = useState<PartidoData | null>(null)
-  const [cancha, setCancha] = useState<any>(null)
+  const [cancha, setCancha] = useState<CanchaDetalle | null>(null)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCancelling, setIsCancelling] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<UserProfile | null>(null)
+  const [usarPartidoAFavor, setUsarPartidoAFavor] = useState(false)
+  const [tienePartidosAFavor, setTienePartidosAFavor] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -38,6 +50,13 @@ export default function PartidoDetallePage() {
         try {
           const user = await getUserProfile()
           setCurrentUser(user)
+
+          try {
+            const creditos = await getPartidosAFavor()
+            setTienePartidosAFavor(creditos.tiene)
+          } catch (e) {
+            console.warn("Error al cargar partidos a favor:", e)
+          }
         } catch (e) {
           // No user logged in or error
         }
@@ -134,19 +153,24 @@ export default function PartidoDetallePage() {
     if (result.isConfirmed) {
       setIsJoining(true)
       try {
-        await inscribirseAPartido(partido.id)
+        const usarCredito = usarPartidoAFavor
+        await inscribirseAPartido(partido.id, usarCredito)
 
         await Swal.fire({
-          title: "¡Reserva iniciada!",
-          text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
+          title: usarCredito ? "¡Inscripción confirmada!" : "¡Reserva iniciada!",
+          text: usarCredito
+            ? "Se descontó un partido a favor de tu cuenta."
+            : "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
           icon: "success",
           confirmButtonColor: "#FF6B4A",
-          confirmButtonText: "Proceder al pago"
+          confirmButtonText: usarCredito ? "Continuar" : "Proceder al pago"
         })
 
         await Swal.fire({
-          title: "¡Pago exitoso!",
-          text: "Tu lugar fue reservado correctamente.",
+          title: usarCredito ? "¡Inscripción lista!" : "¡Pago exitoso!",
+          text: usarCredito
+            ? "Tu lugar fue reservado correctamente usando tu crédito."
+            : "Tu lugar fue reservado correctamente.",
           icon: "success",
           timer: 2000,
           showConfirmButton: false
@@ -246,7 +270,7 @@ export default function PartidoDetallePage() {
             <Clock className="w-4 h-4" />
             <span className="text-xs font-medium uppercase tracking-wide">Horario</span>
           </div>
-          <p className="font-semibold text-foreground">{formatearHorarioTurno(partido.horario, partido.cancha?.duracion_turno || 60)}</p>
+          <p className="font-semibold text-foreground">{formatearHorarioTurno(partido.horario, cancha?.duracion_turno || 60)}</p>
         </div>
       </div>
 
@@ -268,6 +292,28 @@ export default function PartidoDetallePage() {
           </div>
         </div>
       </div>
+
+      {canJoin && (
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary/30 p-4 mb-6">
+          <Checkbox
+            id="usar-partido-a-favor-inscripcion"
+            checked={usarPartidoAFavor}
+            disabled={!tienePartidosAFavor || isJoining}
+            onCheckedChange={(checked) => setUsarPartidoAFavor(checked === true)}
+            className="mt-0.5"
+          />
+          <div className="space-y-1 leading-tight">
+            <Label htmlFor="usar-partido-a-favor-inscripcion" className="font-medium text-sm cursor-pointer">
+              Usar partido a favor al inscribirme
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {tienePartidosAFavor
+                ? "Se descontará un crédito de tu cuenta para esta inscripción."
+                : "No tenés partidos a favor disponibles."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Description */}
       {partido.descripcion && (
