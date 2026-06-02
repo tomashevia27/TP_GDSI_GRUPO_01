@@ -75,7 +75,7 @@ export function ManualReservationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Cargar reserva manual</DialogTitle>
           <DialogDescription>
@@ -83,70 +83,76 @@ export function ManualReservationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Fecha</Label>
-              <Input value={fecha} readOnly className="bg-muted" />
+        <div className="space-y-5 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Fecha</Label>
+              <Input value={fecha} readOnly className="bg-muted/50 font-medium border-0 focus-visible:ring-0" />
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Horario</Label>
-              <Input value={`${horario} hs`} readOnly className="bg-muted" />
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Horario</Label>
+              <Input value={`${horario} hs`} readOnly className="bg-muted/50 font-medium border-0 focus-visible:ring-0" />
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Cancha</Label>
-            <Input value={canchaNombre} readOnly className="bg-muted" />
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cancha</Label>
+            <Input value={canchaNombre} readOnly className="bg-muted/50 font-medium border-0 focus-visible:ring-0" />
           </div>
 
-          <div className="border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground mb-3">
-              Datos del cliente (opcional)
+          <div className="border-t border-border/60 pt-5 mt-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+              Datos del cliente <span className="opacity-70 lowercase normal-case text-[11px]">(opcional)</span>
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="cliente-nombre">Nombre</Label>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cliente-nombre" className="text-sm">Nombre</Label>
                 <Input
                   id="cliente-nombre"
                   value={clienteNombre}
                   onChange={(e) => setClienteNombre(e.target.value)}
                   placeholder="Ej: Juan"
+                  className="bg-background"
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="cliente-apellido">Apellido</Label>
+              <div className="space-y-2">
+                <Label htmlFor="cliente-apellido" className="text-sm">Apellido</Label>
                 <Input
                   id="cliente-apellido"
                   value={clienteApellido}
                   onChange={(e) => setClienteApellido(e.target.value)}
                   placeholder="Ej: Pérez"
+                  className="bg-background"
                 />
               </div>
             </div>
-            <div className="space-y-3 mt-3">
-              <div className="space-y-1.5">
-                <Label htmlFor="cliente-telefono">Teléfono</Label>
-                <Input
-                  id="cliente-telefono"
-                  value={clienteTelefono}
-                  onChange={(e) => setClienteTelefono(e.target.value)}
-                  placeholder="Ej: 11 1234-5678"
-                />
-              </div>
+            <div className="space-y-2 mt-4">
+              <Label htmlFor="cliente-telefono" className="text-sm">Teléfono</Label>
+              <Input
+                id="cliente-telefono"
+                value={clienteTelefono}
+                onChange={(e) => setClienteTelefono(e.target.value)}
+                placeholder="Ej: 11 1234-5678"
+                className="bg-background"
+              />
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 pt-2">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
+            className="w-full sm:w-auto"
           >
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting}>
+          <Button 
+            onClick={handleSubmit} 
+            disabled={isSubmitting} 
+            className="w-full sm:w-auto min-w-[140px]"
+          >
             {isSubmitting ? "Guardando..." : "Confirmar reserva"}
           </Button>
         </DialogFooter>

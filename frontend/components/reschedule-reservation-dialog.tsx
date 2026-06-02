@@ -136,7 +136,7 @@ export function RescheduleReservationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Reprogramar reserva</DialogTitle>
           <DialogDescription>
@@ -144,48 +144,50 @@ export function RescheduleReservationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="bg-secondary/30 p-3 rounded-xl border border-border/50">
-            <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wide font-medium">Reserva actual</p>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-1.5 text-foreground">
-                <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                {new Date(fechaActual + "T12:00:00").toLocaleDateString("es-AR", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
+        <div className="space-y-5 py-4">
+          <div className="bg-secondary/30 p-4 rounded-xl border border-border/50 shadow-sm">
+            <p className="text-[10px] text-muted-foreground mb-3 uppercase tracking-wider font-semibold">Reserva actual</p>
+            <div className="flex flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2 text-foreground">
+                <Calendar className="h-4 w-4 text-primary" />
+                <span className="font-medium">
+                  {new Date(fechaActual + "T12:00:00").toLocaleDateString("es-AR", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </span>
               </div>
-              <div className="flex items-center gap-1.5 text-foreground">
-                <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                {horarioActual} hs
+              <div className="flex items-center gap-2 text-foreground">
+                <Clock className="h-4 w-4 text-primary" />
+                <span className="font-medium">{horarioActual} hs</span>
+                <span className="text-muted-foreground ml-1">•</span>
+                <span className="text-muted-foreground">{canchaNombre}</span>
               </div>
-              <span className="text-muted-foreground">•</span>
-              <span className="text-foreground font-medium">{canchaNombre}</span>
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Nueva fecha</Label>
+          <div className="space-y-2 border-t border-border/60 pt-5">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nueva fecha</Label>
             <Input
               type="date"
               value={nuevaFecha}
               onChange={(e) => setNuevaFecha(e.target.value)}
-              className="bg-input border-0 h-11"
+              className="bg-input h-11"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs text-muted-foreground">Nuevo turno</Label>
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Nuevo turno</Label>
             {isLoadingTurnos ? (
-              <div className="flex items-center justify-center py-4">
+              <div className="flex items-center justify-center py-4 bg-muted/30 rounded-lg">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary" />
               </div>
             ) : turnos.length > 0 ? (
               <select
                 value={nuevoHorario}
                 onChange={(e) => setNuevoHorario(e.target.value)}
-                className="flex h-11 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="flex h-11 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring border border-input"
               >
                 <option value="" disabled>
                   Seleccioná un turno
@@ -203,26 +205,30 @@ export function RescheduleReservationDialog({
                 ))}
               </select>
             ) : (
-              <p className="text-sm text-muted-foreground py-2">
-                No hay turnos disponibles para esta fecha.
-              </p>
+              <div className="bg-muted/30 p-4 rounded-lg text-center">
+                <p className="text-sm text-muted-foreground">
+                  No hay turnos disponibles.
+                </p>
+              </div>
             )}
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2 pt-2">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
+            className="w-full sm:w-auto"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={isSubmitting || !nuevoHorario}
+            className="w-full sm:w-auto min-w-[140px]"
           >
-            {isSubmitting ? "Reprogramando..." : "Confirmar reprogramación"}
+            {isSubmitting ? "Guardando..." : "Confirmar"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { MapPin, Clock, Zap, DollarSign, Search, Filter, Trophy, Users, Star } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/auth-provider"
@@ -40,6 +41,7 @@ export default function CanchasPage() {
     const [isLoading, setIsLoading] = useState(true)
     const [searchTerm, setSearchTerm] = useState("")
     const { role } = useAuthContext()
+    const router = useRouter()
 
     useEffect(() => {
         async function fetchCanchas() {
@@ -286,7 +288,16 @@ export default function CanchasPage() {
                                                     </span>
                                                     <span className="text-muted-foreground text-sm ml-1">/turno</span>
                                                 </div>
-                                                <Button size="sm" className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                                                <Button 
+                                                    size="sm" 
+                                                    className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                                                    onClick={(e) => {
+                                                        if (role === "admin") {
+                                                            e.preventDefault()
+                                                            router.push(`/canchas/${cancha.id}/editar`)
+                                                        }
+                                                    }}
+                                                >
                                                     {role === "admin" ? "Editar" : "Reservar"}
                                                 </Button>
                                             </div>
