@@ -38,7 +38,7 @@ Esto levanta automáticamente:
 |---|---|
 | Frontend (Next.js) | http://localhost:3000 |
 | Backend (FastAPI) | http://localhost:8000 |
-| Base de datos (PostgreSQL) | localhost:5432 |
+| Base de datos (PostgreSQL) | http://localhost:5432 |
 | PgAdmin | http://localhost:5050 |
 
 ### Detener los servicios
