@@ -24,7 +24,7 @@ def registrar(db: Session, usuario: UsuarioRegistro) -> dict:
     nuevo_usuario = Usuario(**usuario.model_dump(), confirmation_code=code, email_confirmado=False)
     usuario_repository.guardar(db, nuevo_usuario)
 
-    # El helper envía por SMTP según la configuración.
+    # El helper envía por API de Brevo según la configuración.
     try:
         email_service.send_confirmation_email(nuevo_usuario.email, code)
     except Exception as e:
