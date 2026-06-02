@@ -6,7 +6,7 @@ export const API_URL = process.env.NEXT_PUBLIC_API_URL
     : "http://localhost:8000")
 
 const CLOUD_NAME = "dzsrgcgq6"
-const UPLOAD_PRESET = "TeamUp_preset"
+const UPLOAD_PRESET = "PartidoYa_preset"
 
 export interface UserData {
   nombre: string
@@ -30,7 +30,7 @@ export interface PartidosAFavorData {
 }
 
 function getAccessToken(): string {
-  const token = sessionStorage.getItem("teamup_auth_access_token")
+  const token = sessionStorage.getItem("partidoya_auth_access_token")
   if (!token) {
     throw new Error("No hay una sesión activa")
   }

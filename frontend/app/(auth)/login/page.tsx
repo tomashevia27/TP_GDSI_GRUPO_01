@@ -23,7 +23,7 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-  
+
     if (!email || !password) {
       Swal.fire({
         title: "Atención",
@@ -33,14 +33,14 @@ export default function LoginPage() {
       })
       return
     }
-  
+
     setIsLoading(true)
-  
+
     try {
       const data = await loginUser(email, password)
-      
+
       login(String(data.usuario_id), data.rol, data.access_token)
-      
+
       await Swal.fire({
         title: "¡Bienvenido!",
         text: "Inicio de sesión exitoso.",
@@ -48,9 +48,9 @@ export default function LoginPage() {
         timer: 1500,
         showConfirmButton: false,
       })
-  
+
       router.push("/home")
-      
+
     } catch (error) {
       Swal.fire({
         title: "Error de acceso",
@@ -90,10 +90,16 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 p-8">
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/25 animate-pulse-glow">
-              <Trophy className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shadow-primary/25 animate-pulse-glow">
+              <Image
+                src="/logo-partidoya.jpg"
+                alt="PartidoYa Logo"
+                width={56}
+                height={56}
+                className="object-cover w-full h-full"
+              />
             </div>
-            <span className="text-3xl font-bold text-gray-900">TeamUp</span>
+            <span className="text-3xl font-bold text-gray-900">PartidoYa</span>
           </div>
 
           {/* Header */}
@@ -162,8 +168,8 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-gray-500 text-sm">
               ¿No tenés cuenta?{" "}
-              <Link 
-                href="/register" 
+              <Link
+                href="/register"
                 className="text-primary font-semibold hover:underline transition-colors"
               >
                 Registrate acá

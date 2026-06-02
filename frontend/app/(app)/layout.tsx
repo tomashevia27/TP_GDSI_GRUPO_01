@@ -17,7 +17,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   function handleLogout() {
     logout()
-    router.push("/login")
+    router.push("/")
   }
 
   if (isLoading) {

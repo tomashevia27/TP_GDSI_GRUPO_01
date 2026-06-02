@@ -15,10 +15,10 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'TeamUp - Armá tu partido',
+  title: 'PartidoYa - Armá tu partido',
   description: 'La app para organizar partidos de fútbol con amigos. Encontrá jugadores, reservá canchas y armá tu equipo.',
   keywords: ['fútbol', 'partidos', 'amigos', 'canchas', 'deportes', 'equipo'],
-  authors: [{ name: 'TeamUp' }],
+  authors: [{ name: 'PartidoYa' }],
   icons: {
     icon: '/pelotarda.png',
     apple: '/pelotarda.png',

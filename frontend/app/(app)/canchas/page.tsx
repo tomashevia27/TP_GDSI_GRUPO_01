@@ -119,18 +119,20 @@ export default function CanchasPage() {
                 </div>
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-                    <div className="flex items-center gap-3 mb-4 animate-slide-up">
-                        <div className="w-12 h-12 rounded-xl overflow-hidden shadow-2xl">
-                            <Image
-                                src="/logo-teamup.jpg"
-                                alt="TeamUp Logo"
-                                width={48}
-                                height={48}
-                                className="w-full h-full object-cover"
-                            />
+                    {role !== "admin" && (
+                        <div className="flex items-center gap-3 mb-4 animate-slide-up">
+                            <div className="w-12 h-12 rounded-xl overflow-hidden shadow-2xl">
+                                <Image
+                                    src="/logo-partidoya.jpg"
+                                    alt="PartidoYa Logo"
+                                    width={48}
+                                    height={48}
+                                    className="w-full h-full object-cover"
+                                />
+                            </div>
+                            <span className="text-card font-bold text-2xl drop-shadow-lg">PartidoYa</span>
                         </div>
-                        <span className="text-card font-bold text-2xl drop-shadow-lg">TeamUp</span>
-                    </div>
+                    )}
                     <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up animation-delay-100 text-balance">
                         {role === "admin" ? "Mis Canchas" : "Canchas Disponibles"}
                     </h1>
@@ -288,8 +290,8 @@ export default function CanchasPage() {
                                                     </span>
                                                     <span className="text-muted-foreground text-sm ml-1">/turno</span>
                                                 </div>
-                                                <Button 
-                                                    size="sm" 
+                                                <Button
+                                                    size="sm"
                                                     className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
                                                     onClick={(e) => {
                                                         if (role === "admin") {
@@ -329,7 +331,7 @@ export default function CanchasPage() {
                             ¿Tenés una cancha?
                         </h2>
                         <p className="text-primary-foreground/90 text-lg mb-8 max-w-2xl mx-auto">
-                            Sumá tu cancha a TeamUp y llegá a miles de jugadores que buscan dónde jugar
+                            Sumá tu cancha a PartidoYa y llegá a miles de jugadores que buscan dónde jugar
                         </p>
                     </div>
                 </div>
