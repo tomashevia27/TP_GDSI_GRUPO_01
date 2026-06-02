@@ -5,9 +5,10 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import { MapPin, Info, ArrowLeft, Clock, DollarSign, Zap } from "lucide-react"
 import Swal from "sweetalert2"
-import { crearPartido, API_URL } from "@/hooks/use-api"
+import { crearPartido, getTurnos, API_URL, getPartidosAFavor } from "@/hooks/use-api"
 
 function NuevoPartidoForm() {
   const router = useRouter()
@@ -25,6 +26,8 @@ function NuevoPartidoForm() {
   const [tipo, setTipo] = useState("abierto")
   const [cuposDisponibles, setCuposDisponibles] = useState("")
   const [descripcion, setDescripcion] = useState("")
+  const [usarPartidoAFavor, setUsarPartidoAFavor] = useState(false)
+  const [tienePartidosAFavor, setTienePartidosAFavor] = useState(false)
   const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string; estado: string }[]>([])
 
   useEffect(() => {
@@ -37,7 +40,7 @@ function NuevoPartidoForm() {
     if (fecha) {
       getTurnos(cancha.id, fecha)
         .then(data => {
-          const duracion = cancha.duracion_turno || 60
+          const duracion = Number(cancha.duracion_turno) || 60
           const turnos = data.slots.map(s => {
             const [h, m] = s.horario.split(":").map(Number)
             const d = new Date()
@@ -51,7 +54,7 @@ function NuevoPartidoForm() {
       const turnos = []
       const [aperturaH, aperturaM] = cancha.hora_apertura.split(":").map(Number)
       const [cierreH, cierreM] = cancha.hora_cierre.split(":").map(Number)
-      const duracion = 60
+      const duracion = Number(cancha.duracion_turno) || 60
 
       let actual = new Date()
       actual.setHours(aperturaH, aperturaM, 0, 0)
@@ -108,6 +111,19 @@ function NuevoPartidoForm() {
     fetchData()
   }, [canchaId, router])
 
+  useEffect(() => {
+    async function loadPartidosAFavor() {
+      try {
+        const data = await getPartidosAFavor()
+        setTienePartidosAFavor(data.tiene)
+      } catch (error) {
+        console.warn("Error al cargar partidos a favor:", error)
+      }
+    }
+
+    loadPartidosAFavor()
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -135,26 +151,32 @@ function NuevoPartidoForm() {
 
     setIsSubmitting(true)
     try {
+      const usarCredito = usarPartidoAFavor
       await crearPartido({
         cancha_id: Number(cancha.id),
         fecha,
         horario,
         tipo,
         descripcion: descripcion || undefined,
-        cupos_disponibles: tipo === "abierto" ? Number(cuposDisponibles) : undefined
+        cupos_disponibles: tipo === "abierto" ? Number(cuposDisponibles) : undefined,
+        use_partido_a_favor: usarCredito
       })
 
       await Swal.fire({
-        title: "¡Reserva iniciada!",
-        text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
+        title: usarCredito ? "¡Partido creado con crédito!" : "¡Reserva iniciada!",
+        text: usarCredito
+          ? "Se descontó un partido a favor de tu cuenta."
+          : "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
         icon: "success",
         confirmButtonColor: "#FF6B4A",
-        confirmButtonText: "Proceder al pago"
+        confirmButtonText: usarCredito ? "Continuar" : "Proceder al pago"
       })
 
       Swal.fire({
-        title: "¡Pago exitoso!",
-        text: "El partido fue creado y la cancha está reservada.",
+        title: usarCredito ? "¡Partido confirmado!" : "¡Pago exitoso!",
+        text: usarCredito
+          ? "El partido fue creado y la cancha está reservada usando tu crédito."
+          : "El partido fue creado y la cancha está reservada.",
         icon: "success",
         timer: 2000,
         showConfirmButton: false
@@ -233,7 +255,7 @@ function NuevoPartidoForm() {
                   </div>
                   <div className="flex items-center gap-2 text-muted-foreground">
                     <Clock className="h-4 w-4" />
-                    {cancha.hora_apertura} a {cancha.hora_cierre} hs (60 min)
+                    {cancha.hora_apertura} a {cancha.hora_cierre} hs ({cancha.duracion_turno || 60} min)
                   </div>
                 </div>
                 <div className="space-y-3">
@@ -350,6 +372,26 @@ function NuevoPartidoForm() {
                 className="flex min-h-[80px] w-full rounded-lg bg-input px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Aclaraciones, reglas, o cualquier info extra para los jugadores..."
               />
+            </div>
+
+            <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary/30 p-4">
+              <Checkbox
+                id="usar-partido-a-favor"
+                checked={usarPartidoAFavor}
+                disabled={!tienePartidosAFavor}
+                onCheckedChange={(checked) => setUsarPartidoAFavor(checked === true)}
+                className="mt-0.5"
+              />
+              <div className="space-y-1 leading-tight">
+                <Label htmlFor="usar-partido-a-favor" className="font-medium text-sm cursor-pointer">
+                  Usar partido a favor
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {tienePartidosAFavor
+                    ? "Se descontará un crédito de tu cuenta para crear este partido."
+                    : "No tenés partidos a favor disponibles."}
+                </p>
+              </div>
             </div>
 
             <Button type="submit" className="w-full font-semibold h-11" disabled={isSubmitting || !cancha}>

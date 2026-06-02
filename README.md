@@ -1,6 +1,6 @@
-# TeamUp ⚽
+# PartidoYa ⚽
 
-**TeamUp** es una plataforma para organizar partidos de fútbol. Permite gestionar canchas, armar equipos, coordinar horarios y notificar a los jugadores por mail.
+**PartidoYa** es una plataforma para organizar partidos de fútbol. Permite gestionar canchas, armar equipos, coordinar horarios y notificar a los jugadores por mail.
 
 ---
 

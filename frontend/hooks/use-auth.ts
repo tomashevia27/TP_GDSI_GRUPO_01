@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from "react"
 
-const AUTH_SESSION_KEY = "teamup_auth_user_id"
-const AUTH_ROLE_KEY = "teamup_auth_user_role"
-const AUTH_TOKEN_KEY = "teamup_auth_access_token"
+const AUTH_SESSION_KEY = "partidoya_auth_user_id"
+const AUTH_ROLE_KEY = "partidoya_auth_user_role"
+const AUTH_TOKEN_KEY = "partidoya_auth_access_token"
 
 export function useAuth() {
   const [userId, setUserId] = useState<string | null>(null)

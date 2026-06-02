@@ -4,9 +4,19 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL } from "@/hooks/use-api"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL, getPartidosAFavor } from "@/hooks/use-api"
 import Swal from "sweetalert2"
 import { CountdownTimer } from "@/components/CountdownTimer"
+
+type CanchaDetalle = {
+  id: number
+  nombre: string
+  zona: string
+  direccion: string
+  duracion_turno?: number
+}
 
 export default function PartidoDetallePage() {
   const params = useParams()
@@ -14,13 +24,15 @@ export default function PartidoDetallePage() {
   const partidoId = params.id as string
 
   const [partido, setPartido] = useState<PartidoData | null>(null)
-  const [cancha, setCancha] = useState<any>(null)
+  const [cancha, setCancha] = useState<CanchaDetalle | null>(null)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isCancelling, setIsCancelling] = useState(false)
   const [isJoining, setIsJoining] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<UserProfile | null>(null)
+  const [usarPartidoAFavor, setUsarPartidoAFavor] = useState(false)
+  const [tienePartidosAFavor, setTienePartidosAFavor] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -38,6 +50,13 @@ export default function PartidoDetallePage() {
         try {
           const user = await getUserProfile()
           setCurrentUser(user)
+
+          try {
+            const creditos = await getPartidosAFavor()
+            setTienePartidosAFavor(creditos.tiene)
+          } catch (e) {
+            console.warn("Error al cargar partidos a favor:", e)
+          }
         } catch (e) {
           // No user logged in or error
         }
@@ -88,7 +107,7 @@ export default function PartidoDetallePage() {
   const isOrganizer = !!(currentUser && partido.organizador && currentUser.id === partido.organizador.id)
   const isJoined = !!(currentUser && partido.jugadores?.some(j => j.id === currentUser.id))
   const canEditOrCancel = isOrganizer && partido.estado?.toLowerCase() !== "cancelado"
-  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && !isJoined && spotsLeft > 0
+  const canJoin = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && !isJoined && spotsLeft > 0 && currentUser?.rol !== "admin"
   const canLeave = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && isJoined
 
   const handleCancel = async () => {
@@ -134,19 +153,24 @@ export default function PartidoDetallePage() {
     if (result.isConfirmed) {
       setIsJoining(true)
       try {
-        await inscribirseAPartido(partido.id)
-        
+        const usarCredito = usarPartidoAFavor
+        await inscribirseAPartido(partido.id, usarCredito)
+
         await Swal.fire({
-          title: "¡Reserva iniciada!",
-          text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
+          title: usarCredito ? "¡Inscripción confirmada!" : "¡Reserva iniciada!",
+          text: usarCredito
+            ? "Se descontó un partido a favor de tu cuenta."
+            : "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
           icon: "success",
           confirmButtonColor: "#FF6B4A",
-          confirmButtonText: "Proceder al pago"
+          confirmButtonText: usarCredito ? "Continuar" : "Proceder al pago"
         })
 
         await Swal.fire({
-          title: "¡Pago exitoso!",
-          text: "Tu lugar fue reservado correctamente.",
+          title: usarCredito ? "¡Inscripción lista!" : "¡Pago exitoso!",
+          text: usarCredito
+            ? "Tu lugar fue reservado correctamente usando tu crédito."
+            : "Tu lugar fue reservado correctamente.",
           icon: "success",
           timer: 2000,
           showConfirmButton: false
@@ -213,24 +237,24 @@ export default function PartidoDetallePage() {
       {/* Match header */}
       <div className="mb-6">
         <div className="flex items-center flex-wrap gap-3 mb-4">
-          
+
           <span className="px-3 py-1.5 bg-primary text-primary-foreground text-sm font-bold rounded-lg tracking-wide">
             {partido.estado.toUpperCase()}
           </span>
-          
+
           <span className="px-3 py-1.5 bg-secondary text-secondary-foreground text-sm font-semibold rounded-lg capitalize tracking-wide">
             {partido.tipo}
           </span>
-          
+
           {partido.estado.toLowerCase() !== "cancelado" && (
             <CountdownTimer fecha={partido.fecha} horario={partido.horario} />
           )}
         </div>
-  
-  <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
-    Partido de <span className="capitalize">{partido.modalidad}</span>
-  </h1>
-</div>
+
+        <h1 className="text-2xl sm:text-3xl font-bold text-foreground text-balance">
+          Partido de <span className="capitalize">{partido.modalidad}</span>
+        </h1>
+      </div>
 
       {/* Key info cards */}
       <div className="grid grid-cols-2 gap-3 mb-6">
@@ -246,7 +270,7 @@ export default function PartidoDetallePage() {
             <Clock className="w-4 h-4" />
             <span className="text-xs font-medium uppercase tracking-wide">Horario</span>
           </div>
-          <p className="font-semibold text-foreground">{formatearHorarioTurno(partido.horario, 60)}</p>
+          <p className="font-semibold text-foreground">{formatearHorarioTurno(partido.horario, cancha?.duracion_turno || 60)}</p>
         </div>
       </div>
 
@@ -268,6 +292,28 @@ export default function PartidoDetallePage() {
           </div>
         </div>
       </div>
+
+      {canJoin && (
+        <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary/30 p-4 mb-6">
+          <Checkbox
+            id="usar-partido-a-favor-inscripcion"
+            checked={usarPartidoAFavor}
+            disabled={!tienePartidosAFavor || isJoining}
+            onCheckedChange={(checked) => setUsarPartidoAFavor(checked === true)}
+            className="mt-0.5"
+          />
+          <div className="space-y-1 leading-tight">
+            <Label htmlFor="usar-partido-a-favor-inscripcion" className="font-medium text-sm cursor-pointer">
+              Usar partido a favor al inscribirme
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              {tienePartidosAFavor
+                ? "Se descontará un crédito de tu cuenta para esta inscripción."
+                : "No tenés partidos a favor disponibles."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Description */}
       {partido.descripcion && (
@@ -309,9 +355,8 @@ export default function PartidoDetallePage() {
               <span className="font-semibold text-foreground">Jugadores</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className={`text-lg font-bold ${
-                spotsLeft === 0 ? "text-accent" : "text-primary"
-              }`}>
+              <span className={`text-lg font-bold ${spotsLeft === 0 ? "text-accent" : "text-primary"
+                }`}>
                 {confirmedCount}/{partido.cantidad_jugadores}
               </span>
               {/* Progress ring */}
@@ -344,7 +389,7 @@ export default function PartidoDetallePage() {
 
         <div className="divide-y divide-border">
           {/* Creador del partido */}
-          <div 
+          <div
             className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
             onClick={() => partido.organizador && setSelectedPlayer(partido.organizador)}
           >
@@ -379,8 +424,8 @@ export default function PartidoDetallePage() {
 
           {/* Jugadores que se sumaron al partido */}
           {partido.jugadores?.map((jugador) => (
-            <div 
-              key={`jugador-${jugador.id}`} 
+            <div
+              key={`jugador-${jugador.id}`}
               className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/40 transition-colors"
               onClick={() => setSelectedPlayer(jugador)}
             >
@@ -410,7 +455,7 @@ export default function PartidoDetallePage() {
               </div>
             </div>
           ))}
-          
+
           {/* Amigos/Invitados del creador */}
           {Array.from({ length: Math.max(0, partido.cantidad_jugadores - partido.cupos_disponibles - 1 - (partido.jugadores?.length || 0)) }).map((_, i) => (
             <div key={`invitado-${i}`} className="flex items-center justify-between p-4">
@@ -428,7 +473,7 @@ export default function PartidoDetallePage() {
               </div>
             </div>
           ))}
-          
+
           {/* Lugares disponibles (solo si es abierto) */}
           {partido.tipo === "abierto" && Array.from({ length: partido.cupos_disponibles }).map((_, i) => (
             <div key={`cupo-${i}`} className="flex items-center justify-between p-4 bg-secondary/30">
@@ -453,7 +498,7 @@ export default function PartidoDetallePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
             {/* Botón de cerrar */}
-            <button 
+            <button
               onClick={() => setSelectedPlayer(null)}
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-1.5 rounded-full hover:bg-secondary transition-colors"
             >
@@ -480,7 +525,7 @@ export default function PartidoDetallePage() {
                 {selectedPlayer.nombre} {selectedPlayer.apellido}
               </h3>
               <span className="inline-block px-3 py-1 mt-2 text-xs font-semibold bg-primary/10 text-primary rounded-full uppercase tracking-wide">
-                {selectedPlayer.rol === "owner" ? "Dueño de Cancha" : "Jugador"}
+                {selectedPlayer.rol === "admin" ? "Dueño de Cancha" : "Jugador"}
               </span>
             </div>
 

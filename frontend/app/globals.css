@@ -3,7 +3,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* TeamUp Rebrand - Coral Warm Palette */
+/* PartidoYa Rebrand - Coral Warm Palette */
 :root {
   /* Core brand colors */
   --background: oklch(0.98 0.01 60);          /* Warm cream #FDF8F4 */

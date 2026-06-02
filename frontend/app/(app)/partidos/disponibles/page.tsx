@@ -438,7 +438,7 @@ export default function PartidosDisponiblesPage() {
                                 <Clock className="h-4 w-4 text-muted-foreground" />
                               </div>
                               <span className="text-foreground font-medium">
-                                {formatearHorarioTurno(partido.horario, 60)}
+                                {formatearHorarioTurno(partido.horario, partido.cancha?.duracion_turno || 60)}
                               </span>
                             </div>
                             <div className="flex items-center gap-2 text-sm">

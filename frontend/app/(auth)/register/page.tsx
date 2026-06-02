@@ -20,13 +20,13 @@ import { Camera, Trophy, Users } from "lucide-react"
 
 function SportsIcon({ className }: { className?: string }) {
   return (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 2.07c1.52.22 2.91.82 4.07 1.68l-1.28 1.76-2.79-.78V4.07zM11 4.07v1.66l-2.79.78-1.28-1.76c1.16-.86 2.55-1.46 4.07-1.68zM5.25 7.58l1.83.51L7.5 12l-2.42 2.42c-.98-1.45-1.52-3.17-1.52-5.02 0-.74.09-1.45.27-2.13l1.42.31zm.52 11.67l.65-2.12 3.22-.9L12 19.5l-2.46 2.46c-1.54-.37-2.94-1.14-4.07-2.19l.3-.52zM12 22c-.34 0-.68-.02-1.01-.05L12 19.5l1.01 2.45c-.33.03-.67.05-1.01.05zm6.77-3.27L14.7 16.2l-.78-3.63 3.58-2.45 2.93.81c.36 1.01.57 2.1.57 3.23 0 1.85-.54 3.57-1.46 5.02l-.77.55zm-1.34-12.15L16.15 8.3l-3.34 2.28H11.19l-3.34-2.28-1.28-1.72c1.37-1.17 3.08-1.88 4.93-2.02V6.5l.5.02.5-.02V4.56c1.85.14 3.56.85 4.93 2.02z"/>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 2.07c1.52.22 2.91.82 4.07 1.68l-1.28 1.76-2.79-.78V4.07zM11 4.07v1.66l-2.79.78-1.28-1.76c1.16-.86 2.55-1.46 4.07-1.68zM5.25 7.58l1.83.51L7.5 12l-2.42 2.42c-.98-1.45-1.52-3.17-1.52-5.02 0-.74.09-1.45.27-2.13l1.42.31zm.52 11.67l.65-2.12 3.22-.9L12 19.5l-2.46 2.46c-1.54-.37-2.94-1.14-4.07-2.19l.3-.52zM12 22c-.34 0-.68-.02-1.01-.05L12 19.5l1.01 2.45c-.33.03-.67.05-1.01.05zm6.77-3.27L14.7 16.2l-.78-3.63 3.58-2.45 2.93.81c.36 1.01.57 2.1.57 3.23 0 1.85-.54 3.57-1.46 5.02l-.77.55zm-1.34-12.15L16.15 8.3l-3.34 2.28H11.19l-3.34-2.28-1.28-1.72c1.37-1.17 3.08-1.88 4.93-2.02V6.5l.5.02.5-.02V4.56c1.85.14 3.56.85 4.93 2.02z" />
     </svg>
   )
 }
@@ -69,7 +69,7 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setIsLoading(true)
-  
+
     try {
       let fotoUrl: string | undefined
       if (foto) {
@@ -86,7 +86,7 @@ export default function RegisterPage() {
           return
         }
       }
-  
+
       const userData = {
         nombre: formData.nombre,
         apellido: formData.apellido,
@@ -98,7 +98,7 @@ export default function RegisterPage() {
         rol: formData.rol,
         foto_perfil: fotoUrl,
       }
-  
+
       await registerUser(userData)
       router.push(`/confirm?email=${encodeURIComponent(formData.email)}`)
     } catch (error) {
@@ -134,14 +134,20 @@ export default function RegisterPage() {
         {/* Overlays modificados para fundirse a negro (zinc-950) */}
         <div className="absolute inset-0 bg-gradient-to-r from-black/50 via-black/30 to-zinc-950" />
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/30" />
-        
+
         {/* Logo */}
         <div className="absolute top-6 left-6 flex items-center gap-3">
-          <div className="w-11 h-11 bg-primary rounded-xl flex items-center justify-center shadow-lg">
-            <SportsIcon className="w-6 h-6 text-primary-foreground" />
+          <div className="w-11 h-11 rounded-xl overflow-hidden shadow-lg">
+            <Image
+              src="/logo-partidoya.jpg"
+              alt="PartidoYa Logo"
+              width={44}
+              height={44}
+              className="object-cover w-full h-full"
+            />
           </div>
           <span className="text-2xl font-black text-white drop-shadow-lg tracking-tight">
-            Team<span className="text-primary">Up</span>
+            Partido<span className="text-primary">Ya</span>
           </span>
         </div>
 
@@ -164,11 +170,17 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           {/* Logo para Versión Móvil */}
           <div className="lg:hidden mb-4 flex items-center justify-center gap-2">
-            <div className="w-9 h-9 bg-primary rounded-lg flex items-center justify-center">
-              <SportsIcon className="w-5 h-5 text-primary-foreground" />
+            <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center">
+              <Image
+                src="/logo-partidoya.jpg"
+                alt="PartidoYa Logo"
+                width={36}
+                height={36}
+                className="object-cover w-full h-full"
+              />
             </div>
             <span className="text-xl font-black text-white tracking-tight">
-              Team<span className="text-primary">Up</span>
+              Partido<span className="text-primary">Ya</span>
             </span>
           </div>
 
@@ -339,7 +351,7 @@ export default function RegisterPage() {
               ) : (
                 <div className="flex items-center gap-2">
                   <SportsIcon className="w-4 h-4" />
-                  <span>Unirme a TeamUp</span>
+                  <span>Unirme a PartidoYa</span>
                 </div>
               )}
             </Button>

@@ -195,7 +195,7 @@ export default function CanchaDetallePage() {
                             </div>
                             <div>
                                 <p className="font-semibold text-foreground">{cancha.hora_apertura} - {cancha.hora_cierre}</p>
-                                <p className="text-sm text-muted-foreground">Turnos de 60 minutos</p>
+                                <p className="text-sm text-muted-foreground">Turnos de {cancha.duracion_turno || 60} minutos</p>
                                 <p className="text-sm text-muted-foreground mt-1">{cancha.dias_operativos_texto}</p>
                             </div>
                         </div>

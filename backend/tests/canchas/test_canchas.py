@@ -4,9 +4,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from backend.app.main import app
-from backend.app.db import Base, get_db
+from backend.app.core.db import Base
+from backend.app.core.dependencies import get_db
 from backend.app.models.usuario_model import Usuario, RolUsuario
-from backend.app.security import get_current_user
+from backend.app.core.dependencies import get_current_user
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -306,7 +307,7 @@ def test_crear_cancha_jugador_no_puede():
     }
     response = client.post("/canchas", json=datos)
     assert response.status_code == 403
-    assert response.json()["detail"] == "Solo los dueños de cancha pueden crear canchas"
+    assert response.json()["detail"] == "Acción permitida solo para dueños de canchas"
 
 
 # ==========================================
@@ -446,7 +447,7 @@ def test_obtener_mis_canchas_rechaza_jugador():
     app.dependency_overrides[get_current_user] = lambda: jugador
     response = client.get("/canchas/me")
     assert response.status_code == 403
-    assert response.json()["detail"] == "Solo los dueños de cancha pueden ver sus canchas"
+    assert response.json()["detail"] == "Acción permitida solo para dueños de canchas"
 
 def test_obtener_canchas_disponibles_solo_activas():
     """

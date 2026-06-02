@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from ..db import get_db
+from ..core.dependencies import get_db
 from ..models.usuario_model import Usuario
 from ..schemas.notificacion_schemas import (
     NotificacionRespuesta,
@@ -10,7 +10,7 @@ from ..schemas.notificacion_schemas import (
     MensajeRespuesta
 )
 from ..services import notificacion_service
-from ..security import get_current_user
+from ..core.dependencies import get_current_user
 
 router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
 

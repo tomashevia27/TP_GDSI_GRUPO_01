@@ -1,9 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Calendar, MapPin, Clock, Users, ChevronRight, Lock, Unlock, Ban } from "lucide-react"
+import { Calendar as CalendarIcon, MapPin, Clock, Users, Lock, Unlock, Ban, RefreshCw, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Calendar } from "@/components/ui/calendar"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format, isSameDay } from "date-fns"
+import { es } from "date-fns/locale"
 import { useAuthContext } from "@/components/auth-provider"
 import { useRouter } from "next/navigation"
 import {
@@ -11,10 +15,12 @@ import {
   getAgenda,
   bloquearTurno,
   desbloquearTurno,
+  cancelarReservaDueno,
   type AgendaData,
   type AgendaSlot,
 } from "@/hooks/use-api"
 import { ManualReservationDialog } from "@/components/manual-reservation-dialog"
+import { RescheduleReservationDialog } from "@/components/reschedule-reservation-dialog"
 import Swal from "sweetalert2"
 
 interface Cancha {
@@ -43,6 +49,11 @@ export default function AgendaPage() {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [slotSeleccionado, setSlotSeleccionado] = useState<AgendaSlot | null>(null)
 
+  const [reprogramarDialogOpen, setReprogramarDialogOpen] = useState(false)
+  const [slotReprogramar, setSlotReprogramar] = useState<AgendaSlot | null>(null)
+  
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
+
   useEffect(() => {
     if (role !== "admin") {
       router.push("/home")
@@ -65,6 +76,14 @@ export default function AgendaPage() {
     }
     fetchCanchas()
   }, [])
+
+  // Generar fechas (desde ayer hasta 14 días en el futuro)
+  const hoy = new Date()
+  const dates = Array.from({ length: 16 }, (_, i) => {
+    const d = new Date()
+    d.setDate(hoy.getDate() + i - 1)
+    return d
+  })
 
   useEffect(() => {
     if (!canchaSeleccionada || !fecha) return
@@ -160,6 +179,43 @@ export default function AgendaPage() {
     }
   }
 
+  const handleCancelarReserva = async (slot: AgendaSlot) => {
+    if (!slot.partido_id) return
+    const confirm = await Swal.fire({
+      title: "¿Cancelar esta reserva?",
+      text: "El turno volverá a estar disponible. Si la reserva es de un jugador, será notificado.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Sí, cancelar reserva",
+      cancelButtonText: "No, mantener",
+      confirmButtonColor: "#EF4444",
+    })
+    if (!confirm.isConfirmed) return
+    try {
+      await cancelarReservaDueno(slot.partido_id)
+      await Swal.fire({
+        title: "Reserva cancelada",
+        text: "El turno fue liberado exitosamente.",
+        icon: "success",
+        timer: 2000,
+        showConfirmButton: false,
+      })
+      recargarAgenda()
+    } catch (error: any) {
+      Swal.fire({
+        title: "Error",
+        text: error.message || "No se pudo cancelar la reserva",
+        icon: "error",
+        confirmButtonColor: "#FF6B4A",
+      })
+    }
+  }
+
+  const handleReprogramar = (slot: AgendaSlot) => {
+    setSlotReprogramar(slot)
+    setReprogramarDialogOpen(true)
+  }
+
   const recargarAgenda = () => {
     if (canchaSeleccionada && fecha) {
       getAgenda(canchaSeleccionada, fecha)
@@ -193,38 +249,84 @@ export default function AgendaPage() {
         </p>
       </div>
 
-      <div className="bg-card rounded-2xl border border-border p-5 mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Cancha
+      <div className="bg-card rounded-2xl border border-border p-5 mb-6 shadow-sm">
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+              <MapPin className="w-3.5 h-3.5" /> Cancha
             </label>
-            <select
-              value={canchaSeleccionada}
-              onChange={(e) => setCanchaSeleccionada(Number(e.target.value))}
-              className="flex h-11 w-full rounded-lg bg-input px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="" disabled>
-                Seleccioná una cancha
-              </option>
-              {canchas.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre} - {c.zona}
-                </option>
-              ))}
-            </select>
+            <div className="flex flex-wrap gap-2">
+              {canchas.map((c) => {
+                const isSelected = canchaSeleccionada === c.id
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setCanchaSeleccionada(c.id)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-md scale-[1.02]"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:scale-[1.02]"
+                    }`}
+                  >
+                    {c.nombre}
+                  </button>
+                )
+              })}
+            </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Fecha
-            </label>
-            <Input
-              type="date"
-              value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
-              className="bg-input border-0 h-11"
-            />
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5">
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground -ml-1">
+                    <CalendarIcon className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={new Date(fecha + "T12:00:00")}
+                    onSelect={(date) => {
+                      if (date) {
+                        setFecha(date.toISOString().split("T")[0])
+                        setIsCalendarOpen(false)
+                      }
+                    }}
+                    locale={es}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Fecha
+              </label>
+            </div>
+            <div className="flex items-center gap-3 overflow-x-auto pb-2 -mx-1 px-1 custom-scrollbar">
+              {dates.map((d) => {
+                const isSelected = fecha === d.toISOString().split("T")[0]
+                const isToday = isSameDay(d, hoy)
+                return (
+                  <button
+                    key={d.toISOString()}
+                    onClick={() => setFecha(d.toISOString().split("T")[0])}
+                    className={`flex flex-col items-center justify-center min-w-[5rem] h-[5rem] rounded-2xl transition-all ${
+                      isSelected
+                        ? "bg-primary text-primary-foreground shadow-md scale-105"
+                        : "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:scale-[1.02]"
+                    }`}
+                  >
+                    <span className="text-[11px] font-medium uppercase tracking-wider opacity-90">
+                      {format(d, "EEE", { locale: es })}
+                    </span>
+                    <span className="text-xl font-bold mt-0.5">{format(d, "d")}</span>
+                    <span className="text-[10px] font-medium uppercase opacity-75 mt-0.5">
+                      {isToday ? "Hoy" : format(d, "MMM", { locale: es })}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
         </div>
 
@@ -247,14 +349,31 @@ export default function AgendaPage() {
       </div>
 
       {isLoadingAgenda ? (
-        <div className="flex items-center justify-center min-h-[300px]">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        <div className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+          <div className="divide-y divide-border">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="w-full flex items-center justify-between px-5 py-4">
+                <div className="flex items-center gap-4 flex-1">
+                  <Skeleton className="h-5 w-16" />
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                  <div className="flex gap-2 ml-auto">
+                    <Skeleton className="h-8 w-20" />
+                    <Skeleton className="h-8 w-20" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       ) : agenda && agenda.slots.length > 0 ? (
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="p-4 border-b border-border bg-muted/30 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-medium">
-              <Calendar className="h-4 w-4 text-primary" />
+              <CalendarIcon className="h-4 w-4 text-primary" />
               Turnos del{" "}
               {new Date(fecha + "T12:00:00").toLocaleDateString("es-AR", {
                 weekday: "long",
@@ -276,9 +395,9 @@ export default function AgendaPage() {
             {agenda.slots.map((slot) => (
               <div
                 key={slot.horario}
-                className="w-full flex items-center justify-between px-5 py-4"
+                className="w-full flex items-center justify-between px-5 py-4 transition-colors hover:bg-muted/30 group"
               >
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+                <div className="flex items-center gap-4 flex-1 min-w-0 transition-transform group-hover:translate-x-1">
                   <div className="flex items-center gap-2 min-w-[100px] shrink-0">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium text-foreground">
@@ -340,6 +459,26 @@ export default function AgendaPage() {
                           Reserva de jugador
                         </span>
                       )}
+                      <div className="flex gap-1.5 ml-auto shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReprogramar(slot)}
+                          className="text-xs h-8"
+                        >
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Reprogramar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleCancelarReserva(slot)}
+                          className="text-xs h-8"
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      </div>
                     </>
                   )}
 
@@ -368,7 +507,7 @@ export default function AgendaPage() {
       ) : agenda && agenda.slots.length === 0 ? (
         <div className="bg-card rounded-2xl border border-border p-12 text-center">
           <div className="w-16 h-16 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Calendar className="h-8 w-8 text-muted-foreground" />
+            <CalendarIcon className="h-8 w-8 text-muted-foreground" />
           </div>
           <p className="text-muted-foreground text-lg">
             No hay turnos disponibles para esta cancha en la fecha seleccionada.
@@ -388,6 +527,19 @@ export default function AgendaPage() {
           fecha={fecha}
           horario={slotSeleccionado.horario}
           onSuccess={handleReservaExitosa}
+        />
+      )}
+
+      {slotReprogramar && slotReprogramar.partido_id && (
+        <RescheduleReservationDialog
+          open={reprogramarDialogOpen}
+          onOpenChange={setReprogramarDialogOpen}
+          partidoId={slotReprogramar.partido_id}
+          canchaId={Number(canchaSeleccionada)}
+          canchaNombre={canchaActual?.nombre || ""}
+          fechaActual={fecha}
+          horarioActual={slotReprogramar.horario}
+          onSuccess={recargarAgenda}
         />
       )}
     </div>

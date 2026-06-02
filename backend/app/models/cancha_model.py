@@ -1,7 +1,11 @@
+from ..core.exceptions import DomainPermissionError
+from datetime import datetime, date, timedelta
 from sqlalchemy import Column, Integer, String, Text, Boolean, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
-from ..db import Base
+from ..core.db import Base
+
+DIAS_SEMANA_MAP = {0: 1, 1: 2, 2: 4, 3: 8, 4: 16, 5: 32, 6: 64}
 
 class Cancha(Base):
     __tablename__ = "canchas"
@@ -22,3 +26,34 @@ class Cancha(Base):
     activa = Column(Boolean, default=True)
     propietario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     partidos = relationship("Partido", back_populates="cancha")
+
+    def opera_en_fecha(self, fecha: date) -> bool:
+        """Verifica si la cancha opera en la fecha solicitada."""
+        return bool(self.dias_operativos & DIAS_SEMANA_MAP[fecha.weekday()])
+
+    def obtener_rango_datetime(self) -> tuple[datetime, datetime]:
+        """Convierte los strings de apertura y cierre en datetimes relativos al mismo día."""
+        apertura = datetime.strptime(self.hora_apertura, "%H:%M")
+        if self.hora_cierre == "24:00":
+            cierre = datetime.strptime("00:00", "%H:%M") + timedelta(days=1)
+        else:
+            cierre = datetime.strptime(self.hora_cierre, "%H:%M")
+        return apertura, cierre
+
+    def opera_en_horario(self, horario) -> bool:
+        """Verifica si el horario matemático se encuentra dentro del rango de la cancha."""
+        hora_limpia = horario.replace(tzinfo=None) if hasattr(horario, 'replace') else horario
+        min_partido = hora_limpia.hour * 60 + hora_limpia.minute
+        min_apertura = int(self.hora_apertura.split(':')[0]) * 60 + int(self.hora_apertura.split(':')[1])
+        
+        if self.hora_cierre == "24:00":
+            min_cierre = 24 * 60
+        else:
+            min_cierre = int(self.hora_cierre.split(':')[0]) * 60 + int(self.hora_cierre.split(':')[1])
+            
+        return min_apertura <= min_partido < min_cierre
+
+    def verificar_propietario(self, usuario_id, mensaje_error):
+        """Verifica si el usuario es el propietario de la cancha."""
+        if self.propietario_id != usuario_id:
+            raise DomainPermissionError(mensaje_error)

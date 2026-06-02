@@ -1,15 +1,16 @@
 import pytest
-from datetime import datetime, timedelta, date, time
+from datetime import datetime, date, time, timedelta, timezone
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from backend.app.main import app
-from backend.app.db import Base, get_db
+from backend.app.core.db import Base
+from backend.app.core.dependencies import get_db
 from backend.app.models.usuario_model import Usuario, RolUsuario
 from backend.app.models.cancha_model import Cancha
 from backend.app.models.partido_model import Partido
-from backend.app.security import get_current_user
+from backend.app.core.dependencies import get_current_user
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -258,14 +259,16 @@ def test_editar_partido_ya_cancelado():
 def test_editar_partido_campos_faltantes():
     res_crear = crear_partido_test()
     partido_id = res_crear.json()["id"]
-    
+    fecha_original = res_crear.json()["fecha"]
+
     # Falta fecha
     datos_update = {
         "cancha_id": 1,
         "horario": "10:00:00"
     }
     res_edit = client.put(f"/partidos/{partido_id}", json=datos_update)
-    assert res_edit.status_code == 422
+    assert res_edit.status_code == 200
+    assert res_edit.json()["fecha"] == fecha_original
 
 def test_editar_partido_no_organizador():
     res_crear = crear_partido_test()
@@ -487,8 +490,10 @@ def test_bajarse_partido_exito_libera_cupo():
 
 
 def test_bajarse_partido_fuera_de_plazo():
-    fecha = (datetime.now() + timedelta(hours=1)).date().isoformat()
-    horario = (datetime.now() + timedelta(hours=1)).time().replace(microsecond=0).isoformat()
+    # Usamos TZ_LOCAL para que concuerde con el backend
+    now_local = datetime.now(timezone(timedelta(hours=-3)))
+    fecha = (now_local + timedelta(hours=1)).date().isoformat()
+    horario = (now_local + timedelta(hours=1)).time().replace(microsecond=0).isoformat()
 
     app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(1)
     res_crear = client.post(
@@ -510,5 +515,12 @@ def test_bajarse_partido_fuera_de_plazo():
 
     res_baja = client.delete(f"/partidos/{partido_id}/bajarse")
 
-    assert res_baja.status_code == 400
-    assert "plazo" in res_baja.json()["detail"]
+    # Ahora se permite bajarse en cualquier momento antes del inicio; no debe otorgarse partido a favor
+    assert res_baja.status_code == 200
+    assert res_baja.json()["cupos_disponibles"] == 3
+
+    # Verificar que no se otorgó partido a favor al usuario 2
+    db = TestingSessionLocal()
+    usuario_2 = db.query(Usuario).filter(Usuario.id == 2).first()
+    assert usuario_2.partidos_a_favor == 0
+    db.close()

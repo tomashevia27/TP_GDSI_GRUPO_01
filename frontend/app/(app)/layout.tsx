@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { useAuthContext } from "@/components/auth-provider"
@@ -9,15 +9,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { isAuthenticated, isLoading, logout } = useAuthContext()
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !isLoggingOut) {
       router.push("/login")
     }
-  }, [isAuthenticated, isLoading, router])
+  }, [isAuthenticated, isLoading, router, isLoggingOut])
 
   function handleLogout() {
+    setIsLoggingOut(true)
     logout()
-    router.push("/login")
+    router.push("/")
   }
 
   if (isLoading) {

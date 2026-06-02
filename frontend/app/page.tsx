@@ -47,10 +47,10 @@ export default function RootPage() {
   function FootballIcon({ className }: { className?: string }) {
     return (
       <svg viewBox="0 0 100 100" className={className} fill="currentColor">
-        <circle cx="50" cy="50" r="48" fill="currentColor" stroke="currentColor" strokeWidth="2"/>
-        <path d="M50 2 L50 20 M50 80 L50 98 M2 50 L20 50 M80 50 L98 50" stroke="white" strokeWidth="2" opacity="0.3"/>
-        <polygon points="50,15 65,35 58,55 42,55 35,35" fill="white" opacity="0.2"/>
-        <circle cx="50" cy="50" r="10" fill="white" opacity="0.15"/>
+        <circle cx="50" cy="50" r="48" fill="currentColor" stroke="currentColor" strokeWidth="2" />
+        <path d="M50 2 L50 20 M50 80 L50 98 M2 50 L20 50 M80 50 L98 50" stroke="white" strokeWidth="2" opacity="0.3" />
+        <polygon points="50,15 65,35 58,55 42,55 35,35" fill="white" opacity="0.2" />
+        <circle cx="50" cy="50" r="10" fill="white" opacity="0.15" />
       </svg>
     )
   }
@@ -61,10 +61,10 @@ export default function RootPage() {
       <svg className="absolute inset-0 w-full h-full opacity-[0.03]" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <pattern id="goalnet" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M0 0 L40 40 M40 0 L0 40" stroke="currentColor" strokeWidth="1" fill="none"/>
+            <path d="M0 0 L40 40 M40 0 L0 40" stroke="currentColor" strokeWidth="1" fill="none" />
           </pattern>
         </defs>
-        <rect width="100%" height="100%" fill="url(#goalnet)" className="text-primary"/>
+        <rect width="100%" height="100%" fill="url(#goalnet)" className="text-primary" />
       </svg>
     )
   }
@@ -87,14 +87,14 @@ export default function RootPage() {
             <Link href="/" className="flex items-center gap-2 group">
               <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-primary/25 group-hover:shadow-primary/40 transition-all duration-300 group-hover:scale-105">
                 <Image
-                  src="/logo-teamup.jpg"
-                  alt="TeamUp Logo"
+                  src="/logo-partidoya.jpg"
+                  alt="PartidoYa Logo"
                   width={40}
                   height={40}
                   className="w-full h-full object-cover"
                 />
               </div>
-              <span className="font-bold text-xl text-foreground">TeamUp</span>
+              <span className="font-bold text-xl text-foreground">PartidoYa</span>
             </Link>
 
             <div className="hidden md:flex items-center gap-8">
@@ -126,21 +126,21 @@ export default function RootPage() {
         {/* Background Elements */}
         <div className="absolute inset-0 field-pattern" />
         <GoalNetPattern />
-        
+
         {/* Floating Footballs */}
         <FloatingBall className="w-16 h-16 top-24 right-[15%] animate-float hidden lg:block" delay="0s" />
         <FloatingBall className="w-12 h-12 top-40 right-[8%] animate-float-reverse hidden lg:block" delay="1s" />
         <FloatingBall className="w-20 h-20 bottom-20 right-[20%] animate-float-slow hidden lg:block" delay="2s" />
         <FloatingBall className="w-10 h-10 top-32 left-[5%] animate-float hidden md:block" delay="0.5s" />
         <FloatingBall className="w-14 h-14 bottom-32 left-[10%] animate-float-reverse hidden md:block" delay="1.5s" />
-        
+
         {/* Gradient Orbs */}
         <div className="absolute top-20 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[120px] -z-10" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/20 rounded-full blur-[100px] -z-10" />
 
         {/* CONTENEDOR PRINCIPAL: Cambiado a GRID para dividir en dos columnas en pantallas grandes */}
         <div className="max-w-6xl mx-auto relative grid lg:grid-cols-2 gap-12 items-center">
-          
+
           {/* COLUMNA IZQUIERDA: Todo tu texto y botones actuales */}
           <div className="max-w-3xl">
             {/* Live Badge */}
@@ -158,7 +158,7 @@ export default function RootPage() {
               <span className="relative">
                 <span className="text-primary">sin vueltas</span>
                 <svg className="absolute -bottom-2 left-0 w-full h-3 text-primary/30" viewBox="0 0 200 12" preserveAspectRatio="none">
-                  <path d="M0 6 Q50 0, 100 6 T200 6" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/>
+                  <path d="M0 6 Q50 0, 100 6 T200 6" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" />
                 </svg>
               </span>
             </h1>
@@ -216,7 +216,7 @@ export default function RootPage() {
           </div>
 
           {/* COLUMNA DERECHA: Suavizado perfecto sin mover la posición de los personajes */}
-          <div 
+          <div
             className="relative w-full h-[350px] sm:h-[450px] lg:h-[550px] mt-8 lg:mt-0 flex items-center justify-center animate-slide-up animation-delay-200"
             style={{
               WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1) 0%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0.2) 85%, rgba(0,0,0,0) 100%)',
@@ -225,7 +225,7 @@ export default function RootPage() {
           >
             <Image
               src="/ver_centro1.png"
-              alt="Deportes TeamUp"
+              alt="Deportes PartidoYa"
               fill
               priority
               className="object-contain object-center drop-shadow-[0_20px_50px_rgba(var(--primary),0.15)]"
@@ -307,7 +307,7 @@ export default function RootPage() {
                   {index < 2 && (
                     <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-primary/30 to-transparent z-0" />
                   )}
-                  
+
                   <div className="relative p-8 rounded-3xl bg-card shadow-lg shadow-primary/5 border border-border hover:border-primary/50 hover:shadow-xl hover:shadow-primary/10 transition-all duration-500 h-full group-hover:-translate-y-2">
                     <div className="flex items-start justify-between mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
@@ -363,7 +363,7 @@ export default function RootPage() {
                   {index < 2 && (
                     <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-accent/30 to-transparent z-0" />
                   )}
-                  
+
                   <div className="relative p-8 rounded-3xl bg-card shadow-lg shadow-accent/5 border border-border hover:border-accent/50 hover:shadow-xl hover:shadow-accent/10 transition-all duration-500 h-full group-hover:-translate-y-2">
                     <div className="flex items-start justify-between mb-6">
                       <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center group-hover:bg-accent group-hover:scale-110 transition-all duration-300">
@@ -386,7 +386,7 @@ export default function RootPage() {
       <section id="features" className="py-24 px-4 sm:px-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[150px] -z-10" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/10 rounded-full blur-[120px] -z-10" />
-        
+
         <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-2 gap-16 items-stretch">
             <div className="flex flex-col">
@@ -394,7 +394,7 @@ export default function RootPage() {
                 <Trophy className="w-4 h-4 text-primary" />
                 <span className="text-sm font-bold text-primary">Funcionalidades</span>
               </div>
-              
+
               <h2 className="text-4xl sm:text-5xl font-black text-foreground text-balance leading-tight">
                 Todo lo que necesitás para{" "}
                 <span className="text-primary">organizar, jugar</span> y administrar
@@ -449,7 +449,7 @@ export default function RootPage() {
                 {/* Phone frame glow */}
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/30 rounded-full blur-[60px]" />
                 <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-accent/30 rounded-full blur-[60px]" />
-                
+
                 <div className="bg-background rounded-3xl h-full p-4 overflow-hidden border border-border shadow-inner flex flex-col relative">
                   {/* App Header */}
                   <div className="flex items-center justify-between mb-6 pt-2 px-2">
@@ -516,19 +516,19 @@ export default function RootPage() {
               <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <pattern id="footballPattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                    <circle cx="30" cy="30" r="8" fill="white"/>
+                    <circle cx="30" cy="30" r="8" fill="white" />
                   </pattern>
                 </defs>
-                <rect width="100%" height="100%" fill="url(#footballPattern)"/>
+                <rect width="100%" height="100%" fill="url(#footballPattern)" />
               </svg>
             </div>
-            
+
             <div className="relative z-10">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 rounded-full mb-8 backdrop-blur-sm">
                 <Trophy className="w-5 h-5 text-accent" />
                 <span className="text-sm font-bold text-primary-foreground">Unite a la comunidad</span>
               </div>
-              
+
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black text-primary-foreground text-balance mb-6 leading-tight">
                 ¿Listo para tu próximo partido?
               </h2>
@@ -562,10 +562,16 @@ export default function RootPage() {
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-                <FootballIcon className="w-6 h-6 text-primary-foreground" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg shadow-primary/20">
+                <Image
+                  src="/logo-partidoya.jpg"
+                  alt="PartidoYa Logo"
+                  width={40}
+                  height={40}
+                  className="object-cover"
+                />
               </div>
-              <span className="font-bold text-xl text-foreground">TeamUp</span>
+              <span className="font-bold text-xl text-foreground">PartidoYa</span>
             </div>
 
             <div className="flex items-center gap-6">
@@ -581,7 +587,7 @@ export default function RootPage() {
             </div>
 
             <p className="text-sm text-muted-foreground text-center md:text-left flex items-center gap-2">
-              © {new Date().getFullYear()} TeamUp. Hecho con
+              © {new Date().getFullYear()} PartidoYa. Hecho con
               <span className="text-primary">pasión</span>
               por el fútbol.
               <FootballIcon className="w-4 h-4 text-primary" />

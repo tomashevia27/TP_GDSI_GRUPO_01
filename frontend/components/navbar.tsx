@@ -21,10 +21,14 @@ export function Navbar({ onLogout }: NavbarProps) {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link href="/home" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-sm">T</span>
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center">
+              <img
+                src="/logo-partidoya.jpg"
+                alt="PartidoYa Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
-            <span className="font-semibold text-lg text-foreground">TeamUp</span>
+            <span className="font-semibold text-lg text-foreground">PartidoYa</span>
           </Link>
 
           <div className="hidden md:flex items-center gap-8">
