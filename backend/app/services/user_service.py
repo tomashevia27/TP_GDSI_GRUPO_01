@@ -18,6 +18,7 @@ def _usuario_a_respuesta(usuario: Usuario) -> UsuarioRespuesta:
         zona=usuario.zona,
         rol=usuario.rol,
         foto_perfil=usuario.foto_perfil,
+        partidos_a_favor=usuario.partidos_a_favor or 0,
     )
 
 

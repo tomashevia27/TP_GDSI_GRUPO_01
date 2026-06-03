@@ -13,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-from app.db import Base
+from app.core.db import Base 
 from app.models.usuario_model import Usuario, RolUsuario
 from app.models.cancha_model import Cancha
 from app.models.partido_model import Partido
@@ -34,6 +34,7 @@ USUARIOS_SEED = [
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490316/Captura_desde_2026-05-22_19-51-40_km9yne.png",
+        "partidos_a_favor": 0,
     },
     {
         "nombre": "Valeria",
@@ -46,6 +47,7 @@ USUARIOS_SEED = [
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490533/Valeria_kmanxt.png",
+        "partidos_a_favor": 0,
     },
     {
         "nombre": "Santiago",
@@ -58,6 +60,7 @@ USUARIOS_SEED = [
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490533/Santiago_okjzdk.png",
+        "partidos_a_favor": 0,
     },
     {
         "nombre": "Tomas",
@@ -70,6 +73,7 @@ USUARIOS_SEED = [
         "rol": RolUsuario.jugador,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490533/Tomas_eyoa35.png",
+        "partidos_a_favor": 0,
     },
     {
         "nombre": "Carlos",
@@ -82,6 +86,7 @@ USUARIOS_SEED = [
         "rol": RolUsuario.admin,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779490534/Carlos_dthk2y.png",
+        "partidos_a_favor": 0,
     },
     {
         "nombre": "Miguel",
@@ -94,6 +99,7 @@ USUARIOS_SEED = [
         "rol": RolUsuario.admin,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491362/Miguel_ibuv1k.png",
+        "partidos_a_favor": 0,
     },
     {
         "nombre": "Laura",
@@ -106,7 +112,8 @@ USUARIOS_SEED = [
         "rol": RolUsuario.admin,
         "email_confirmado": True,
         "foto_perfil": "https://res.cloudinary.com/dzsrgcgq6/image/upload/v1779491363/Laura_sa5urg.png",
-    },
+        "partidos_a_favor": 0,
+    }
 ]
 
 

@@ -157,14 +157,29 @@ def crear_partido(db: Session, organizador_id: int, datos: PartidoCreate):
         db, datos.cancha_id, datos.fecha, datos.horario, for_update=True
     )
 
-    # Consumir un partido a favor si se solicitó y corresponde
-    if getattr(datos, "use_partido_a_favor", False):
+    # Consumir partidos a favor si se solicitó y corresponde
+    partidos_a_usar = getattr(datos, "partidos_a_favor_a_usar", 0) or 0
+    if partidos_a_usar == 0 and getattr(datos, "use_partido_a_favor", False):
+        partidos_a_usar = 1
+
+    if partidos_a_usar > 0:
         organizador = usuario_repository.obtener_por_id(db, organizador_id)
         if not organizador:
             raise HTTPException(status_code=404, detail="Organizador no encontrado")
-        if not (organizador.partidos_a_favor and organizador.partidos_a_favor > 0):
-            raise HTTPException(status_code=400, detail="No tenés partidos a favor para usar")
-        organizador.partidos_a_favor = organizador.partidos_a_favor - 1
+        if (organizador.partidos_a_favor or 0) < partidos_a_usar:
+            raise HTTPException(status_code=400, detail="No tenés suficientes partidos a favor")
+        
+        # Validar el límite de slots a pagar para este partido
+        slots_a_pagar = cantidad_jugadores
+        if datos.tipo == "abierto" and datos.cupos_disponibles is not None:
+            slots_a_pagar = cantidad_jugadores - datos.cupos_disponibles
+            
+        if partidos_a_usar > slots_a_pagar:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"No podés usar más de {slots_a_pagar} partidos a favor para esta reserva"
+            )
+        organizador.partidos_a_favor = (organizador.partidos_a_favor or 0) - partidos_a_usar
 
     if datos.tipo == "abierto":
         nuevo_partido = Partido.crear_abierto(cancha.id, datos.fecha, datos.horario, modalidad, cantidad_jugadores, 
@@ -258,6 +273,12 @@ def cancelar_partido(db: Session, partido_id: int, usuario_id: int):
     if partido_inicio - ahora >= timedelta(hours=2):
         for jugador in partido.jugadores:
             jugador.partidos_a_favor = (jugador.partidos_a_favor or 0) + 1
+            
+        organizador = usuario_repository.obtener_por_id(db, partido.organizador_id)
+        if organizador:
+            partidos_organizador = partido.cantidad_jugadores - partido.cupos_disponibles - len(partido.jugadores)
+            if partidos_organizador > 0:
+                organizador.partidos_a_favor = (organizador.partidos_a_favor or 0) + partidos_organizador
 
     partido_notificador.notificar_partido_cancelado(db, partido)
 

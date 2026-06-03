@@ -28,8 +28,20 @@ function NuevoPartidoForm() {
   const [descripcion, setDescripcion] = useState("")
   const [usarPartidoAFavor, setUsarPartidoAFavor] = useState(false)
   const [tienePartidosAFavor, setTienePartidosAFavor] = useState(false)
+  const [partidosAFavorCount, setPartidosAFavorCount] = useState(0)
+  const [partidosAFavorAUsar, setPartidosAFavorAUsar] = useState(1)
   const [turnosDisponibles, setTurnosDisponibles] = useState<{ inicio: string; fin: string; estado: string }[]>([])
 
+  const totalJugadores = cancha?.tamano ? cancha.tamano * 2 : 0
+  const slotsAPagar = tipo === "abierto" ? (totalJugadores - (Number(cuposDisponibles) || 0)) : totalJugadores
+  const maxCreditosPosibles = Math.min(partidosAFavorCount, slotsAPagar)
+
+  useEffect(() => {
+    if (partidosAFavorAUsar > maxCreditosPosibles) {
+      setPartidosAFavorAUsar(maxCreditosPosibles || 1)
+    }
+  }, [maxCreditosPosibles, partidosAFavorAUsar])
+  
   useEffect(() => {
     if (!cancha) {
       setTurnosDisponibles([])
@@ -116,6 +128,7 @@ function NuevoPartidoForm() {
       try {
         const data = await getPartidosAFavor()
         setTienePartidosAFavor(data.tiene)
+        setPartidosAFavorCount(data.cantidad)
       } catch (error) {
         console.warn("Error al cargar partidos a favor:", error)
       }
@@ -159,23 +172,28 @@ function NuevoPartidoForm() {
         tipo,
         descripcion: descripcion || undefined,
         cupos_disponibles: tipo === "abierto" ? Number(cuposDisponibles) : undefined,
-        use_partido_a_favor: usarCredito
+        use_partido_a_favor: usarCredito,
+        partidos_a_favor_a_usar: usarCredito ? partidosAFavorAUsar : 0
       })
 
+      const todoPagoConCredito = usarCredito && partidosAFavorAUsar === slotsAPagar
+
       await Swal.fire({
-        title: usarCredito ? "¡Partido creado con crédito!" : "¡Reserva iniciada!",
+        title: todoPagoConCredito ? "¡Partido creado con crédito!" : "¡Reserva iniciada!",
         text: usarCredito
-          ? "Se descontó un partido a favor de tu cuenta."
+          ? (todoPagoConCredito 
+              ? `Se descontaron ${partidosAFavorAUsar} partidos a favor de tu cuenta.` 
+              : `Se descontaron ${partidosAFavorAUsar} partidos a favor. Serás redirigido a la pasarela de pago para abonar el resto de la seña.`)
           : "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
         icon: "success",
         confirmButtonColor: "#FF6B4A",
-        confirmButtonText: usarCredito ? "Continuar" : "Proceder al pago"
+        confirmButtonText: todoPagoConCredito ? "Continuar" : "Proceder al pago"
       })
 
       Swal.fire({
-        title: usarCredito ? "¡Partido confirmado!" : "¡Pago exitoso!",
-        text: usarCredito
-          ? "El partido fue creado y la cancha está reservada usando tu crédito."
+        title: todoPagoConCredito ? "¡Partido confirmado!" : "¡Pago exitoso!",
+        text: todoPagoConCredito
+          ? `El partido fue creado y la cancha está reservada usando ${partidosAFavorAUsar} créditos.`
           : "El partido fue creado y la cancha está reservada.",
         icon: "success",
         timer: 2000,
@@ -374,24 +392,46 @@ function NuevoPartidoForm() {
               />
             </div>
 
-            <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary/30 p-4">
-              <Checkbox
-                id="usar-partido-a-favor"
-                checked={usarPartidoAFavor}
-                disabled={!tienePartidosAFavor}
-                onCheckedChange={(checked) => setUsarPartidoAFavor(checked === true)}
-                className="mt-0.5"
-              />
-              <div className="space-y-1 leading-tight">
-                <Label htmlFor="usar-partido-a-favor" className="font-medium text-sm cursor-pointer">
-                  Usar partido a favor
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  {tienePartidosAFavor
-                    ? "Se descontará un crédito de tu cuenta para crear este partido."
-                    : "No tenés partidos a favor disponibles."}
-                </p>
+            <div className="space-y-3 rounded-xl border border-border bg-secondary/30 p-4">
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="usar-partido-a-favor"
+                  checked={usarPartidoAFavor}
+                  disabled={!tienePartidosAFavor}
+                  onCheckedChange={(checked) => setUsarPartidoAFavor(checked === true)}
+                  className="mt-0.5"
+                />
+                <div className="space-y-1 leading-tight">
+                  <Label htmlFor="usar-partido-a-favor" className="font-medium text-sm cursor-pointer">
+                    Usar partidos a favor
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    {tienePartidosAFavor
+                      ? `Tenés ${partidosAFavorCount} créditos disponibles para esta reserva.`
+                      : "No tenés partidos a favor disponibles."}
+                  </p>
+                </div>
               </div>
+
+              {usarPartidoAFavor && maxCreditosPosibles > 1 && (
+                <div className="pl-7 space-y-2 pt-2 border-t border-border/50">
+                  <Label htmlFor="partidos-a-usar" className="text-xs font-medium text-muted-foreground block">
+                    ¿Cuántos créditos querés usar? (Máximo {maxCreditosPosibles})
+                  </Label>
+                  <Input
+                    id="partidos-a-usar"
+                    type="number"
+                    min={1}
+                    max={maxCreditosPosibles}
+                    value={partidosAFavorAUsar}
+                    onChange={(e) => {
+                      const val = Math.min(maxCreditosPosibles, Math.max(1, Number(e.target.value) || 1))
+                      setPartidosAFavorAUsar(val)
+                    }}
+                    className="w-24 bg-input border-0 h-9 text-center font-semibold text-sm"
+                  />
+                </div>
+              )}
             </div>
 
             <Button type="submit" className="w-full font-semibold h-11" disabled={isSubmitting || !cancha}>

@@ -122,18 +122,24 @@ export default function ProfilePage() {
           </h1>
           <p className="text-muted-foreground mt-1 capitalize">{profile?.edad} años • {profile?.genero} • {profile?.rol}</p>
 
-          <div className="flex items-center justify-center sm:justify-start gap-4 mt-3 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mt-3 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <MapPin className="w-4 h-4" />
               {profile?.zona}, Argentina
             </div>
+            {profile?.rol === "jugador" && (
+              <div className="flex items-center gap-1 px-2.5 py-0.5 bg-green-500/10 text-green-500 rounded-full font-medium text-xs border border-green-500/20">
+                <TrendingUp className="w-3.5 h-3.5" />
+                Partidos a favor: {profile?.partidos_a_favor || 0}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Stats grid */}
       {profile?.rol !== "admin" && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
           <div className="bg-card rounded-xl p-4 border border-border text-center">
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-2">
               <Trophy className="w-5 h-5 text-primary" />
@@ -146,21 +152,14 @@ export default function ProfilePage() {
               <Calendar className="w-5 h-5 text-accent" />
             </div>
             <p className="text-2xl font-bold text-foreground">{proximos.length}</p>
-            <p className="text-xs text-muted-foreground">Próximos</p>
+            <p className="text-xs text-muted-foreground">Próximos Partidos</p>
           </div>
           <div className="bg-card rounded-xl p-4 border border-border text-center">
             <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center mx-auto mb-2">
               <Users className="w-5 h-5 text-muted-foreground" />
             </div>
             <p className="text-2xl font-bold text-foreground">{pasados.length}</p>
-            <p className="text-xs text-muted-foreground">Jugados</p>
-          </div>
-          <div className="bg-card rounded-xl p-4 border border-border text-center">
-            <div className="w-10 h-10 bg-yellow-500/10 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Star className="w-5 h-5 text-yellow-500" />
-            </div>
-            <p className="text-2xl font-bold text-foreground">4.8</p>
-            <p className="text-xs text-muted-foreground">Rating</p>
+            <p className="text-xs text-muted-foreground">Partidos Jugados</p>
           </div>
         </div>
       )}

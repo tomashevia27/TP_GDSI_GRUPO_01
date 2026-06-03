@@ -111,9 +111,14 @@ export default function PartidoDetallePage() {
   const canLeave = partido.tipo === "abierto" && partido.estado?.toLowerCase() !== "cancelado" && !isOrganizer && isJoined
 
   const handleCancel = async () => {
+    const date = new Date(`${partido.fecha}T${partido.horario}`)
+    const now = new Date()
+    const hoursDifference = (date.getTime() - now.getTime()) / (1000 * 60 * 60)
+    const penalidad = hoursDifference < 2
+
     const result = await Swal.fire({
       title: "¿Cancelar partido?",
-      text: "Esta acción no se puede deshacer.",
+      text: penalidad ? "Al cancelar con menos de 2 horas de anticipación perderás la seña abonada por los cupos y no se te acreditarán los partidos a favor." : "Al cancelar con más de 2 horas de anticipación, se te acreditarán partidos a favor correspondientes a tus cupos pagos.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#EF4444",
@@ -187,9 +192,14 @@ export default function PartidoDetallePage() {
   }
 
   const handleLeave = async () => {
+    const date = new Date(`${partido.fecha}T${partido.horario}`)
+    const now = new Date()
+    const hoursDifference = (date.getTime() - now.getTime()) / (1000 * 60 * 60)
+    const penalidad = hoursDifference < 2
+
     const result = await Swal.fire({
       title: "¿Darse de baja?",
-      text: "Vas a cancelar tu inscripción a este partido.",
+      text: penalidad ? "Al darte de baja con menos de 2 horas de anticipación perderás la seña abonada y no se te acreditará el partido a favor." : "Al darte de baja con más de 2 horas de anticipación, se te acreditará un partido a favor en tu cuenta.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#EF4444",
@@ -308,7 +318,7 @@ export default function PartidoDetallePage() {
             </Label>
             <p className="text-xs text-muted-foreground">
               {tienePartidosAFavor
-                ? "Se descontará un crédito de tu cuenta para esta inscripción."
+                ? `Se descontará un crédito de tu cuenta para esta inscripción (Tenés ${currentUser?.partidos_a_favor || 0} disponibles).`
                 : "No tenés partidos a favor disponibles."}
             </p>
           </div>

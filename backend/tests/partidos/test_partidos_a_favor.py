@@ -149,3 +149,51 @@ def test_inscripcion_usando_partido_a_favor_sin_tener_falla():
     res_ins = client.post(f"/partidos/{partido_id}/inscribirse?use_partido_a_favor=true")
     assert res_ins.status_code == 400
     assert "No tenés partidos a favor" in res_ins.json()["detail"]
+
+
+def test_crear_partido_con_multiples_partidos_a_favor():
+    # 1. Establecer partidos_a_favor = 5 para el usuario 1
+    db = TestingSessionLocal()
+    u1 = db.query(Usuario).filter(Usuario.id == 1).first()
+    u1.partidos_a_favor = 5
+    db.commit()
+    db.close()
+
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(1)
+    fecha = (datetime.now() + timedelta(days=1)).date().isoformat()
+    datos = {
+        "cancha_id": 1,
+        "fecha": fecha,
+        "horario": "16:00:00",
+        "tipo": "cerrado",
+        "use_partido_a_favor": True,
+        "partidos_a_favor_a_usar": 5
+    }
+    
+    # Crear partido usando 5 créditos
+    res = client.post("/partidos", json=datos)
+    assert res.status_code == 200
+
+    # Verificar que los créditos se redujeron a 0
+    db = TestingSessionLocal()
+    u = db.query(Usuario).filter(Usuario.id == 1).first()
+    assert u.partidos_a_favor == 0
+    db.close()
+
+
+def test_crear_partido_con_multiples_partidos_a_favor_insuficientes():
+    app.dependency_overrides[get_current_user] = lambda: mock_get_current_user(2) # u2 tiene 0 creditos
+    fecha = (datetime.now() + timedelta(days=1)).date().isoformat()
+    datos = {
+        "cancha_id": 1,
+        "fecha": fecha,
+        "horario": "18:00:00",
+        "tipo": "cerrado",
+        "use_partido_a_favor": True,
+        "partidos_a_favor_a_usar": 2
+    }
+    
+    res = client.post("/partidos", json=datos)
+    assert res.status_code == 400
+    assert "No tenés suficientes partidos a favor" in res.json()["detail"]
+

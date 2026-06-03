@@ -51,3 +51,4 @@ class UsuarioRespuesta(BaseModel):
     zona: str
     rol: RolUsuario
     foto_perfil: Optional[str] = None
+    partidos_a_favor: int = 0

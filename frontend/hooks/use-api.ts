@@ -22,6 +22,7 @@ export interface UserData {
 
 export interface UserProfile extends UserData {
   id: number
+  partidos_a_favor?: number
 }
 
 export interface PartidosAFavorData {
@@ -281,6 +282,7 @@ export interface PartidoCreateData {
   descripcion?: string;
   cupos_disponibles?: number;
   use_partido_a_favor?: boolean;
+  partidos_a_favor_a_usar?: number;
 }
 
 export interface PartidoData {
