@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.exceptions import DomainRuleError, DomainPermissionError
 
-from .routers import auth, canchas, users, partidos, notificaciones, reservas
+from .routers import auth, canchas, users, partidos, notificaciones, reservas, torneos
 from .core.db import engine, Base
 
 # Crear tablas
@@ -47,3 +47,4 @@ app.include_router(canchas.router)
 app.include_router(partidos.router)
 app.include_router(notificaciones.router)
 app.include_router(reservas.router)
+app.include_router(torneos.router)
