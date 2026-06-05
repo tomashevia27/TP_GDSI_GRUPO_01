@@ -136,7 +136,7 @@ export default function RegisterPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/30" />
 
         {/* Logo */}
-        <div className="absolute top-6 left-6 flex items-center gap-3">
+        <Link href="/" className="absolute top-6 left-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="w-11 h-11 rounded-xl overflow-hidden shadow-lg">
             <Image
               src="/logo-partidoya.jpg"
@@ -149,7 +149,7 @@ export default function RegisterPage() {
           <span className="text-2xl font-black text-white drop-shadow-lg tracking-tight">
             Partido<span className="text-primary">Ya</span>
           </span>
-        </div>
+        </Link>
 
         {/* Texto del Héroe */}
         <div className="absolute bottom-6 left-6 right-6">
@@ -169,7 +169,7 @@ export default function RegisterPage() {
       <div className="w-full lg:w-[50%] flex items-center justify-center p-4 sm:p-6 bg-zinc-950 relative z-10">
         <div className="w-full max-w-md">
           {/* Logo para Versión Móvil */}
-          <div className="lg:hidden mb-4 flex items-center justify-center gap-2">
+          <Link href="/" className="lg:hidden mb-4 flex items-center justify-center gap-2 hover:opacity-80 transition-opacity">
             <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center">
               <Image
                 src="/logo-partidoya.jpg"
@@ -182,7 +182,7 @@ export default function RegisterPage() {
             <span className="text-xl font-black text-white tracking-tight">
               Partido<span className="text-primary">Ya</span>
             </span>
-          </div>
+          </Link>
 
           <div className="text-center mb-4">
             <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">

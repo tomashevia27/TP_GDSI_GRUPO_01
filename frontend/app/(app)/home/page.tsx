@@ -26,11 +26,15 @@ import {
   getPartidosDisponibles,
   getUserProfile,
   getFiltrosDisponibles,
+  getTorneosDisponibles,
+  getMisTorneos,
   type PartidoData,
   type UserProfile,
   type PartidoDisponibleFilters,
-  type FiltrosDisponiblesData
+  type FiltrosDisponiblesData,
+  type TorneoData
 } from "@/hooks/use-api"
+import { Trophy } from "lucide-react"
 
 interface Cancha {
   id: number
@@ -85,9 +89,11 @@ export default function HomePage() {
 
   // Admin state
   const [canchas, setCanchas] = useState<Cancha[]>([])
+  const [adminTorneos, setAdminTorneos] = useState<TorneoData[]>([])
 
   // Jugador state
   const [partidos, setPartidos] = useState<PartidoData[]>([])
+  const [torneos, setTorneos] = useState<TorneoData[]>([])
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [userZona, setUserZona] = useState<string>("")
   const [isUsingUserZone, setIsUsingUserZone] = useState(true)
@@ -123,9 +129,18 @@ export default function HomePage() {
         console.warn("Error al cargar filtros dinámicos:", e)
       }
     }
+    async function fetchTorneos() {
+      try {
+        const data = await getTorneosDisponibles()
+        setTorneos(data)
+      } catch (e) {
+        console.warn("Error al cargar torneos:", e)
+      }
+    }
     if (role === "jugador") {
       loadProfile()
       loadFiltros()
+      fetchTorneos()
     }
   }, [role])
 
@@ -150,20 +165,24 @@ export default function HomePage() {
 
   // Fetch canchas for admin
   useEffect(() => {
-    async function fetchCanchas() {
+    async function fetchCanchasYTorneos() {
       try {
         if (role === "admin") {
-          const data = await getMisCanchas()
-          setCanchas(data)
+          const [canchasData, torneosData] = await Promise.all([
+            getMisCanchas(),
+            getMisTorneos()
+          ])
+          setCanchas(canchasData)
+          setAdminTorneos(torneosData)
         }
       } catch (error) {
-        console.warn("Error fetching canchas:", error)
+        console.warn("Error fetching data:", error)
       } finally {
         setIsLoading(false)
       }
     }
     if (role === "admin") {
-      fetchCanchas()
+      fetchCanchasYTorneos()
     }
   }, [role])
 
@@ -384,6 +403,78 @@ export default function HomePage() {
                 </div>
               </Link>
             ))}
+          </div>
+        )}
+
+        {/* SECCIÓN DE TORNEOS DEL ADMIN */}
+        {!isLoading && adminTorneos.length > 0 && (
+          <div className="mt-16 pt-8 border-t border-border">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
+                  <Trophy className="h-7 w-7 text-primary" />
+                  Mis Torneos
+                </h2>
+                <p className="text-muted-foreground mt-1">
+                  Torneos que estás organizando
+                </p>
+              </div>
+              <Button variant="outline" className="font-semibold" asChild>
+                <Link href="/torneos">
+                  Ver todos
+                </Link>
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {adminTorneos.slice(0, 3).map((torneo) => (
+                  <Link key={torneo.id} href={`/torneos/${torneo.id}`}>
+                      <div className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden h-full flex flex-col cursor-pointer group">
+                          <div className="bg-gradient-to-br from-primary/10 via-secondary to-muted p-6 flex items-center justify-center border-b border-border relative">
+                              <Trophy className="h-12 w-12 text-primary drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
+                          </div>
+                          <div className="p-5 flex-1 flex flex-col">
+                              <div className="flex items-start justify-between gap-2 mb-3">
+                                  <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                                      {torneo.nombre}
+                                  </h3>
+                                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400`}>
+                                      {torneo.estado}
+                                  </span>
+                              </div>
+                              <div className="space-y-3 text-sm text-muted-foreground mb-4">
+                                  <div className="flex items-center gap-2.5">
+                                      <Calendar className="h-4 w-4 text-primary shrink-0" />
+                                      <span>Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2.5">
+                                      <MapPin className="h-4 w-4 text-primary shrink-0" />
+                                      <span className="truncate">{torneo.lugar}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2.5">
+                                      <Users className="h-4 w-4 text-primary shrink-0" />
+                                      <span>{torneo.equipos_inscriptos} / {torneo.max_equipos} Equipos</span>
+                                  </div>
+                              </div>
+                              <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                                  <div>
+                                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Inscripción</p>
+                                      <span className="text-lg font-bold text-foreground">
+                                          {formatearPrecio(torneo.costo_inscripcion)}
+                                      </span>
+                                  </div>
+                                  <Button 
+                                      variant="ghost" 
+                                      className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                                  >
+                                      Detalle
+                                  </Button>
+                              </div>
+                          </div>
+                      </div>
+                  </Link>
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -687,6 +778,78 @@ export default function HomePage() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* SECCIÓN DE TORNEOS */}
+      {!isLoading && torneos.length > 0 && (
+        <div className="mt-16 pt-8 border-t border-border">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-foreground flex items-center gap-3">
+                <Trophy className="h-7 w-7 text-primary" />
+                Torneos Disponibles
+              </h2>
+              <p className="text-muted-foreground mt-1">
+                Competí con tu equipo y ganá premios
+              </p>
+            </div>
+            <Button variant="outline" className="font-semibold" asChild>
+              <Link href="/torneos">
+                Ver todos
+              </Link>
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {torneos.slice(0, 3).map((torneo) => (
+                <Link key={torneo.id} href={`/torneos/${torneo.id}`}>
+                    <div className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden h-full flex flex-col cursor-pointer group">
+                        <div className="bg-gradient-to-br from-primary/10 via-secondary to-muted p-6 flex items-center justify-center border-b border-border relative">
+                            <Trophy className="h-12 w-12 text-primary drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
+                        </div>
+                        <div className="p-5 flex-1 flex flex-col">
+                            <div className="flex items-start justify-between gap-2 mb-3">
+                                <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                                    {torneo.nombre}
+                                </h3>
+                                <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400`}>
+                                    Abierto
+                                </span>
+                            </div>
+                            <div className="space-y-3 text-sm text-muted-foreground mb-4">
+                                <div className="flex items-center gap-2.5">
+                                    <Calendar className="h-4 w-4 text-primary shrink-0" />
+                                    <span>Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}</span>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                    <MapPin className="h-4 w-4 text-primary shrink-0" />
+                                    <span className="truncate">{torneo.lugar}</span>
+                                </div>
+                                <div className="flex items-center gap-2.5">
+                                    <Users className="h-4 w-4 text-primary shrink-0" />
+                                    <span>{torneo.equipos_inscriptos} / {torneo.max_equipos} Equipos</span>
+                                </div>
+                            </div>
+                            <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Inscripción</p>
+                                    <span className="text-lg font-bold text-foreground">
+                                        {formatearPrecio(torneo.costo_inscripcion)}
+                                    </span>
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                                >
+                                    Detalle
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+                </Link>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -81,6 +81,17 @@ export function Navbar({ onLogout }: NavbarProps) {
               Canchas
             </Link>
             <Link
+              href="/torneos"
+              className={cn(
+                "text-sm font-medium transition-colors hover:text-foreground",
+                pathname?.startsWith("/torneos")
+                  ? "text-foreground"
+                  : "text-muted-foreground"
+              )}
+            >
+              Torneos
+            </Link>
+            <Link
               href="/profile"
               className={cn(
                 "text-sm font-medium transition-colors hover:text-foreground",

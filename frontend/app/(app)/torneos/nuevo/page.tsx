@@ -1,0 +1,279 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Trophy, Calendar, MapPin, Users, DollarSign, AlignLeft, Info, AlertCircle, ArrowLeft } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { crearTorneo, TorneoCreateData } from "@/hooks/use-api"
+import Link from "next/link"
+
+export default function CrearTorneoPage() {
+    const router = useRouter()
+    const [isLoading, setIsLoading] = useState(false)
+    const [errorMsg, setErrorMsg] = useState("")
+
+    const [formData, setFormData] = useState<TorneoCreateData>({
+        nombre: "",
+        fecha_inicio: "",
+        formato: "Fase de grupos + eliminación",
+        lugar: "",
+        max_equipos: 4,
+        costo_inscripcion: 0,
+        descripcion: "",
+        reglas: ""
+    })
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target
+        setFormData(prev => ({ ...prev, [name]: value }))
+        setErrorMsg("") // clear errors on edit
+    }
+
+    const validateForm = () => {
+        if (!formData.nombre.trim()) return "El nombre del torneo es obligatorio."
+        if (!formData.fecha_inicio) return "La fecha de inicio es obligatoria."
+        
+        const fechaElegida = new Date(formData.fecha_inicio)
+        const hoy = new Date()
+        hoy.setHours(0, 0, 0, 0)
+        
+        // Agregar offset por zona horaria para comparar la fecha correctamente
+        const fechaElegidaLocal = new Date(fechaElegida.getTime() + fechaElegida.getTimezoneOffset() * 60000)
+
+        if (fechaElegidaLocal < hoy) {
+            return "La fecha de inicio no puede estar en el pasado."
+        }
+        
+        if (!formData.lugar.trim()) return "El lugar es obligatorio."
+        if (Number(formData.max_equipos) < 2) return "El número máximo de equipos debe ser al menos 2."
+        if (Number(formData.costo_inscripcion) < 0) return "El costo de inscripción no puede ser negativo."
+
+        return null
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        const error = validateForm()
+        if (error) {
+            setErrorMsg(error)
+            return
+        }
+
+        setIsLoading(true)
+        try {
+            await crearTorneo({
+                ...formData,
+                max_equipos: Number(formData.max_equipos),
+                costo_inscripcion: Number(formData.costo_inscripcion)
+            })
+            // En caso de éxito, volvemos a la lista de torneos.
+            router.push("/torneos")
+        } catch (error: any) {
+            setErrorMsg(error.message || "Error al crear el torneo. Por favor, intentá nuevamente.")
+            setIsLoading(false)
+        }
+    }
+
+    return (
+        <div className="min-h-screen bg-background pb-12">
+            {/* Header */}
+            <div className="bg-primary/5 border-b border-border py-8">
+                <div className="max-w-3xl mx-auto px-4 sm:px-6">
+                    <Link href="/torneos" className="inline-flex items-center text-sm text-primary hover:underline mb-6 font-medium">
+                        <ArrowLeft className="w-4 h-4 mr-1" />
+                        Volver a Torneos
+                    </Link>
+                    <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
+                        <Trophy className="h-8 w-8 text-primary" />
+                        Crear Nuevo Torneo
+                    </h1>
+                    <p className="text-muted-foreground mt-2">
+                        Completá los datos para publicar tu torneo y empezar a recibir inscripciones.
+                    </p>
+                </div>
+            </div>
+
+            {/* Formulario */}
+            <div className="max-w-3xl mx-auto px-4 sm:px-6 mt-8">
+                <form onSubmit={handleSubmit} className="bg-card rounded-2xl border border-border p-6 sm:p-8 shadow-sm">
+                    {errorMsg && (
+                        <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                            <p className="text-sm font-medium">{errorMsg}</p>
+                        </div>
+                    )}
+
+                    <div className="space-y-6">
+                        {/* Información Básica */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold border-b border-border pb-2 flex items-center gap-2">
+                                <Info className="w-5 h-5 text-primary" />
+                                Información Básica
+                            </h3>
+                            
+                            <div>
+                                <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                    Nombre del Torneo *
+                                </label>
+                                <input
+                                    type="text"
+                                    name="nombre"
+                                    value={formData.nombre}
+                                    onChange={handleChange}
+                                    placeholder="Ej: Copa de Verano 2026"
+                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                        Fecha de Inicio *
+                                    </label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <input
+                                            type="date"
+                                            name="fecha_inicio"
+                                            value={formData.fecha_inicio}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                        Lugar (Cancha / Complejo) *
+                                    </label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <input
+                                            type="text"
+                                            name="lugar"
+                                            value={formData.lugar}
+                                            onChange={handleChange}
+                                            placeholder="Ej: Complejo El Predio"
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Configuración */}
+                        <div className="space-y-4 pt-4">
+                            <h3 className="text-lg font-semibold border-b border-border pb-2 flex items-center gap-2">
+                                <Users className="w-5 h-5 text-primary" />
+                                Formato y Configuración
+                            </h3>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                    Formato del Torneo *
+                                </label>
+                                <select
+                                    name="formato"
+                                    value={formData.formato}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                >
+                                    <option value="Eliminación directa">Eliminación directa</option>
+                                    <option value="Fase de grupos + eliminación">Fase de grupos + eliminación</option>
+                                    <option value="Todos contra todos">Todos contra todos</option>
+                                </select>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                        Máximo de Equipos *
+                                    </label>
+                                    <div className="relative">
+                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <input
+                                            type="number"
+                                            name="max_equipos"
+                                            min="2"
+                                            value={formData.max_equipos}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                        Costo por Equipo (ARS) *
+                                    </label>
+                                    <div className="relative">
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <input
+                                            type="number"
+                                            name="costo_inscripcion"
+                                            min="0"
+                                            step="100"
+                                            value={formData.costo_inscripcion}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Detalles Opcionales */}
+                        <div className="space-y-4 pt-4">
+                            <h3 className="text-lg font-semibold border-b border-border pb-2 flex items-center gap-2">
+                                <AlignLeft className="w-5 h-5 text-primary" />
+                                Detalles Opcionales
+                            </h3>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1.5 text-foreground text-muted-foreground">
+                                    Descripción general
+                                </label>
+                                <textarea
+                                    name="descripcion"
+                                    value={formData.descripcion}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    placeholder="Agregá detalles sobre premios, duración, u otra info útil..."
+                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none resize-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium mb-1.5 text-foreground text-muted-foreground">
+                                    Reglas específicas
+                                </label>
+                                <textarea
+                                    name="reglas"
+                                    value={formData.reglas}
+                                    onChange={handleChange}
+                                    rows={3}
+                                    placeholder="Ej: Solo calzado de sintético, sin plancha..."
+                                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none resize-none"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-border flex justify-end gap-3">
+                        <Link href="/torneos">
+                            <Button type="button" variant="outline" disabled={isLoading}>
+                                Cancelar
+                            </Button>
+                        </Link>
+                        <Button type="submit" disabled={isLoading} className="min-w-[150px]">
+                            {isLoading ? "Creando..." : "Publicar Torneo"}
+                        </Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    )
+}

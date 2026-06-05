@@ -754,3 +754,216 @@ export async function reprogramarReserva(
   }
   return result
 }
+
+// ─────────────────────────────────────────────
+// US: Torneos (MOCK PARA FRONTEND)
+// ─────────────────────────────────────────────
+
+export interface TorneoCreateData {
+  nombre: string
+  fecha_inicio: string
+  formato: string
+  lugar: string
+  max_equipos: number
+  costo_inscripcion: number
+  descripcion?: string
+  reglas?: string
+}
+
+export interface EquipoInscripto {
+  id: number
+  nombre_equipo: string
+  jugadores: string
+  escudo?: string
+}
+
+export interface TorneoData extends TorneoCreateData {
+  id: number
+  estado: string // "Abierto para inscripción", "En curso", "Finalizado"
+  organizador_id: number
+  equipos_inscriptos: number
+  equipos?: EquipoInscripto[]
+  rol_usuario?: "Organizador" | "Jugador" // Campo util para "Mis Torneos"
+}
+
+// Almacenamiento en memoria para simular backend
+let mockTorneos: TorneoData[] = [
+  {
+    id: 1,
+    nombre: "Torneo de Verano 2026",
+    fecha_inicio: "2026-07-01",
+    formato: "Fase de grupos + eliminación",
+    lugar: "Cancha Central",
+    max_equipos: 16,
+    costo_inscripcion: 5000,
+    descripcion: "El mejor torneo del verano con grandes premios.",
+    reglas: "Fútbol 5. Se aplican reglas FIFA.",
+    estado: "Abierto para inscripción",
+    organizador_id: 2, // Otro usuario lo organizó
+    equipos_inscriptos: 4,
+    equipos: [
+        { id: 101, nombre_equipo: "Los Pumas", jugadores: "Juan, Pedro, Pablo" }
+    ],
+    rol_usuario: "Jugador" // Simula que el usuario actual ya está inscripto acá o lo va a estar
+  },
+  {
+    id: 2,
+    nombre: "Liga de Invierno",
+    fecha_inicio: "2026-06-01",
+    formato: "Todos contra todos",
+    lugar: "Complejo Norte",
+    max_equipos: 10,
+    costo_inscripcion: 8000,
+    estado: "En curso",
+    organizador_id: 1, // El usuario actual organizó este
+    equipos_inscriptos: 10,
+    equipos: [],
+    rol_usuario: "Organizador"
+  },
+  {
+    id: 3,
+    nombre: "Copa Relámpago",
+    fecha_inicio: "2025-12-01",
+    formato: "Eliminación directa",
+    lugar: "Polideportivo Sur",
+    max_equipos: 8,
+    costo_inscripcion: 3000,
+    estado: "Finalizado",
+    organizador_id: 1, // El usuario actual organizó este
+    equipos_inscriptos: 8,
+    equipos: [],
+    rol_usuario: "Organizador"
+  }
+]
+
+export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
+  const token = getAccessToken()
+  if (!token) throw new Error("No autenticado")
+
+  // Mapear formato del frontend al enum del backend
+  const formatoMap: Record<string, string> = {
+    "Eliminación directa": "eliminacion_directa",
+    "Fase de grupos + eliminación": "fase_grupos",
+    "Todos contra todos": "todos_contra_todos"
+  }
+
+  const payload = {
+    ...data,
+    formato: formatoMap[data.formato] || data.formato
+  }
+
+  const response = await fetch(`${API_URL}/api/torneos/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const result = await response.json()
+
+  if (!response.ok) {
+    if (Array.isArray(result.detail)) {
+      throw new Error(result.detail[0]?.msg || "Error de validación")
+    }
+    throw new Error(result.detail || "Error al crear el torneo")
+  }
+
+  // Mapear estado del backend al formato del frontend para que funcione con el resto del mock (temporal)
+  const estadoMap: Record<string, string> = {
+    "abierto": "Abierto para inscripción",
+    "en_curso": "En curso",
+    "finalizado": "Finalizado",
+    "cancelado": "Cancelado"
+  }
+  
+  // Como aún tenemos funciones mock que devuelven un TorneoData distinto, 
+  // simulamos agregarle las propiedades mock y lo metemos en la lista mock para que el flujo siga funcionando 
+  // hasta que conectemos los endpoints GET.
+  const torneoFrontend: TorneoData = {
+    ...data,
+    id: result.id,
+    estado: estadoMap[result.estado] || "Abierto para inscripción",
+    organizador_id: result.organizador_id,
+    equipos_inscriptos: 0,
+    equipos: [],
+    rol_usuario: "Organizador"
+  }
+  
+  mockTorneos.push(torneoFrontend)
+
+  return torneoFrontend
+}
+
+export async function getTorneosDisponibles(): Promise<TorneoData[]> {
+  await new Promise(resolve => setTimeout(resolve, 500))
+  getAccessToken()
+  return mockTorneos.filter(t => t.estado === "Abierto para inscripción")
+}
+
+export async function getMisTorneos(): Promise<TorneoData[]> {
+  await new Promise(resolve => setTimeout(resolve, 500))
+  getAccessToken()
+  // Retorna los torneos donde el usuario es organizador o jugador
+  return mockTorneos.filter(t => t.organizador_id === 1 || t.rol_usuario === "Jugador" || t.rol_usuario === "Organizador")
+}
+
+export async function getTorneo(id: number): Promise<TorneoData> {
+  await new Promise(resolve => setTimeout(resolve, 500))
+  getAccessToken()
+  const torneo = mockTorneos.find(t => t.id === id)
+  if (!torneo) throw new Error("Torneo no encontrado")
+  return torneo
+}
+
+export interface InscripcionData {
+  nombre_equipo: string
+  jugadores: string
+  escudo?: string
+}
+
+export async function inscribirEquipo(torneoId: number, data: InscripcionData): Promise<TorneoData> {
+  await new Promise(resolve => setTimeout(resolve, 500))
+  getAccessToken()
+  
+  const torneoIndex = mockTorneos.findIndex(t => t.id === torneoId)
+  if (torneoIndex === -1) throw new Error("Torneo no encontrado")
+  
+  const torneo = mockTorneos[torneoIndex]
+  if (torneo.equipos_inscriptos >= torneo.max_equipos) {
+    throw new Error("El torneo ya no tiene cupos disponibles.")
+  }
+
+  // Agregamos el equipo
+  const nuevoEquipo: EquipoInscripto = {
+    id: Date.now(),
+    ...data
+  }
+  
+  torneo.equipos = torneo.equipos || []
+  torneo.equipos.push(nuevoEquipo)
+  torneo.equipos_inscriptos += 1
+  torneo.rol_usuario = "Jugador" // Simular que ahora somos jugadores
+
+  return torneo
+}
+
+export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
+  await new Promise(resolve => setTimeout(resolve, 500))
+  getAccessToken()
+  
+  const torneoIndex = mockTorneos.findIndex(t => t.id === torneoId)
+  if (torneoIndex === -1) throw new Error("Torneo no encontrado")
+  
+  const torneo = mockTorneos[torneoIndex]
+  if (torneo.organizador_id !== 1 && torneo.rol_usuario !== "Organizador") {
+      throw new Error("No tenés permisos para cancelar este torneo.")
+  }
+
+  torneo.estado = "Cancelado"
+  
+  // Nota: En un backend real, acá se dispararían las notificaciones a los jugadores inscriptos.
+  return torneo
+}
+
