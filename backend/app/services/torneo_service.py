@@ -58,7 +58,7 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
         raise DomainRuleError("Uno o más jugadores del listado no son válidos o no existen.")
 
     nuevo_equipo = Equipo(
-        nombre=datos.nombre_equipo,
+        nombre=datos.nombre,
         escudo=datos.escudo  
     )
     nuevo_equipo.jugadores = jugadores
