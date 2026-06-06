@@ -29,5 +29,9 @@ class Torneo(Base):
     reglas = Column(Text, nullable=True)
     estado = Column(Enum(EstadoTorneo, native_enum=False), nullable=False, default=EstadoTorneo.abierto)
     organizador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-
+    equipos_inscriptos = relationship("Equipo", secondary="torneo_equipos", back_populates="torneos")
     organizador = relationship("Usuario", back_populates="torneos_organizados")
+
+    @property
+    def cupos_restantes(self) -> int:
+        return self.max_equipos - len(self.equipos_inscriptos)

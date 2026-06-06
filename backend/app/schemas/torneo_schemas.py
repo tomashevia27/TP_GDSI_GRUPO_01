@@ -1,8 +1,9 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from .usuario_schemas import UsuarioRespuesta
+from .equipo_schemas import EquipoResponse
 from ..models.torneo_model import FormatoTorneo, EstadoTorneo
 
 class TorneoBase(BaseModel):
@@ -29,10 +30,12 @@ class TorneoResponse(TorneoBase):
     id: int
     estado: EstadoTorneo
     organizador_id: int
+    cupos_restantes: int
 
     model_config = ConfigDict(from_attributes=True)
 
 class TorneoDetalleResponse(TorneoResponse):
     organizador: UsuarioRespuesta
+    equipos_inscriptos: List[EquipoResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
