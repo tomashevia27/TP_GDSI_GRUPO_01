@@ -9,6 +9,8 @@ from ..models.equipo_model import Equipo
 from ..models.usuario_model import Usuario
 from ..schemas.equipo_schemas import InscripcionEquipoCreate 
 
+from typing import List, Dict
+
 def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torneo:
     if datos.max_equipos < 2:
         raise DomainRuleError("El torneo debe admitir al menos 2 equipos")
@@ -65,3 +67,22 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     db.refresh(nuevo_equipo)
 
     return nuevo_equipo
+
+
+def listar_torneos_abiertos(db: Session) -> List[Dict]:
+    """Devuelve una lista de torneos con estado 'abierto' incluyendo cupos_restantes.  
+    """
+    torneos = torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
+    resultado = []
+    for t in torneos:
+        cupos_restantes = max(0, t.max_equipos - t.inscriptos)
+        resultado.append({
+            "id": t.id,
+            "nombre": t.nombre,
+            "formato": t.formato,
+            "lugar": t.lugar,
+            "fecha_inicio": t.fecha_inicio,
+            "inscriptos": t.inscriptos,
+            "cupos_restantes": cupos_restantes,
+        })
+    return resultado

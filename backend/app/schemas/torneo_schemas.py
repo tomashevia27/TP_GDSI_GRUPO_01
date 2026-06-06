@@ -39,3 +39,15 @@ class TorneoDetalleResponse(TorneoResponse):
     equipos_inscriptos: List[EquipoResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TorneoListado(BaseModel):
+    id: int
+    nombre: str
+    formato: FormatoTorneo
+    lugar: str
+    fecha_inicio: datetime
+    inscriptos: int
+    cupos_restantes: int
+
+    model_config = ConfigDict(from_attributes=True)
