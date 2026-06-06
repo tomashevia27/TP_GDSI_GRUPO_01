@@ -24,6 +24,7 @@ class Torneo(Base):
     formato = Column(Enum(FormatoTorneo, native_enum=False), nullable=False)
     lugar = Column(String(200), nullable=False)
     max_equipos = Column(Integer, nullable=False)
+    inscriptos = Column(Integer, nullable=False, default=0)
     costo_inscripcion = Column(Float, nullable=False)
     descripcion = Column(Text, nullable=True)
     reglas = Column(Text, nullable=True)

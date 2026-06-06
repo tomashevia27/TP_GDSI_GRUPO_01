@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Optional, List
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from .usuario_schemas import UsuarioRespuesta
@@ -34,5 +34,17 @@ class TorneoResponse(TorneoBase):
 
 class TorneoDetalleResponse(TorneoResponse):
     organizador: UsuarioRespuesta
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TorneoListado(BaseModel):
+    id: int
+    nombre: str
+    formato: FormatoTorneo
+    lugar: str
+    fecha_inicio: datetime
+    inscriptos: int
+    cupos_restantes: int
 
     model_config = ConfigDict(from_attributes=True)
