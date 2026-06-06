@@ -35,7 +35,7 @@ def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torne
 
     return torneo_repository.crear_torneo(db, nuevo_torneo)
 
-def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate) -> Equipo:
+def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate, creador_accion_id: int) -> Equipo:
     
     torneo = torneo_repository.obtener_por_id(db, torneo_id)
     if not torneo:
@@ -49,6 +49,9 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
 
     if not datos.jugadores_ids or len(datos.jugadores_ids) == 0:
         raise DomainRuleError("El listado de los jugadores es obligatorio.")
+
+    if creador_accion_id not in datos.jugadores_ids:
+        raise DomainRuleError("Debes formar parte del equipo para poder inscribirlo.")
 
     jugadores = torneo_repository.obtener_usuarios_por_ids(db, datos.jugadores_ids)
     if len(jugadores) != len(datos.jugadores_ids):

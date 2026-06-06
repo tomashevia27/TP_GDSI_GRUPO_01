@@ -9,6 +9,7 @@ from ..schemas.usuario_schemas import UsuarioRespuesta
 from ..models.usuario_model import Usuario
 from ..services import torneo_service
 from ..repositories import torneo_repository
+from ..schemas.equipo_schemas import InscripcionEquipoCreate, EquipoResponse
  
 
 router = APIRouter(
@@ -49,3 +50,16 @@ def obtener_torneo(
         organizador = db.query(Usuario).filter(Usuario.id == torneo.organizador_id).first()
         torneo.organizador = organizador
     return torneo
+
+
+@router.post("/{torneo_id}/inscripciones", response_model=EquipoResponse, status_code=status.HTTP_201_CREATED)
+def inscribir_equipo_a_torneo(
+    torneo_id: int,
+    inscripcion_in: InscripcionEquipoCreate,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Inscribe un nuevo equipo con sus jugadores a un torneo específico.
+    """
+    return torneo_service.inscribir_equipo(db, torneo_id, inscripcion_in, current_user.id)
