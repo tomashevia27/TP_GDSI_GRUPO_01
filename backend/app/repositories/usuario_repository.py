@@ -56,3 +56,7 @@ def editar_usuario(db: Session, user_id: int, datos: UsuarioEdicion) -> Usuario 
 def obtener_todos(db: Session) -> list[Usuario]:
     """Obtiene todos los usuarios."""
     return db.query(Usuario).all()
+
+
+def obtener_usuarios_por_ids(db: Session, ids: list[int]) -> list[Usuario]:
+    return db.query(Usuario).filter(Usuario.id.in_(ids)).all()

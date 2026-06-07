@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
+from .user_service import obtener_usuarios_activos
 
 from ..models.torneo_model import Torneo, EstadoTorneo
 from ..schemas.torneo_schemas import TorneoCreate
 from ..repositories import torneo_repository
 from ..core.exceptions import DomainRuleError
 from ..models.equipo_model import Equipo
-from ..models.usuario_model import Usuario
 from ..schemas.equipo_schemas import InscripcionEquipoCreate 
 
 from typing import List, Dict
@@ -53,9 +53,7 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     if creador_accion_id not in datos.jugadores_ids:
         raise DomainRuleError("Debes formar parte del equipo para poder inscribirlo.")
 
-    jugadores = torneo_repository.obtener_usuarios_por_ids(db, datos.jugadores_ids)
-    if len(jugadores) != len(datos.jugadores_ids):
-        raise DomainRuleError("Uno o más jugadores del listado no son válidos o no existen.")
+    jugadores = obtener_usuarios_activos(db, datos.jugadores_ids)
 
     nuevo_equipo = Equipo(
         nombre=datos.nombre,
@@ -72,20 +70,8 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     return nuevo_equipo
 
 
-def listar_torneos_abiertos(db: Session) -> List[Dict]:
+def listar_torneos_abiertos(db: Session) -> List[Torneo]:
     """Devuelve una lista de torneos con estado 'abierto' incluyendo cupos_restantes.  
     """
-    torneos = torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
-    resultado = []
-    for t in torneos:
-        cupos_restantes = max(0, t.max_equipos - t.inscriptos)
-        resultado.append({
-            "id": t.id,
-            "nombre": t.nombre,
-            "formato": t.formato,
-            "lugar": t.lugar,
-            "fecha_inicio": t.fecha_inicio,
-            "inscriptos": t.inscriptos,
-            "cupos_restantes": cupos_restantes,
-        })
-    return resultado
+    return torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
+    
