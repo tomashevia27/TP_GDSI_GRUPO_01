@@ -51,3 +51,21 @@ class TorneoListado(BaseModel):
     cupos_restantes: int
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TorneoMisActividades(BaseModel):
+    id: int
+    nombre: str
+    fecha_inicio: datetime
+    formato: FormatoTorneo
+    estado: EstadoTorneo
+    rol: str  
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MisTorneosResponse(BaseModel):
+    proximos: List[TorneoMisActividades] = []
+    en_curso: List[TorneoMisActividades] = []
+    finalizados: List[TorneoMisActividades] = []
+

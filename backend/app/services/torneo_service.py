@@ -1,24 +1,34 @@
+from fastapi import HTTPException, status
+
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
+
+from backend.app.services.torneo_notificador import notificar_torneo_cancelado
+from .user_service import obtener_usuarios_activos
 
 from ..models.torneo_model import Torneo, EstadoTorneo
 from ..schemas.torneo_schemas import TorneoCreate
 from ..repositories import torneo_repository
-from ..core.exceptions import DomainRuleError
 from ..models.equipo_model import Equipo
-from ..models.usuario_model import Usuario
 from ..schemas.equipo_schemas import InscripcionEquipoCreate 
+from .torneo_notificador import notificar_torneo_cancelado
 
 from typing import List, Dict
 
 def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torneo:
     if datos.max_equipos < 2:
-        raise DomainRuleError("El torneo debe admitir al menos 2 equipos")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="El torneo debe admitir al menos 2 equipos"
+        )
         
     tz_local = timezone(timedelta(hours=-3))
     ahora = datetime.now(tz_local).replace(tzinfo=None)
     if datos.fecha_inicio.replace(tzinfo=None) < ahora:
-        raise DomainRuleError("La fecha de inicio no puede estar en el pasado")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, 
+            detail="La fecha de inicio no puede estar en el pasado"
+        )
 
     nuevo_torneo = Torneo(
         nombre=datos.nombre,
@@ -39,23 +49,36 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     
     torneo = torneo_repository.obtener_por_id(db, torneo_id)
     if not torneo:
-        raise DomainRuleError("El torneo especificado no existe.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="El torneo especificado no existe."
+        )
 
     if torneo.estado != EstadoTorneo.abierto:
-        raise DomainRuleError("No se aceptan inscripciones. El torneo no está abierto.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No se aceptan inscripciones. El torneo no está abierto."
+        )
 
     if len(torneo.equipos_inscriptos) >= torneo.max_equipos:
-        raise DomainRuleError("El torneo ya no tiene cupos de inscripción disponibles.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El torneo ya no tiene cupos de inscripción disponibles."
+        )
 
     if not datos.jugadores_ids or len(datos.jugadores_ids) == 0:
-        raise DomainRuleError("El listado de los jugadores es obligatorio.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El listado de los jugadores es obligatorio."
+        )
 
     if creador_accion_id not in datos.jugadores_ids:
-        raise DomainRuleError("Debes formar parte del equipo para poder inscribirlo.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Debes formar parte del equipo para poder inscribirlo."
+        )
 
-    jugadores = torneo_repository.obtener_usuarios_por_ids(db, datos.jugadores_ids)
-    if len(jugadores) != len(datos.jugadores_ids):
-        raise DomainRuleError("Uno o más jugadores del listado no son válidos o no existen.")
+    jugadores = obtener_usuarios_activos(db, datos.jugadores_ids)
 
     nuevo_equipo = Equipo(
         nombre=datos.nombre,
@@ -72,20 +95,64 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     return nuevo_equipo
 
 
-def listar_torneos_abiertos(db: Session) -> List[Dict]:
+def listar_torneos_abiertos(db: Session) -> List[Torneo]:
     """Devuelve una lista de torneos con estado 'abierto' incluyendo cupos_restantes.  
     """
-    torneos = torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
-    resultado = []
+    return torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
+
+
+def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
+    torneos = torneo_repository.obtener_torneos_por_usuario(db, usuario_id)
+    
+    resultado = {
+        "proximos": [],
+        "en_curso": [],
+        "finalizados": []
+    }
+    
     for t in torneos:
-        cupos_restantes = max(0, t.max_equipos - t.inscriptos)
-        resultado.append({
+        rol = "Organizador" if t.organizador_id == usuario_id else "Jugador"
+        
+        dto_torneo = {
             "id": t.id,
             "nombre": t.nombre,
-            "formato": t.formato,
-            "lugar": t.lugar,
             "fecha_inicio": t.fecha_inicio,
-            "inscriptos": t.inscriptos,
-            "cupos_restantes": cupos_restantes,
-        })
+            "formato": t.formato,
+            "estado": t.estado,
+            "rol": rol
+        }
+        
+        if t.estado == EstadoTorneo.abierto:
+            resultado["proximos"].append(dto_torneo)
+        elif t.estado == EstadoTorneo.en_curso:
+            resultado["en_curso"].append(dto_torneo)
+        elif t.estado in [EstadoTorneo.finalizado, EstadoTorneo.cancelado]:
+            resultado["finalizados"].append(dto_torneo)
+            
     return resultado
+
+
+def cancelar_torneo(db: Session, torneo_id: int, usuario_accion_id: int):
+    torneo = torneo_repository.obtener_por_id(db, torneo_id)
+    
+    if not torneo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Torneo no encontrado")
+        
+    if torneo.organizador_id != usuario_accion_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, 
+            detail="No tienes permisos para cancelar este torneo"
+        )
+        
+    if torneo.estado == "cancelado":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El torneo ya está cancelado")
+    if torneo.estado == "finalizado":
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede cancelar un torneo finalizado")
+
+
+    notificar_torneo_cancelado(db, torneo)
+
+    torneo.estado = "cancelado"
+    db.commit()
+    db.refresh(torneo)    
+    return torneo

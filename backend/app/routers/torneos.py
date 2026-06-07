@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..core.db import engine
 from ..core.dependencies import get_current_user, get_db
-from ..schemas.torneo_schemas import TorneoCreate, TorneoResponse, TorneoListado, TorneoDetalleResponse
+from ..schemas.torneo_schemas import MisTorneosResponse, TorneoCreate, TorneoResponse, TorneoListado, TorneoDetalleResponse
 from ..schemas.usuario_schemas import UsuarioRespuesta
 from ..models.usuario_model import Usuario
 from ..services import torneo_service
@@ -37,6 +37,13 @@ def listar_torneos_abiertos(db: Session = Depends(get_db)):
     return torneo_service.listar_torneos_abiertos(db)
 
 
+@router.get("/mis-torneos", response_model=MisTorneosResponse)
+def obtener_mis_torneos(
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return torneo_service.listar_mis_torneos(db, current_user.id)
+
 @router.get("/{torneo_id}", response_model=TorneoDetalleResponse)
 def obtener_torneo(
     torneo_id: int,
@@ -63,3 +70,11 @@ def inscribir_equipo_a_torneo(
     Inscribe un nuevo equipo con sus jugadores a un torneo específico.
     """
     return torneo_service.inscribir_equipo(db, torneo_id, inscripcion_in, current_user.id)
+
+@router.post("/{torneo_id}/cancelar", response_model=TorneoResponse)
+def cancelar_torneo(
+    torneo_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return torneo_service.cancelar_torneo(db, torneo_id, current_user.id)
