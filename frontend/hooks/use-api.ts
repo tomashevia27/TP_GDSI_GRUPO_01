@@ -756,7 +756,7 @@ export async function reprogramarReserva(
 }
 
 // ─────────────────────────────────────────────
-// US: Torneos (MOCK PARA FRONTEND)
+// US: Torneos (MOCK PARA FRONTEND ACTUALIZADO)
 // ─────────────────────────────────────────────
 
 export interface TorneoCreateData {
@@ -765,6 +765,7 @@ export interface TorneoCreateData {
   formato: string
   lugar: string
   max_equipos: number
+  max_jugadores_por_equipo?: number
   costo_inscripcion: number
   descripcion?: string
   reglas?: string
@@ -773,17 +774,17 @@ export interface TorneoCreateData {
 export interface EquipoInscripto {
   id: number
   nombre_equipo: string
-  jugadores: string
+  jugadores: string // Sigue siendo string porque el backend recibe/almacena el JSON stringificado
   escudo?: string
 }
 
 export interface TorneoData extends TorneoCreateData {
   id: number
-  estado: string // "Abierto para inscripción", "En curso", "Finalizado"
+  estado: string // "Abierto para inscripción", "En curso", "Finalizado", "Cancelado"
   organizador_id: number
   equipos_inscriptos: number
   equipos?: EquipoInscripto[]
-  rol_usuario?: "Organizador" | "Jugador" // Campo util para "Mis Torneos"
+  rol_usuario?: "Organizador" | "Jugador"
 }
 
 // Almacenamiento en memoria para simular backend
@@ -795,16 +796,27 @@ let mockTorneos: TorneoData[] = [
     formato: "Fase de grupos + eliminación",
     lugar: "Cancha Central",
     max_equipos: 16,
+    max_jugadores_por_equipo: 5,
     costo_inscripcion: 5000,
     descripcion: "El mejor torneo del verano con grandes premios.",
     reglas: "Fútbol 5. Se aplican reglas FIFA.",
     estado: "Abierto para inscripción",
-    organizador_id: 2, // Otro usuario lo organizó
-    equipos_inscriptos: 4,
+    organizador_id: 2, 
+    equipos_inscriptos: 1, // Ajustado a los dos equipos mockeados abajo
     equipos: [
-        { id: 101, nombre_equipo: "Los Pumas", jugadores: "Juan, Pedro, Pablo" }
+        { 
+          id: 101, 
+          nombre_equipo: "Los Pumas", 
+          jugadores: JSON.stringify([
+            { nombre: "Juan Pérez", email: "juan@pumas.com", dni: "38123456" },
+            { nombre: "Pedro Gómez", email: "pedro@pumas.com", dni: "39123456" },
+            { nombre: "Pablo Ruiz", email: "pablo@pumas.com", dni: "40123456" },
+            { nombre: "Leo Ruiz", email: "leo@pumas.com", dni: "40223456" },
+            { nombre: "Cristobal Almada", email: "quito@pumas.com", dni: "43323456" }
+          ])
+        }
     ],
-    rol_usuario: "Jugador" // Simula que el usuario actual ya está inscripto acá o lo va a estar
+    rol_usuario: "Jugador" 
   },
   {
     id: 2,
@@ -815,7 +827,7 @@ let mockTorneos: TorneoData[] = [
     max_equipos: 10,
     costo_inscripcion: 8000,
     estado: "En curso",
-    organizador_id: 1, // El usuario actual organizó este
+    organizador_id: 1, 
     equipos_inscriptos: 10,
     equipos: [],
     rol_usuario: "Organizador"
@@ -829,7 +841,7 @@ let mockTorneos: TorneoData[] = [
     max_equipos: 8,
     costo_inscripcion: 3000,
     estado: "Finalizado",
-    organizador_id: 1, // El usuario actual organizó este
+    organizador_id: 1, 
     equipos_inscriptos: 8,
     equipos: [],
     rol_usuario: "Organizador"
@@ -840,7 +852,6 @@ export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
   const token = getAccessToken()
   if (!token) throw new Error("No autenticado")
 
-  // Mapear formato del frontend al enum del backend
   const formatoMap: Record<string, string> = {
     "Eliminación directa": "eliminacion_directa",
     "Fase de grupos + eliminación": "fase_grupos",
@@ -870,7 +881,6 @@ export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
     throw new Error(result.detail || "Error al crear el torneo")
   }
 
-  // Mapear estado del backend al formato del frontend para que funcione con el resto del mock (temporal)
   const estadoMap: Record<string, string> = {
     "abierto": "Abierto para inscripción",
     "en_curso": "En curso",
@@ -878,9 +888,6 @@ export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
     "cancelado": "Cancelado"
   }
   
-  // Como aún tenemos funciones mock que devuelven un TorneoData distinto, 
-  // simulamos agregarle las propiedades mock y lo metemos en la lista mock para que el flujo siga funcionando 
-  // hasta que conectemos los endpoints GET.
   const torneoFrontend: TorneoData = {
     ...data,
     id: result.id,
@@ -892,7 +899,6 @@ export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
   }
   
   mockTorneos.push(torneoFrontend)
-
   return torneoFrontend
 }
 
@@ -905,7 +911,6 @@ export async function getTorneosDisponibles(): Promise<TorneoData[]> {
 export async function getMisTorneos(): Promise<TorneoData[]> {
   await new Promise(resolve => setTimeout(resolve, 500))
   getAccessToken()
-  // Retorna los torneos donde el usuario es organizador o jugador
   return mockTorneos.filter(t => t.organizador_id === 1 || t.rol_usuario === "Jugador" || t.rol_usuario === "Organizador")
 }
 
@@ -919,7 +924,7 @@ export async function getTorneo(id: number): Promise<TorneoData> {
 
 export interface InscripcionData {
   nombre_equipo: string
-  jugadores: string
+  jugadores: string // Recibe el string del JSON mandado por el formulario dinámico
   escudo?: string
 }
 
@@ -935,16 +940,18 @@ export async function inscribirEquipo(torneoId: number, data: InscripcionData): 
     throw new Error("El torneo ya no tiene cupos disponibles.")
   }
 
-  // Agregamos el equipo
+  // Creamos el nuevo registro del equipo inscripto
   const nuevoEquipo: EquipoInscripto = {
     id: Date.now(),
-    ...data
+    nombre_equipo: data.nombre_equipo,
+    jugadores: data.jugadores, // Mantiene el JSON stringificado listo para la UI
+    escudo: data.escudo
   }
   
   torneo.equipos = torneo.equipos || []
   torneo.equipos.push(nuevoEquipo)
   torneo.equipos_inscriptos += 1
-  torneo.rol_usuario = "Jugador" // Simular que ahora somos jugadores
+  torneo.rol_usuario = "Jugador"
 
   return torneo
 }
@@ -962,8 +969,6 @@ export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
   }
 
   torneo.estado = "Cancelado"
-  
-  // Nota: En un backend real, acá se dispararían las notificaciones a los jugadores inscriptos.
   return torneo
 }
 

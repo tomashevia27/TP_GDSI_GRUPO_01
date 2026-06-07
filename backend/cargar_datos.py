@@ -19,6 +19,7 @@ from app.models.cancha_model import Cancha
 from app.models.partido_model import Partido
 from app.models.notificacion_model import Notificacion
 from app.models.torneo_model import Torneo
+from app.models.equipo_model import Equipo, equipo_jugadores
 from app.repositories.usuario_repository import guardar
 
 

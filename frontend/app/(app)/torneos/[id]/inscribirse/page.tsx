@@ -47,6 +47,11 @@ export default function InscripcionTorneoPage() {
         fetchTorneo()
     }, [id])
 
+    // Determinar el límite máximo de jugadores permitidos (usa el del back o 12 por defecto)
+    // NOTA: Ajustá 'max_jugadores_por_equipo' al nombre exacto que devuelva tu API de Python/Node.
+    const maxJugadoresPermitidos = torneo?.max_jugadores_por_equipo || 5
+    const alcanzoMaximoJugadores = jugadores.length >= maxJugadoresPermitidos
+
     // Maneja cambios en Nombre del Equipo y Escudo
     const handleLimpiarError = () => {
         if (errorMsg && torneo && torneo.estado === "Abierto para inscripción" && torneo.equipos_inscriptos < torneo.max_equipos) {
@@ -65,6 +70,8 @@ export default function InscripcionTorneoPage() {
     }
 
     const agregarJugador = () => {
+        // Validación de seguridad por si intentan saltearse el disabled del botón
+        if (alcanzoMaximoJugadores) return 
         setJugadores(prev => [...prev, { nombre: "", email: "", dni: "" }])
     }
 
@@ -103,12 +110,9 @@ export default function InscripcionTorneoPage() {
 
         setIsSubmitting(true)
         try {
-            // Ajustamos la data antes de mandarla al API según lo que espere tu backend
             const payload = {
                 nombre_equipo: nombreEquipo,
                 escudo: escudo,
-                // Si tu backend todavía espera un string de texto plano, hacemos un JSON.stringify o mapeo.
-                // Si ya acepta objetos, mandas directamente 'jugadores'.
                 jugadores: JSON.stringify(jugadores) 
             }
 
@@ -197,20 +201,26 @@ export default function InscripcionTorneoPage() {
                             <div className="flex items-center justify-between">
                                 <label className="block text-sm font-medium text-foreground flex items-center gap-2">
                                     <Users className="w-4 h-4 text-primary" />
-                                    Lista de Jugadores *
+                                    Lista de Jugadores ({jugadores.length}/{maxJugadoresPermitidos}) *
                                 </label>
                                 <Button 
                                     type="button" 
                                     variant="outline" 
                                     size="sm" 
                                     onClick={agregarJugador}
-                                    className="gap-1.5 h-8 text-xs"
+                                    disabled={alcanzoMaximoJugadores}
+                                    className="gap-1.5 h-8 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Plus className="w-3.5 h-3.5" /> Añadir Jugador
                                 </Button>
                             </div>
                             
-                            <p className="text-xs text-muted-foreground -mt-2">Cargá los datos correspondientes de cada integrante de la plantilla.</p>
+                            <p className="text-xs text-muted-foreground -mt-2">
+                                {alcanzoMaximoJugadores 
+                                    ? `Alcanzaste el límite máximo de ${maxJugadoresPermitidos} jugadores permitidos para este torneo.` 
+                                    : "Cargá los datos correspondientes de cada integrante de la plantilla."
+                                }
+                            </p>
                             
                             <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
                                 {jugadores.map((jugador, index) => (
