@@ -15,6 +15,7 @@ class TorneoBase(BaseModel):
     costo_inscripcion: float = Field(..., ge=0)
     descripcion: Optional[str] = None
     reglas: Optional[str] = None
+    max_integrantes_por_equipo: int = Field(default=10, ge=1, description="Máximo de jugadores por equipo en este torneo")
 
 class TorneoCreate(TorneoBase):
     @model_validator(mode='after')

@@ -38,7 +38,8 @@ def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torne
         descripcion=datos.descripcion,
         reglas=datos.reglas,
         estado=EstadoTorneo.abierto,
-        organizador_id=organizador_id
+        organizador_id=organizador_id,
+        max_integrantes_por_equipo=datos.max_integrantes_por_equipo
     )
 
     return torneo_repository.crear_torneo(db, nuevo_torneo)
@@ -77,16 +78,15 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
         )
 
     jugadores = obtener_usuarios_activos(db, datos.jugadores_ids)
-    if len(jugadores) > datos.max_integrantes:
+    if len(jugadores) > torneo.max_integrantes_por_equipo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"La cantidad de jugadores válidos ({len(jugadores)}) supera el límite máximo permitido para el equipo ({datos.max_integrantes})."
+            detail=f"La cantidad de jugadores válidos ({len(jugadores)}) supera el límite máximo permitido para este torneo ({torneo.max_integrantes_por_equipo})."
         )
 
     nuevo_equipo = Equipo(
         nombre=datos.nombre,
-        escudo=datos.escudo,
-        max_integrantes=datos.max_integrantes  
+        escudo=datos.escudo
     )
     nuevo_equipo.jugadores = jugadores
 
