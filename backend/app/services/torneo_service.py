@@ -74,4 +74,34 @@ def listar_torneos_abiertos(db: Session) -> List[Torneo]:
     """Devuelve una lista de torneos con estado 'abierto' incluyendo cupos_restantes.  
     """
     return torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
+
+
+def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
+    torneos = torneo_repository.obtener_torneos_por_usuario(db, usuario_id)
     
+    resultado = {
+        "proximos": [],
+        "en_curso": [],
+        "finalizados": []
+    }
+    
+    for t in torneos:
+        rol = "Organizador" if t.organizador_id == usuario_id else "Jugador"
+        
+        dto_torneo = {
+            "id": t.id,
+            "nombre": t.nombre,
+            "fecha_inicio": t.fecha_inicio,
+            "formato": t.formato,
+            "estado": t.estado,
+            "rol": rol
+        }
+        
+        if t.estado == EstadoTorneo.abierto:
+            resultado["proximos"].append(dto_torneo)
+        elif t.estado == EstadoTorneo.en_curso:
+            resultado["en_curso"].append(dto_torneo)
+        elif t.estado in [EstadoTorneo.finalizado, EstadoTorneo.cancelado]:
+            resultado["finalizados"].append(dto_torneo)
+            
+    return resultado

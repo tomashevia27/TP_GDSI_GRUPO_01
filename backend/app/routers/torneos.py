@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..core.db import engine
 from ..core.dependencies import get_current_user, get_db
-from ..schemas.torneo_schemas import TorneoCreate, TorneoResponse, TorneoListado, TorneoDetalleResponse
+from ..schemas.torneo_schemas import MisTorneosResponse, TorneoCreate, TorneoResponse, TorneoListado, TorneoDetalleResponse
 from ..schemas.usuario_schemas import UsuarioRespuesta
 from ..models.usuario_model import Usuario
 from ..services import torneo_service
@@ -36,6 +36,13 @@ def listar_torneos_abiertos(db: Session = Depends(get_db)):
     """Lista torneos que están abiertos para inscripción."""
     return torneo_service.listar_torneos_abiertos(db)
 
+
+@router.get("/mis-torneos", response_model=MisTorneosResponse)
+def obtener_mis_torneos(
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return torneo_service.listar_mis_torneos(db, current_user.id)
 
 @router.get("/{torneo_id}", response_model=TorneoDetalleResponse)
 def obtener_torneo(

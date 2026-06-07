@@ -35,4 +35,4 @@ class Torneo(Base):
 
     @property
     def cupos_restantes(self) -> int:
-        return self.max_equipos - len(self.equipos_inscriptos)
+        return max(0, self.max_equipos - len(self.equipos_inscriptos))
