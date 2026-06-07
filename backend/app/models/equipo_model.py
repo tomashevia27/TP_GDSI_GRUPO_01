@@ -21,7 +21,8 @@ class Equipo(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)        
-    escudo = Column(Text, nullable=True)               
+    escudo = Column(Text, nullable=True)    
+    max_integrantes = Column(Integer, nullable=False, default=10)           
 
     jugadores = relationship("Usuario", secondary="equipo_jugadores", back_populates="equipos")
     

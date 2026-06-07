@@ -2,8 +2,6 @@ from fastapi import HTTPException, status
 
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
-
-from app.services.torneo_notificador import notificar_torneo_cancelado
 from .user_service import obtener_usuarios_activos
 
 from ..models.torneo_model import Torneo, EstadoTorneo
@@ -79,10 +77,16 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
         )
 
     jugadores = obtener_usuarios_activos(db, datos.jugadores_ids)
+    if len(jugadores) > datos.max_integrantes:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"La cantidad de jugadores válidos ({len(jugadores)}) supera el límite máximo permitido para el equipo ({datos.max_integrantes})."
+        )
 
     nuevo_equipo = Equipo(
         nombre=datos.nombre,
-        escudo=datos.escudo  
+        escudo=datos.escudo,
+        max_integrantes=datos.max_integrantes  
     )
     nuevo_equipo.jugadores = jugadores
 
