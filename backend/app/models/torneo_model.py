@@ -24,10 +24,15 @@ class Torneo(Base):
     formato = Column(Enum(FormatoTorneo, native_enum=False), nullable=False)
     lugar = Column(String(200), nullable=False)
     max_equipos = Column(Integer, nullable=False)
+    inscriptos = Column(Integer, nullable=False, default=0)
     costo_inscripcion = Column(Float, nullable=False)
     descripcion = Column(Text, nullable=True)
     reglas = Column(Text, nullable=True)
     estado = Column(Enum(EstadoTorneo, native_enum=False), nullable=False, default=EstadoTorneo.abierto)
     organizador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-
+    equipos_inscriptos = relationship("Equipo", secondary="torneo_equipos", back_populates="torneos")
     organizador = relationship("Usuario", back_populates="torneos_organizados")
+
+    @property
+    def cupos_restantes(self) -> int:
+        return self.max_equipos - len(self.equipos_inscriptos)
