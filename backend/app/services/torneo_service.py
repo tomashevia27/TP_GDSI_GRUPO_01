@@ -3,7 +3,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 
-from backend.app.services.torneo_notificador import notificar_torneo_cancelado
+from app.services.torneo_notificador import notificar_torneo_cancelado
 from .user_service import obtener_usuarios_activos
 
 from ..models.torneo_model import Torneo, EstadoTorneo
