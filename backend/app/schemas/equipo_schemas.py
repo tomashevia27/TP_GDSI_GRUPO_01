@@ -5,6 +5,7 @@ from .usuario_schemas import UsuarioRespuesta
 class EquipoBase(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=100, description="Nombre del equipo participante")
     escudo: Optional[str] = Field(None, description="URL o representación en string del escudo del equipo")
+    max_integrantes: int = Field(..., ge=1, description="Número máximo de integrantes del equipo")
 
 class InscripcionEquipoCreate(EquipoBase):
     jugadores_ids: List[int] = Field(..., min_length=1, description="Lista de IDs de los jugadores del equipo")
