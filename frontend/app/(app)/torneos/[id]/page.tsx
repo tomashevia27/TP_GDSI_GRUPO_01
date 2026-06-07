@@ -3,9 +3,16 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Trophy, Calendar, Users, MapPin, DollarSign, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle } from "lucide-react"
+import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getTorneo, cancelarTorneo, TorneoData } from "@/hooks/use-api"
+
+// Interfaz para el tipado de los jugadores parseados
+interface JugadorObjeto {
+    nombre: string;
+    email?: string;
+    dni?: string;
+}
 
 export default function TorneoDetallePage() {
     const { id } = useParams()
@@ -70,6 +77,32 @@ export default function TorneoDetallePage() {
         } catch (err: any) {
             alert(err.message || "Error al cancelar el torneo")
         }
+    }
+
+    const renderizarJugadores = (jugadoresRaw: string) => {
+        try {
+            // parseador formato JSON array
+            const lista: JugadorObjeto[] = JSON.parse(jugadoresRaw)
+            
+            if (Array.isArray(lista)) {
+                return (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {lista.map((j, i) => (
+                            <span 
+                                key={i} 
+                                className="inline-block bg-muted text-muted-foreground text-[11px] font-medium px-2 py-0.5 rounded-md border border-border/60"
+                                title={j.email ? `Email: ${j.email} | DNI: ${j.dni}` : undefined}
+                            >
+                                {j.nombre}
+                            </span>
+                        ))}
+                    </div>
+                )
+            }
+        } catch (e) {
+        }
+
+        return <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{jugadoresRaw}</p>
     }
 
     const cuposRestantes = torneo.max_equipos - torneo.equipos_inscriptos
@@ -195,10 +228,9 @@ export default function TorneoDetallePage() {
                                     <ul className="divide-y divide-border">
                                         {torneo.equipos.map(equipo => (
                                             <li key={equipo.id} className="p-4 hover:bg-muted/50 transition-colors">
-                                                <p className="font-medium text-foreground">{equipo.nombre_equipo}</p>
-                                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1" title={equipo.jugadores}>
-                                                    Plantel: {equipo.jugadores}
-                                                </p>
+                                                <p className="font-semibold text-sm text-foreground">{equipo.nombre_equipo}</p>
+                                                {/* Renderizador dinámico en fila */}
+                                                {renderizarJugadores(equipo.jugadores)}
                                             </li>
                                         ))}
                                     </ul>

@@ -3,9 +3,15 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Trophy, ArrowLeft, Loader2, AlertCircle, Users, Shield, Image as ImageIcon } from "lucide-react"
+import { Trophy, ArrowLeft, Loader2, AlertCircle, Users, Shield, Image as ImageIcon, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getTorneo, inscribirEquipo, TorneoData, InscripcionData } from "@/hooks/use-api"
+import { getTorneo, inscribirEquipo, TorneoData } from "@/hooks/use-api"
+
+interface Jugador {
+    nombre: string;
+    email: string;
+    dni: string;
+}
 
 export default function InscripcionTorneoPage() {
     const { id } = useParams()
@@ -15,11 +21,11 @@ export default function InscripcionTorneoPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
 
-    const [formData, setFormData] = useState<InscripcionData>({
-        nombre_equipo: "",
-        jugadores: "",
-        escudo: ""
-    })
+    const [nombreEquipo, setNombreEquipo] = useState("")
+    const [escudo, setEscudo] = useState("")
+    const [jugadores, setJugadores] = useState<Jugador[]>([
+        { nombre: "", email: "", dni: "" } // Arranca con un casillero vacío para el primer jugador
+    ])
 
     useEffect(() => {
         async function fetchTorneo() {
@@ -27,7 +33,6 @@ export default function InscripcionTorneoPage() {
                 const data = await getTorneo(Number(id))
                 setTorneo(data)
                 
-                // Pre-validaciones
                 if (data.estado !== "Abierto para inscripción") {
                     setErrorMsg("Este torneo no está abierto para nuevas inscripciones.")
                 } else if (data.equipos_inscriptos >= data.max_equipos) {
@@ -42,17 +47,47 @@ export default function InscripcionTorneoPage() {
         fetchTorneo()
     }, [id])
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
+    // Maneja cambios en Nombre del Equipo y Escudo
+    const handleLimpiarError = () => {
         if (errorMsg && torneo && torneo.estado === "Abierto para inscripción" && torneo.equipos_inscriptos < torneo.max_equipos) {
-            setErrorMsg("") // clear validation errors on edit, only if not blocked
+            setErrorMsg("")
         }
     }
 
+    // Funciones para gestionar el array de jugadores
+    const handleJugadorChange = (index: number, field: keyof Jugador, value: string) => {
+        handleLimpiarError()
+        setJugadores(prev => {
+            const nuevos = [...prev]
+            nuevos[index] = { ...nuevos[index], [field]: value }
+            return nuevos
+        })
+    }
+
+    const agregarJugador = () => {
+        setJugadores(prev => [...prev, { nombre: "", email: "", dni: "" }])
+    }
+
+    const eliminarJugador = (index: number) => {
+        if (jugadores.length === 1) return; // No dejamos que borre si queda solo uno
+        setJugadores(prev => prev.filter((_, i) => i !== index))
+    }
+
     const validateForm = () => {
-        if (!formData.nombre_equipo.trim()) return "El nombre del equipo es obligatorio."
-        if (!formData.jugadores.trim()) return "Debés ingresar la lista de jugadores."
+        if (!nombreEquipo.trim()) return "El nombre del equipo es obligatorio."
+        
+        // Validar que al menos haya un jugador y tenga el nombre completo
+        if (jugadores.length === 0 || !jugadores[0].nombre.trim()) {
+            return "Debés ingresar al menos al capitán o primer jugador."
+        }
+
+        // Validar que todos los campos de los jugadores añadidos estén completos
+        for (let i = 0; i < jugadores.length; i++) {
+            const j = jugadores[i];
+            if (!j.nombre.trim() || !j.email.trim() || !j.dni.trim()) {
+                return `Por favor, completa todos los datos del jugador número ${i + 1}.`
+            }
+        }
         return null
     }
 
@@ -68,8 +103,16 @@ export default function InscripcionTorneoPage() {
 
         setIsSubmitting(true)
         try {
-            await inscribirEquipo(torneo.id, formData)
-            // Redirigir al detalle del torneo
+            // Ajustamos la data antes de mandarla al API según lo que espere tu backend
+            const payload = {
+                nombre_equipo: nombreEquipo,
+                escudo: escudo,
+                // Si tu backend todavía espera un string de texto plano, hacemos un JSON.stringify o mapeo.
+                // Si ya acepta objetos, mandas directamente 'jugadores'.
+                jugadores: JSON.stringify(jugadores) 
+            }
+
+            await inscribirEquipo(torneo.id, payload)
             router.push(`/torneos/${torneo.id}`)
         } catch (error: any) {
             setErrorMsg(error.message || "Error al inscribir el equipo.")
@@ -133,6 +176,7 @@ export default function InscripcionTorneoPage() {
                     )}
 
                     <fieldset disabled={bloqueado} className={`space-y-6 ${bloqueado ? 'opacity-70' : ''}`}>
+                        {/* Nombre de Equipo */}
                         <div>
                             <label className="block text-sm font-medium mb-1.5 text-foreground flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-primary" />
@@ -140,32 +184,90 @@ export default function InscripcionTorneoPage() {
                             </label>
                             <input
                                 type="text"
-                                name="nombre_equipo"
-                                value={formData.nombre_equipo}
-                                onChange={handleChange}
+                                value={nombreEquipo}
+                                onChange={(e) => { setNombreEquipo(e.target.value); handleLimpiarError(); }}
                                 placeholder="Ej: Los Galácticos"
                                 className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                 required
                             />
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-medium mb-1.5 text-foreground flex items-center gap-2">
-                                <Users className="w-4 h-4 text-primary" />
-                                Jugadores *
-                            </label>
-                            <p className="text-xs text-muted-foreground mb-2">Ingresá los nombres, emails o DNIs de los jugadores que van a participar.</p>
-                            <textarea
-                                name="jugadores"
-                                value={formData.jugadores}
-                                onChange={handleChange}
-                                rows={5}
-                                placeholder="1. Juan Pérez (Capitán)&#10;2. Lionel Messi&#10;3. Emiliano Martínez..."
-                                className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none resize-none"
-                                required
-                            />
+                        {/* AGREGADOR DE JUGADORES */}
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <label className="block text-sm font-medium text-foreground flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-primary" />
+                                    Lista de Jugadores *
+                                </label>
+                                <Button 
+                                    type="button" 
+                                    variant="outline" 
+                                    size="sm" 
+                                    onClick={agregarJugador}
+                                    className="gap-1.5 h-8 text-xs"
+                                >
+                                    <Plus className="w-3.5 h-3.5" /> Añadir Jugador
+                                </Button>
+                            </div>
+                            
+                            <p className="text-xs text-muted-foreground -mt-2">Cargá los datos correspondientes de cada integrante de la plantilla.</p>
+                            
+                            <div className="space-y-3 max-h-[380px] overflow-y-auto pr-1">
+                                {jugadores.map((jugador, index) => (
+                                    <div key={index} className="flex flex-col sm:flex-row gap-2 bg-muted/40 p-3 rounded-xl border border-border items-center relative group">
+                                        <div className="absolute -left-2 top-1/2 -translate-y-1/2 bg-background border border-border text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center text-muted-foreground shadow-sm">
+                                            {index + 1}
+                                        </div>
+                                        
+                                        <div className="w-full sm:flex-1 pl-2">
+                                            <input
+                                                type="text"
+                                                placeholder="Nombre y Apellido"
+                                                value={jugador.nombre}
+                                                onChange={(e) => handleJugadorChange(index, "nombre", e.target.value)}
+                                                className="w-full text-xs px-3 py-2 rounded-lg border border-border bg-background outline-none focus:border-primary"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="w-full sm:flex-1">
+                                            <input
+                                                type="email"
+                                                placeholder="Email"
+                                                value={jugador.email}
+                                                onChange={(e) => handleJugadorChange(index, "email", e.target.value)}
+                                                className="w-full text-xs px-3 py-2 rounded-lg border border-border bg-background outline-none focus:border-primary"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="w-full sm:w-[120px]">
+                                            <input
+                                                type="text"
+                                                placeholder="DNI"
+                                                value={jugador.dni}
+                                                onChange={(e) => handleJugadorChange(index, "dni", e.target.value)}
+                                                className="w-full text-xs px-3 py-2 rounded-lg border border-border bg-background outline-none focus:border-primary"
+                                                required
+                                            />
+                                        </div>
+
+                                        {jugadores.length > 1 && (
+                                            <button
+                                                type="button"
+                                                onClick={() => eliminarJugador(index)}
+                                                className="text-destructive hover:bg-destructive/10 p-2 rounded-lg transition-colors sm:self-center self-end"
+                                                title="Eliminar jugador"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
                         </div>
 
+                        {/* Escudo */}
                         <div>
                             <label className="block text-sm font-medium mb-1.5 text-foreground flex items-center gap-2">
                                 <ImageIcon className="w-4 h-4 text-primary" />
@@ -174,9 +276,8 @@ export default function InscripcionTorneoPage() {
                             <p className="text-xs text-muted-foreground mb-2">Podés pegar una URL con el logo de tu equipo.</p>
                             <input
                                 type="url"
-                                name="escudo"
-                                value={formData.escudo}
-                                onChange={handleChange}
+                                value={escudo}
+                                onChange={(e) => { setEscudo(e.target.value); handleLimpiarError(); }}
                                 placeholder="https://ejemplo.com/mi-escudo.png"
                                 className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                             />
