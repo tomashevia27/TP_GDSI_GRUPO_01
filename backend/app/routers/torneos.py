@@ -70,3 +70,11 @@ def inscribir_equipo_a_torneo(
     Inscribe un nuevo equipo con sus jugadores a un torneo específico.
     """
     return torneo_service.inscribir_equipo(db, torneo_id, inscripcion_in, current_user.id)
+
+@router.post("/{torneo_id}/cancelar", response_model=TorneoResponse)
+def cancelar_torneo(
+    torneo_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return torneo_service.cancelar_torneo(db, torneo_id, current_user.id)

@@ -129,7 +129,7 @@ def test_error_torneo_inexistente():
         "jugadores_ids": [1]
     }
     response = client.post("/api/torneos/999/inscripciones", json=payload)
-    assert response.status_code == 400
+    assert response.status_code == 404
     assert "El torneo especificado no existe" in response.json()["detail"]
 
 
