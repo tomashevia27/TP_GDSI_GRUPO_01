@@ -9,8 +9,8 @@ from backend.app.main import app
 from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
-from backend.app.models.torneo_model import Torneo, EstadoTorneo, FormatoTorneo
 from backend.app.models.equipo_model import Equipo
+from backend.app.models.torneo_model import Torneo, EstadoTorneo, FormatoTorneo
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
