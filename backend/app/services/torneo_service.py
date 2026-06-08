@@ -2,7 +2,8 @@ from fastapi import HTTPException, status
 
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
-from .user_service import obtener_usuarios_activos
+
+from ..models.usuario_model import Usuario
 
 from ..models.torneo_model import Torneo, EstadoTorneo
 from ..schemas.torneo_schemas import TorneoCreate
@@ -65,19 +66,27 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
             detail="El torneo ya no tiene cupos de inscripción disponibles."
         )
 
-    if not datos.jugadores_ids or len(datos.jugadores_ids) == 0:
+    if not datos.jugadores_emails or len(datos.jugadores_emails) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="El listado de los jugadores es obligatorio."
         )
 
-    if creador_accion_id not in datos.jugadores_ids:
+    emails_busqueda = [email.lower() for email in datos.jugadores_emails]
+    jugadores = db.query(Usuario).filter(Usuario.email.in_(emails_busqueda)).all()
+
+    if len(jugadores) != len(set(emails_busqueda)):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Uno o más emails del listado no pertenecen a usuarios registrados."
+        )
+
+    if creador_accion_id not in [jugador.id for jugador in jugadores]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debes formar parte del equipo para poder inscribirlo."
         )
-
-    jugadores = obtener_usuarios_activos(db, datos.jugadores_ids)
+    
     if len(jugadores) > torneo.max_integrantes_por_equipo:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
