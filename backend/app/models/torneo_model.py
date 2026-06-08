@@ -8,6 +8,8 @@ class FormatoTorneo(str, enum.Enum):
     eliminacion_directa = "eliminacion_directa"
     fase_grupos = "fase_grupos"
     todos_contra_todos = "todos_contra_todos"
+    fase_grupos_16avos = "fase_grupos_16avos"
+    fase_grupos_8avos = "fase_grupos_8avos"
 
 class EstadoTorneo(str, enum.Enum):
     abierto = "abierto"
