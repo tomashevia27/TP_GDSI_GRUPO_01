@@ -46,9 +46,6 @@ export default function InscripcionTorneoPage() {
         fetchTorneo()
     }, [id])
 
-    const maxJugadoresPermitidos = torneo!.max_integrantes_por_equipo
-    const alcanzoMaximoJugadores = jugadores.length >= maxJugadoresPermitidos
-
     // Maneja cambios en Nombre del Equipo y Escudo
     const handleLimpiarError = () => {
         if (errorMsg && torneo && torneo.estado === "Abierto para inscripción" && torneo.equipos_inscriptos < torneo.max_equipos) {
@@ -141,6 +138,8 @@ export default function InscripcionTorneoPage() {
             </div>
         )
     }
+    const maxJugadoresPermitidos = torneo!.max_integrantes_por_equipo
+    const alcanzoMaximoJugadores = jugadores.length >= maxJugadoresPermitidos
 
     const bloqueado = !!errorMsg && (torneo?.estado !== "Abierto para inscripción" || (torneo && torneo.equipos_inscriptos >= torneo.max_equipos));
 

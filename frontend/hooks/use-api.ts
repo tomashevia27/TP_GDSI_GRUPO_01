@@ -801,11 +801,18 @@ const ESTADO_MAP: Record<string, string> = {
   "finalizado": "Finalizado",
   "cancelado": "Cancelado",
 }
+const FORMATO_MAP: Record<string, string> = {
+  "eliminacion_directa": "Eliminación directa",
+  "fase_grupos_8avos": "Fase de grupos + 8vos",
+  "fase_grupos_16avos": "Fase de grupos + 16vos",
+  "todos_contra_todos": "Todos contra todos",
+}
 
 function normalizarTorneo(t: any): TorneoData {
   return {
     ...t,
     estado: ESTADO_MAP[t.estado] ?? t.estado,
+    formato: FORMATO_MAP[t.formato] ?? t.formato,
     costo_inscripcion: Number(t.costo_inscripcion ?? 0),
     equipos_inscriptos: t.inscriptos ?? t.equipos_inscriptos ?? 0,
     max_equipos: t.max_equipos ?? (t.inscriptos + t.cupos_restantes) ?? 0,
@@ -882,10 +889,13 @@ export async function getTorneo(id: number): Promise<TorneoData> {
   })
   const data = await response.json()
   if (!response.ok) throw new Error(data.detail || "Torneo no encontrado")
-  return data
+  return normalizarTorneo(data)
 }
 
 export async function inscribirEquipo(torneoId: number, data: InscripcionData): Promise<any> {
+  const jugadoresParseados: { nombre: string; email: string }[] = JSON.parse(data.jugadores)
+  const emails = jugadoresParseados.map(j => j.email)
+
   const response = await fetch(`${API_URL}/api/torneos/${torneoId}/inscripciones`, {
     method: "POST",
     headers: {
@@ -893,8 +903,8 @@ export async function inscribirEquipo(torneoId: number, data: InscripcionData): 
       Authorization: `Bearer ${getAccessToken()}`,
     },
     body: JSON.stringify({
-      nombre_equipo: data.nombre_equipo,
-      jugadores: data.jugadores,
+      nombre: data.nombre_equipo,
+      jugadores_emails: emails,
       escudo: data.escudo || ""
     }),
   })
