@@ -2,8 +2,8 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
-from app.models.equipo_model import Equipo
-from app.models.usuario_model import Usuario
+from ..models.equipo_model import Equipo
+from ..models.usuario_model import Usuario
 
 from ..models.torneo_model import Torneo, EstadoTorneo
 
