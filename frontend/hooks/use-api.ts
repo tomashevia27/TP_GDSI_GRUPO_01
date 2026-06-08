@@ -71,17 +71,12 @@ export async function loginUser(
     body: JSON.stringify({ email, password }),
   })
 
-  // Leemos el JSON una sola vez aquí
   const data = await response.json()
 
   if (!response.ok) {
-    // Si FastAPI devuelve errores de validación (Pydantic), data.detail es un Array
     if (Array.isArray(data.detail)) {
       throw new Error("Por favor, ingresá un formato de email válido.")
     }
-
-    // Aquí es donde atrapamos el "Email o contraseña incorrectos" del backend
-    // Lanzamos el error para que el 'catch' del LoginPage lo capture
     throw new Error(data.detail || "Error al iniciar sesión")
   }
 
@@ -756,6 +751,157 @@ export async function reprogramarReserva(
 }
 
 // ─────────────────────────────────────────────
+// US 5: Torneos 
+// ─────────────────────────────────────────────
+
+export interface TorneoCreateData {
+  nombre: string
+  fecha_inicio: string
+  formato: string
+  lugar: string
+  max_equipos: number
+  max_integrantes_por_equipo: number
+  costo_inscripcion: number
+  descripcion?: string
+  reglas?: string
+}
+
+export interface EquipoInscripto {
+  id: number
+  nombre_equipo: string
+  jugadores: string 
+  escudo?: string
+}
+
+export interface TorneoData extends TorneoCreateData {
+  id: number
+  estado: string
+  organizador_id: number
+  equipos_inscriptos: number
+  max_integrantes_por_equipo: number
+  equipos?: EquipoInscripto[]
+  rol_usuario?: "Organizador" | "Jugador"
+}
+
+export interface MisTorneosResponse {
+  como_organizador: TorneoData[]
+  como_jugador: TorneoData[]
+}
+
+export interface InscripcionData {
+  nombre_equipo: string
+  jugadores: string // String JSON stringificado
+  escudo?: string
+}
+
+export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
+  const formatoMap: Record<string, string> = {
+    "Eliminación directa": "eliminacion_directa",
+    "Fase de grupos + 8avos de final": "fase_grupos_8avos",
+    "Fase de grupos + 16avos de final": "fase_grupos_16avos",
+    "Todos contra todos": "todos_contra_todos"
+  }
+
+  const payload = {
+    ...data,
+    formato: formatoMap[data.formato] || data.formato
+  }
+
+  const response = await fetch(`${API_URL}/api/torneos/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${sessionStorage.getItem("partidoya_auth_access_token")}`,
+    },
+    body: JSON.stringify(payload),
+  })
+
+  const result = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(result.detail)) {
+      // Desarmamos el array de errores de Pydantic de FastAPI para mostrárselo limpio al usuario
+      const erroresCampos = result.detail.map((err: any) => `• Campo [${err.loc[err.loc.length - 1]}]: ${err.msg}`).join("\n")
+      throw new Error("Errores de validación en el servidor:\n" + erroresCampos)
+    }
+    throw new Error(result.detail || "Error al crear el torneo")
+  }
+  return result
+}
+
+export async function getTorneosDisponibles(): Promise<TorneoData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar torneos abiertos")
+  return data
+}
+
+export async function getMisTorneos(): Promise<TorneoData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/mis-torneos`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  
+  const data: MisTorneosResponse = await response.json()
+  if (!response.ok) throw new Error((data as any).detail || "Error al cargar mis torneos")
+  
+  const organizados = (data.como_organizador || []).map(t => ({ ...t, rol_usuario: "Organizador" as const }))
+  const participando = (data.como_jugador || []).map(t => ({ ...t, rol_usuario: "Jugador" as const }))
+  return [...organizados, ...participando]
+}
+
+export async function getTorneo(id: number): Promise<TorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/${id}`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" }
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Torneo no encontrado")
+  return data
+}
+
+export async function inscribirEquipo(torneoId: number, data: InscripcionData): Promise<any> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/inscripciones`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify({
+      nombre_equipo: data.nombre_equipo,
+      jugadores: data.jugadores,
+      escudo: data.escudo || ""
+    }),
+  })
+
+  const result = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(result.detail)) {
+      throw new Error("Revisá los datos cargados en la plantilla del equipo.")
+    }
+    throw new Error(result.detail || "Error al inscribir el equipo.")
+  }
+  return result
+}
+
+export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/cancelar`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cancelar el torneo")
+  return data
+}
+/* 
+// ─────────────────────────────────────────────
 // US: Torneos (MOCK PARA FRONTEND ACTUALIZADO)
 // ─────────────────────────────────────────────
 
@@ -765,7 +911,7 @@ export interface TorneoCreateData {
   formato: string
   lugar: string
   max_equipos: number
-  max_jugadores_por_equipo?: number
+  max_integrantes_por_equipo: number
   costo_inscripcion: number
   descripcion?: string
   reglas?: string
@@ -784,6 +930,7 @@ export interface TorneoData extends TorneoCreateData {
   organizador_id: number
   equipos_inscriptos: number
   equipos?: EquipoInscripto[]
+  max_integrantes_por_equipo: number
   rol_usuario?: "Organizador" | "Jugador"
 }
 
@@ -796,7 +943,7 @@ let mockTorneos: TorneoData[] = [
     formato: "Fase de grupos + eliminación",
     lugar: "Cancha Central",
     max_equipos: 16,
-    max_jugadores_por_equipo: 5,
+    max_integrantes_por_equipo: 5,
     costo_inscripcion: 5000,
     descripcion: "El mejor torneo del verano con grandes premios.",
     reglas: "Fútbol 5. Se aplican reglas FIFA.",
@@ -830,6 +977,7 @@ let mockTorneos: TorneoData[] = [
     organizador_id: 1, 
     equipos_inscriptos: 10,
     equipos: [],
+    max_integrantes_por_equipo: 5,
     rol_usuario: "Organizador"
   },
   {
@@ -844,6 +992,7 @@ let mockTorneos: TorneoData[] = [
     organizador_id: 1, 
     equipos_inscriptos: 8,
     equipos: [],
+    max_integrantes_por_equipo: 5,
     rol_usuario: "Organizador"
   }
 ]
@@ -970,5 +1119,5 @@ export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
 
   torneo.estado = "Cancelado"
   return torneo
-}
+} */
 

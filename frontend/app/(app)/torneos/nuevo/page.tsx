@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Trophy, Calendar, MapPin, Users, DollarSign, AlignLeft, Info, AlertCircle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { crearTorneo, TorneoCreateData } from "@/hooks/use-api"
+import { crearTorneo } from "@/hooks/use-api"
 import Link from "next/link"
 
 export default function CrearTorneoPage() {
@@ -12,12 +12,13 @@ export default function CrearTorneoPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
 
-    const [formData, setFormData] = useState<TorneoCreateData>({
+    const [formData, setFormData] = useState({
         nombre: "",
         fecha_inicio: "",
         formato: "Fase de grupos + eliminación",
         lugar: "",
         max_equipos: 4,
+        max_integrantes_por_equipo: 5,
         costo_inscripcion: 0,
         descripcion: "",
         reglas: ""
@@ -25,9 +26,30 @@ export default function CrearTorneoPage() {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
-        setFormData(prev => ({ ...prev, [name]: value }))
-        setErrorMsg("") // clear errors on edit
+        setErrorMsg("") 
+
+        if (name === "formato") {
+            let nuevosEquipos = formData.max_equipos
+
+            if (value === "Fase de grupos + 8avos de final") {
+                nuevosEquipos = 16
+            } else if (value === "Fase de grupos + 16avos de final") {
+                nuevosEquipos = 32
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                formato: value,
+                max_equipos: nuevosEquipos
+            }))
+        } else {
+            setFormData(prev => ({ ...prev, [name]: value }))
+        }
     }
+
+    const esFormatoFijo = 
+        formData.formato === "Fase de grupos + 8avos de final" || 
+        formData.formato === "Fase de grupos + 16avos de final"
 
     const validateForm = () => {
         if (!formData.nombre.trim()) return "El nombre del torneo es obligatorio."
@@ -37,7 +59,6 @@ export default function CrearTorneoPage() {
         const hoy = new Date()
         hoy.setHours(0, 0, 0, 0)
         
-        // Agregar offset por zona horaria para comparar la fecha correctamente
         const fechaElegidaLocal = new Date(fechaElegida.getTime() + fechaElegida.getTimezoneOffset() * 60000)
 
         if (fechaElegidaLocal < hoy) {
@@ -61,14 +82,21 @@ export default function CrearTorneoPage() {
 
         setIsLoading(true)
         try {
+            // Enviamos los datos sanitizados con los tipos numéricos correctos
             await crearTorneo({
-                ...formData,
+                nombre: formData.nombre,
+                fecha_inicio: formData.fecha_inicio,
+                formato: formData.formato,
+                lugar: formData.lugar,
                 max_equipos: Number(formData.max_equipos),
-                costo_inscripcion: Number(formData.costo_inscripcion)
+                max_integrantes_por_equipo: Number(formData.max_integrantes_por_equipo),
+                costo_inscripcion: Number(formData.costo_inscripcion),
+                descripcion: formData.descripcion,
+                reglas: formData.reglas
             })
-            // En caso de éxito, volvemos a la lista de torneos.
             router.push("/torneos")
         } catch (error: any) {
+            // Si el botón se quedaba trabado, ahora vuelve a su estado normal y te muestra el error real
             setErrorMsg(error.message || "Error al crear el torneo. Por favor, intentá nuevamente.")
             setIsLoading(false)
         }
@@ -99,7 +127,7 @@ export default function CrearTorneoPage() {
                     {errorMsg && (
                         <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive flex items-start gap-3">
                             <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                            <p className="text-sm font-medium">{errorMsg}</p>
+                            <p className="text-sm font-medium whitespace-pre-line">{errorMsg}</p>
                         </div>
                     )}
 
@@ -181,12 +209,13 @@ export default function CrearTorneoPage() {
                                     className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                 >
                                     <option value="Eliminación directa">Eliminación directa</option>
-                                    <option value="Fase de grupos + eliminación">Fase de grupos + eliminación</option>
+                                    <option value="Fase de grupos + 16avos de final">Fase de grupos + 16avos de final</option>
+                                    <option value="Fase de grupos + 8avos de final">Fase de grupos + 8avos de final</option>
                                     <option value="Todos contra todos">Todos contra todos</option>
                                 </select>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-foreground">
                                         Máximo de Equipos *
@@ -199,11 +228,39 @@ export default function CrearTorneoPage() {
                                             min="2"
                                             value={formData.max_equipos}
                                             onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
+                                            disabled={esFormatoFijo}
+                                            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none ${
+                                                esFormatoFijo ? "opacity-60 bg-muted cursor-not-allowed" : ""
+                                            }`}
                                             required
                                         />
                                     </div>
+                                    {esFormatoFijo && (
+                                        <p className="text-[11px] text-primary mt-1 font-medium">
+                                            Fijo para la estructura del formato.
+                                        </p>
+                                    )}
                                 </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                        Jugadores por Equipo *
+                                    </label>
+                                    <div className="relative">
+                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
+                                        <select
+                                            name="max_integrantes_por_equipo"
+                                            value={formData.max_integrantes_por_equipo}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none appearance-none"
+                                        >
+                                            <option value={5}>5 Jugadores</option>
+                                            <option value={8}>8 Jugadores</option>
+                                            <option value={11}>11 Jugadores</option>
+                                        </select>
+                                    </div>
+                                end</div>
+
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-foreground">
                                         Costo por Equipo (ARS) *
