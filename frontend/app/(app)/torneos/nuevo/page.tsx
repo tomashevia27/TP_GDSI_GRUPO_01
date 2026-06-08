@@ -235,11 +235,11 @@ export default function CrearTorneoPage() {
                                             required
                                         />
                                     </div>
-                                    {esFormatoFijo && (
+                                   {/*  {esFormatoFijo && (
                                         <p className="text-[11px] text-primary mt-1 font-medium">
                                             Fijo para la estructura del formato.
                                         </p>
-                                    )}
+                                    )} */}
                                 </div>
 
                                 <div>
@@ -259,7 +259,7 @@ export default function CrearTorneoPage() {
                                             <option value={11}>11 Jugadores</option>
                                         </select>
                                     </div>
-                                end</div>
+                                </div>
 
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-foreground">

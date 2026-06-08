@@ -50,6 +50,9 @@ class TorneoListado(BaseModel):
     fecha_inicio: datetime
     inscriptos: int
     cupos_restantes: int
+    estado: EstadoTorneo
+    costo_inscripcion: float
+    max_equipos: int
 
     model_config = ConfigDict(from_attributes=True)
 

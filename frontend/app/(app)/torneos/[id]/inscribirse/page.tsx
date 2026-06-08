@@ -10,7 +10,6 @@ import { getTorneo, inscribirEquipo, TorneoData } from "@/hooks/use-api"
 interface Jugador {
     nombre: string;
     email: string;
-    dni: string;
 }
 
 export default function InscripcionTorneoPage() {
@@ -24,7 +23,7 @@ export default function InscripcionTorneoPage() {
     const [nombreEquipo, setNombreEquipo] = useState("")
     const [escudo, setEscudo] = useState("")
     const [jugadores, setJugadores] = useState<Jugador[]>([
-        { nombre: "", email: "", dni: "" } // Arranca con un casillero vacío para el primer jugador
+        { nombre: "", email: ""} // Arranca con un casillero vacío para el primer jugador
     ])
 
     useEffect(() => {
@@ -47,9 +46,7 @@ export default function InscripcionTorneoPage() {
         fetchTorneo()
     }, [id])
 
-    // Determinar el límite máximo de jugadores permitidos (usa el del back o 12 por defecto)
-    // NOTA: Ajustá 'max_jugadores_por_equipo' al nombre exacto que devuelva tu API de Python/Node.
-    const maxJugadoresPermitidos = torneo?.max_jugadores_por_equipo || 5
+    const maxJugadoresPermitidos = torneo!.max_integrantes_por_equipo
     const alcanzoMaximoJugadores = jugadores.length >= maxJugadoresPermitidos
 
     // Maneja cambios en Nombre del Equipo y Escudo
@@ -70,28 +67,25 @@ export default function InscripcionTorneoPage() {
     }
 
     const agregarJugador = () => {
-        // Validación de seguridad por si intentan saltearse el disabled del botón
         if (alcanzoMaximoJugadores) return 
-        setJugadores(prev => [...prev, { nombre: "", email: "", dni: "" }])
+        setJugadores(prev => [...prev, { nombre: "", email: ""}])
     }
 
     const eliminarJugador = (index: number) => {
-        if (jugadores.length === 1) return; // No dejamos que borre si queda solo uno
+        if (jugadores.length === 1) return;
         setJugadores(prev => prev.filter((_, i) => i !== index))
     }
 
     const validateForm = () => {
         if (!nombreEquipo.trim()) return "El nombre del equipo es obligatorio."
         
-        // Validar que al menos haya un jugador y tenga el nombre completo
         if (jugadores.length === 0 || !jugadores[0].nombre.trim()) {
             return "Debés ingresar al menos al capitán o primer jugador."
         }
 
-        // Validar que todos los campos de los jugadores añadidos estén completos
         for (let i = 0; i < jugadores.length; i++) {
             const j = jugadores[i];
-            if (!j.nombre.trim() || !j.email.trim() || !j.dni.trim()) {
+            if (!j.nombre.trim() || !j.email.trim()) {
                 return `Por favor, completa todos los datos del jugador número ${i + 1}.`
             }
         }
@@ -246,17 +240,6 @@ export default function InscripcionTorneoPage() {
                                                 placeholder="Email"
                                                 value={jugador.email}
                                                 onChange={(e) => handleJugadorChange(index, "email", e.target.value)}
-                                                className="w-full text-xs px-3 py-2 rounded-lg border border-border bg-background outline-none focus:border-primary"
-                                                required
-                                            />
-                                        </div>
-
-                                        <div className="w-full sm:w-[120px]">
-                                            <input
-                                                type="text"
-                                                placeholder="DNI"
-                                                value={jugador.dni}
-                                                onChange={(e) => handleJugadorChange(index, "dni", e.target.value)}
                                                 className="w-full text-xs px-3 py-2 rounded-lg border border-border bg-background outline-none focus:border-primary"
                                                 required
                                             />

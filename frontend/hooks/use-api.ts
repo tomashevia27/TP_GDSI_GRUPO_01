@@ -779,6 +779,7 @@ export interface TorneoData extends TorneoCreateData {
   organizador_id: number
   equipos_inscriptos: number
   max_integrantes_por_equipo: number
+  costo_inscripcion: number
   equipos?: EquipoInscripto[]
   rol_usuario?: "Organizador" | "Jugador"
 }
@@ -792,6 +793,23 @@ export interface InscripcionData {
   nombre_equipo: string
   jugadores: string // String JSON stringificado
   escudo?: string
+}
+
+const ESTADO_MAP: Record<string, string> = {
+  "abierto": "Abierto para inscripción",
+  "en_curso": "En curso",
+  "finalizado": "Finalizado",
+  "cancelado": "Cancelado",
+}
+
+function normalizarTorneo(t: any): TorneoData {
+  return {
+    ...t,
+    estado: ESTADO_MAP[t.estado] ?? t.estado,
+    costo_inscripcion: Number(t.costo_inscripcion ?? 0),
+    equipos_inscriptos: t.inscriptos ?? t.equipos_inscriptos ?? 0,
+    max_equipos: t.max_equipos ?? (t.inscriptos + t.cupos_restantes) ?? 0,
+  }
 }
 
 export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
@@ -835,7 +853,7 @@ export async function getTorneosDisponibles(): Promise<TorneoData[]> {
   })
   const data = await response.json()
   if (!response.ok) throw new Error(data.detail || "Error al cargar torneos abiertos")
-  return data
+  return (data as any[]).map(normalizarTorneo)
 }
 
 export async function getMisTorneos(): Promise<TorneoData[]> {
@@ -849,9 +867,11 @@ export async function getMisTorneos(): Promise<TorneoData[]> {
   
   const data: MisTorneosResponse = await response.json()
   if (!response.ok) throw new Error((data as any).detail || "Error al cargar mis torneos")
-  
-  const organizados = (data.como_organizador || []).map(t => ({ ...t, rol_usuario: "Organizador" as const }))
-  const participando = (data.como_jugador || []).map(t => ({ ...t, rol_usuario: "Jugador" as const }))
+
+  const organizados = (data.como_organizador || [])
+    .map(t => normalizarTorneo({ ...t, rol_usuario: "Organizador" as const }))
+  const participando = (data.como_jugador || [])
+    .map(t => normalizarTorneo({ ...t, rol_usuario: "Jugador" as const }))
   return [...organizados, ...participando]
 }
 
