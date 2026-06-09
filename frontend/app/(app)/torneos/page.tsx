@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { Trophy, Calendar, Users, MapPin, Plus, Loader2, UserCheck, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getTorneosDisponibles, getMisTorneos, TorneoData } from "@/hooks/use-api"
@@ -74,35 +75,53 @@ export default function TorneosPage() {
     return (
         <div className="min-h-screen bg-background">
             {/* Hero Section */}
-            <div className="bg-primary/5 border-b border-border py-12">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6">
-                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-foreground flex items-center gap-3">
-                                <Trophy className="h-10 w-10 text-primary" />
-                                {role === "admin" ? "Mis Torneos" : "Torneos"}
-                            </h1>
-                            <p className="text-muted-foreground mt-2 max-w-xl">
-                                {role === "admin" 
-                                    ? "Gestioná y organizá todos tus torneos creados desde un solo lugar."
-                                    : "Explorá competencias abiertas, anotá a tu equipo, o creá y organizá tu propio torneo de manera sencilla."}
-                            </p>
-                        </div>
-                        <Link href="/torneos/nuevo">
-                            <Button className="flex items-center gap-2">
-                                <Plus className="h-5 w-5" />
+            <div className="relative h-[320px] sm:h-[400px] overflow-hidden">
+                <Image
+                    src="/sports-hero.jpg"
+                    alt="Torneos"
+                    fill
+                    className="object-cover"
+                    priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+
+                <div className="absolute top-10 left-10 opacity-20 animate-float">
+                    <Trophy className="w-12 h-12 text-card" />
+                </div>
+                <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
+                    <Trophy className="w-8 h-8 text-card" />
+                </div>
+                <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
+                    <Trophy className="w-16 h-16 text-card" />
+                </div>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+                    <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
+                        {role === "admin" ? "Mis Torneos" : "Torneos"}
+                    </h1>
+                    <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
+                        {role === "admin" 
+                            ? "Gestioná y organizá todos tus torneos creados desde un solo lugar."
+                            : "Explorá competencias abiertas, anotá a tu equipo, o creá y organizá tu propio torneo."}
+                    </p>
+                    
+                    <div className="mt-8 animate-slide-up animation-delay-200">
+                        <Button size="lg" className="font-semibold px-8" asChild>
+                            <Link href="/torneos/nuevo">
+                                <Plus className="mr-2 h-5 w-5" />
                                 Crear Torneo
-                            </Button>
-                        </Link>
+                            </Link>
+                        </Button>
                     </div>
                 </div>
             </div>
 
             {/* Tabs & Content */}
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10 pb-8">
                 {/* Custom Tabs */}
                 {role !== "admin" && (
-                    <div className="flex border-b border-border mb-6">
+                    <div className="bg-card rounded-2xl border border-border shadow-xl p-2 mb-6">
+                    <div className="flex border-b border-border px-4">
                         <button
                             onClick={() => setActiveTab("disponibles")}
                             className={`px-6 py-3 font-medium text-sm transition-all relative ${
@@ -130,6 +149,7 @@ export default function TorneosPage() {
                             )}
                         </button>
                     </div>
+                  </div>
                 )}
 
                 {/* Sub-tabs for Mis Torneos */}

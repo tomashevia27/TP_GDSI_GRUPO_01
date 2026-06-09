@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import {
   Plus,
@@ -514,16 +515,39 @@ export default function HomePage() {
 
   // ─── JUGADOR VIEW: DASHBOARD ───────────────────────────
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      {/* Welcome Header */}
-      <div className="mb-10">
-        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-          ¡Hola{userProfile?.nombre ? `, ${userProfile.nombre.split(' ')[0]}` : ''}!
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          ¿Qué tenés ganas de jugar hoy?
-        </p>
+    <div className="min-h-screen bg-background pb-12">
+      {/* Hero Section */}
+      <div className="relative h-[280px] sm:h-[360px] overflow-hidden">
+          <Image
+              src="/football-bg.jpg"
+              alt="Inicio"
+              fill
+              className="object-cover"
+              priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+
+          <div className="absolute top-10 left-10 opacity-20 animate-float">
+              <FootballIcon className="w-12 h-12 text-card" />
+          </div>
+          <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
+              <FootballIcon className="w-8 h-8 text-card" />
+          </div>
+          <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
+              <FootballIcon className="w-16 h-16 text-card" />
+          </div>
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+              <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
+                  ¡Hola{userProfile?.nombre ? `, ${userProfile.nombre.split(' ')[0]}` : ''}!
+              </h1>
+              <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
+                  ¿Qué tenés ganas de jugar hoy?
+              </p>
+          </div>
       </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-12 relative z-10">
 
       {/* Quick Actions Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
@@ -696,5 +720,7 @@ export default function HomePage() {
 
       </div>
     </div>
-  )
+  
+      </div>
+)
 }
