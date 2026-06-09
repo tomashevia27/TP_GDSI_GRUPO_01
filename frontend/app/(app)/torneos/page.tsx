@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { getTorneosDisponibles, getMisTorneos, TorneoData } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
 
-type MisTorneosCategory = "Próximos" | "En curso" | "Finalizados"
+type MisTorneosCategory = "Próximos" | "En curso" | "Finalizados" | "Cancelados"
 
 export default function TorneosPage() {
     const [activeTab, setActiveTab] = useState<"disponibles" | "mis-torneos">("disponibles")
@@ -66,7 +66,8 @@ export default function TorneosPage() {
 
             if (misTorneosCategory === "Próximos") return t.estado === "Abierto para inscripción"
             if (misTorneosCategory === "En curso") return t.estado === "En curso"
-            if (misTorneosCategory === "Finalizados") return t.estado === "Finalizado" || t.estado === "Cancelado"
+            if (misTorneosCategory === "Finalizados") return t.estado === "Finalizado"
+            if (misTorneosCategory === "Cancelados") return t.estado === "Cancelado"
             return true
         })
 
@@ -135,7 +136,7 @@ export default function TorneosPage() {
                 {activeTab === "mis-torneos" && (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
                         <div className="flex gap-2 bg-muted p-1.5 rounded-lg inline-flex w-fit">
-                            {(["Próximos", "En curso", "Finalizados"] as MisTorneosCategory[]).map(cat => (
+                            {(["Próximos", "En curso", "Finalizados", "Cancelados"] as MisTorneosCategory[]).map(cat => (
                                 <button
                                     key={cat}
                                     onClick={() => setMisTorneosCategory(cat)}

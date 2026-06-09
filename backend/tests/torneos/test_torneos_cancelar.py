@@ -152,3 +152,28 @@ def test_cancelar_torneo_ya_finalizado():
     
     assert response.status_code == 400
     assert "finalizado" in response.json()["detail"].lower()
+
+
+def test_cancelar_torneo_en_curso():
+    """No se puede cancelar un torneo que ya está en curso (Debe dar 400)."""
+    db = TestingSessionLocal()
+
+    torneo = Torneo(
+        nombre="Torneo En Marcha",
+        fecha_inicio=datetime.now() - timedelta(days=2),
+        formato=FormatoTorneo.eliminacion_directa,
+        lugar="Cancha Central",
+        max_equipos=8,
+        costo_inscripcion=500.0,
+        estado=EstadoTorneo.en_curso,
+        organizador_id=1
+    )
+    db.add(torneo)
+    db.commit()
+    torneo_id = torneo.id
+    db.close()
+
+    response = client.post(f"/api/torneos/{torneo_id}/cancelar")
+
+    assert response.status_code == 400
+    assert "en curso" in response.json()["detail"].lower()

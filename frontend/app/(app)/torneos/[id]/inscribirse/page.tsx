@@ -168,7 +168,8 @@ export default function InscripcionTorneoPage() {
             </div>
         )
     }
-    const maxJugadoresPermitidos = torneo!.max_integrantes_por_equipo
+    const minJugadoresRequeridos = torneo!.min_integrantes_por_equipo
+    const maxJugadoresPermitidos = torneo!.min_integrantes_por_equipo * 2
     const alcanzoMaximoJugadores = jugadores.length >= maxJugadoresPermitidos
 
     const bloqueado = !!errorMsg && (torneo?.estado !== "Abierto para inscripción" || (torneo && torneo.equipos_inscriptos >= torneo.max_equipos));
@@ -224,7 +225,7 @@ export default function InscripcionTorneoPage() {
                             <div className="flex items-center justify-between">
                                 <label className="block text-sm font-medium text-foreground flex items-center gap-2">
                                     <Users className="w-4 h-4 text-primary" />
-                                    Lista de Jugadores ({jugadores.length}/{maxJugadoresPermitidos}) *
+                                    Lista de Jugadores ({jugadores.length} / mín. {minJugadoresRequeridos} &mdash; máx. {maxJugadoresPermitidos}) *
                                 </label>
                                 <Button 
                                     type="button" 

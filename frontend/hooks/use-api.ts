@@ -760,7 +760,7 @@ export interface TorneoCreateData {
   formato: string
   lugar: string
   max_equipos: number
-  max_integrantes_por_equipo: number
+  min_integrantes_por_equipo: number
   costo_inscripcion: number
   descripcion?: string
   reglas?: string
@@ -778,7 +778,7 @@ export interface TorneoData extends TorneoCreateData {
   estado: string
   organizador_id: number
   equipos_inscriptos: number
-  max_integrantes_por_equipo: number
+  min_integrantes_por_equipo: number
   costo_inscripcion: number
   equipos?: EquipoInscripto[]
   rol_usuario?: "Organizador" | "Jugador"
@@ -802,6 +802,7 @@ export interface MisTorneosResponse {
   proximos: TorneoMisActividades[]
   en_curso: TorneoMisActividades[]
   finalizados: TorneoMisActividades[]
+  cancelados: TorneoMisActividades[]
 }
 
 export interface InscripcionData {
@@ -905,8 +906,9 @@ export async function getMisTorneos(): Promise<TorneoData[]> {
   const proximos = (data.proximos || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
   const enCurso = (data.en_curso || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
   const finalizados = (data.finalizados || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
+  const cancelados = (data.cancelados || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
   
-  return [...proximos, ...enCurso, ...finalizados]
+  return [...proximos, ...enCurso, ...finalizados, ...cancelados]
 }
 
 export async function getTorneo(id: number): Promise<TorneoData> {

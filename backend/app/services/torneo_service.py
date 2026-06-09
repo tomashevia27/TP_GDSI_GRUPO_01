@@ -15,20 +15,10 @@ from .torneo_notificador import notificar_torneo_cancelado
 from typing import List, Dict
 
 def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torneo:
-    if datos.max_equipos < 2:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="El torneo debe admitir al menos 2 equipos"
-        )
-        
-    tz_local = timezone(timedelta(hours=-3))
-    ahora = datetime.now(tz_local).replace(tzinfo=None)
-    if datos.fecha_inicio.replace(tzinfo=None) < ahora:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="La fecha de inicio no puede estar en el pasado"
-        )
-
+    """
+    Crea un nuevo torneo asociado al organizador.
+    La validación de datos (fechas, max_equipos, etc.) ya la realiza el schema TorneoCreate.
+    """
     nuevo_torneo = Torneo(
         nombre=datos.nombre,
         fecha_inicio=datos.fecha_inicio,
@@ -40,7 +30,7 @@ def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torne
         reglas=datos.reglas,
         estado=EstadoTorneo.abierto,
         organizador_id=organizador_id,
-        max_integrantes_por_equipo=datos.max_integrantes_por_equipo
+        min_integrantes_por_equipo=datos.min_integrantes_por_equipo
     )
 
     return torneo_repository.crear_torneo(db, nuevo_torneo)
@@ -86,11 +76,35 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Debes formar parte del equipo para poder inscribirlo."
         )
-    
-    if len(jugadores) > torneo.max_integrantes_por_equipo:
+
+    # Validar rango de jugadores: mínimo = titulares, máximo = titulares * 2 (suplentes)
+    min_requerido = torneo.min_integrantes_por_equipo
+    max_permitido = torneo.min_integrantes_por_equipo * 2
+
+    if len(jugadores) < min_requerido:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"La cantidad de jugadores válidos ({len(jugadores)}) supera el límite máximo permitido para este torneo ({torneo.max_integrantes_por_equipo})."
+            detail=f"El equipo debe tener al menos {min_requerido} jugadores (titulares) para inscribirse en este torneo."
+        )
+
+    if len(jugadores) > max_permitido:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"El equipo no puede tener más de {max_permitido} jugadores (titulares + suplentes) para este torneo."
+        )
+
+    # Validar que ningún jugador esté ya en un equipo inscripto en este torneo
+    ids_ya_inscriptos = {
+        j.id
+        for eq in torneo.equipos_inscriptos
+        for j in eq.jugadores
+    }
+    conflictos = [j for j in jugadores if j.id in ids_ya_inscriptos]
+    if conflictos:
+        emails_conflicto = ", ".join(j.email for j in conflictos)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Uno o más jugadores ya están inscriptos en otro equipo de este torneo: {emails_conflicto}"
         )
 
     nuevo_equipo = Equipo(
@@ -100,6 +114,7 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     nuevo_equipo.jugadores = jugadores
 
     torneo.equipos_inscriptos.append(nuevo_equipo)
+    torneo.inscriptos += 1
 
     db.add(nuevo_equipo)
     db.commit()
@@ -120,7 +135,8 @@ def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
     resultado = {
         "proximos": [],
         "en_curso": [],
-        "finalizados": []
+        "finalizados": [],
+        "cancelados": []
     }
     
     for t in torneos:
@@ -143,8 +159,10 @@ def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
             resultado["proximos"].append(dto_torneo)
         elif t.estado == EstadoTorneo.en_curso:
             resultado["en_curso"].append(dto_torneo)
-        elif t.estado in [EstadoTorneo.finalizado, EstadoTorneo.cancelado]:
+        elif t.estado == EstadoTorneo.finalizado:
             resultado["finalizados"].append(dto_torneo)
+        elif t.estado == EstadoTorneo.cancelado:
+            resultado["cancelados"].append(dto_torneo)
             
     return resultado
 
@@ -161,15 +179,16 @@ def cancelar_torneo(db: Session, torneo_id: int, usuario_accion_id: int):
             detail="No tienes permisos para cancelar este torneo"
         )
         
-    if torneo.estado == "cancelado":
+    if torneo.estado == EstadoTorneo.cancelado:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El torneo ya está cancelado")
-    if torneo.estado == "finalizado":
+    if torneo.estado == EstadoTorneo.en_curso:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede cancelar un torneo que está en curso")
+    if torneo.estado == EstadoTorneo.finalizado:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede cancelar un torneo finalizado")
-
 
     notificar_torneo_cancelado(db, torneo)
 
-    torneo.estado = "cancelado"
+    torneo.estado = EstadoTorneo.cancelado
     db.commit()
     db.refresh(torneo)    
     return torneo

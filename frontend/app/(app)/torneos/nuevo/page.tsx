@@ -19,7 +19,7 @@ export default function CrearTorneoPage() {
         formato: "Eliminación directa",
         lugar: "",
         max_equipos: 4,
-        max_integrantes_por_equipo: 5,
+        min_integrantes_por_equipo: 5,
         costo_inscripcion: 0,
         descripcion: "",
         reglas: ""
@@ -89,7 +89,7 @@ export default function CrearTorneoPage() {
                 formato: formData.formato,
                 lugar: formData.lugar,
                 max_equipos: Number(formData.max_equipos),
-                max_integrantes_por_equipo: Number(formData.max_integrantes_por_equipo),
+                min_integrantes_por_equipo: Number(formData.min_integrantes_por_equipo),
                 costo_inscripcion: Number(formData.costo_inscripcion),
                 descripcion: formData.descripcion,
                 reglas: formData.reglas
@@ -252,13 +252,13 @@ export default function CrearTorneoPage() {
 
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-foreground">
-                                        Jugadores por Equipo *
+                                        Jugadores Titulares por Equipo *
                                     </label>
                                     <div className="relative">
                                         <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
                                         <select
-                                            name="max_integrantes_por_equipo"
-                                            value={formData.max_integrantes_por_equipo}
+                                            name="min_integrantes_por_equipo"
+                                            value={formData.min_integrantes_por_equipo}
                                             onChange={handleChange}
                                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none appearance-none"
                                         >
@@ -267,6 +267,9 @@ export default function CrearTorneoPage() {
                                             <option value={11}>11 Jugadores</option>
                                         </select>
                                     </div>
+                                    <p className="text-[11px] text-muted-foreground mt-1">
+                                        Máximo con suplentes: <span className="font-semibold text-foreground">{Number(formData.min_integrantes_por_equipo) * 2} jugadores</span>
+                                    </p>
                                 </div>
 
                                 <div>
@@ -276,9 +279,11 @@ export default function CrearTorneoPage() {
                                     <div className="relative">
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                         <input
-                                            type="text"
+                                            type="number"
                                             inputMode="numeric"
                                             name="costo_inscripcion"
+                                            min="0"
+                                            step="1"
                                             value={formData.costo_inscripcion}
                                             onChange={handleChange}
                                             placeholder="Ej: 5000"

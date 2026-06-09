@@ -10,6 +10,7 @@ from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
 from backend.app.models.torneo_model import Torneo, EstadoTorneo
+from backend.app.models.equipo_model import Equipo
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
 
@@ -68,11 +69,11 @@ def limpiar_db():
     db.refresh(usuario2)
     db.close()
     
-    # Mockear usuario logueado por defecto (ID 1)
+    # Mockear usuario logueado por defecto (ID 1 — julian@test.com)
     app.dependency_overrides[get_current_user] = lambda: usuario
 
 
-def crear_torneo_base(max_equipos: int = 2, estado: EstadoTorneo = EstadoTorneo.abierto) -> int:
+def crear_torneo_base(max_equipos: int = 2, estado: EstadoTorneo = EstadoTorneo.abierto, min_integrantes: int = 2) -> int:
     """Función auxiliar para insertar un torneo rápido directo a la DB de pruebas"""
     db = TestingSessionLocal()
     torneo = Torneo(
@@ -83,7 +84,8 @@ def crear_torneo_base(max_equipos: int = 2, estado: EstadoTorneo = EstadoTorneo.
         max_equipos=max_equipos,
         costo_inscripcion=100.0,
         estado=estado,
-        organizador_id=1
+        organizador_id=1,
+        min_integrantes_por_equipo=min_integrantes
     )
     db.add(torneo)
     db.commit()
@@ -94,12 +96,13 @@ def crear_torneo_base(max_equipos: int = 2, estado: EstadoTorneo = EstadoTorneo.
 
 
 def test_inscripcion_exitosa():
-    torneo_id = crear_torneo_base(max_equipos=2)
+    """Inscripción válida: nombre de equipo + emails de jugadores registrados."""
+    torneo_id = crear_torneo_base(max_equipos=2, min_integrantes=2)
     
     payload = {
         "nombre": "Los Magos de OpenCode",
         "escudo": "https://imagen.com/escudo.png",
-        "jugadores_ids": [1, 2]
+        "jugadores_emails": ["julian@test.com", "tomas@test.com"]
     }
     
     response = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload)
@@ -110,12 +113,30 @@ def test_inscripcion_exitosa():
     assert "id" in data
 
 
+def test_inscripcion_actualiza_contador_inscriptos():
+    """Al inscribir un equipo, el campo 'inscriptos' del torneo debe incrementarse."""
+    torneo_id = crear_torneo_base(max_equipos=2, min_integrantes=2)
+
+    payload = {
+        "nombre": "Equipo Contador",
+        "jugadores_emails": ["julian@test.com", "tomas@test.com"]
+    }
+    response = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload)
+    assert response.status_code == 201
+
+    db = TestingSessionLocal()
+    torneo = db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    assert torneo.inscriptos == 1
+    db.close()
+
+
 def test_error_usuario_logueado_no_forma_parte_del_equipo():
+    """El usuario logueado (julian) intenta inscribir un equipo donde él no está."""
     torneo_id = crear_torneo_base()
     
     payload = {
         "nombre": "Equipo Intruso",
-        "jugadores_ids": [2] 
+        "jugadores_emails": ["tomas@test.com"]  # solo usuario2, sin julian (logueado)
     }
     
     response = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload)
@@ -124,9 +145,10 @@ def test_error_usuario_logueado_no_forma_parte_del_equipo():
 
 
 def test_error_torneo_inexistente():
+    """Intentar inscribirse en un torneo que no existe debe dar 404."""
     payload = {
         "nombre": "Inter de Milán",
-        "jugadores_ids": [1]
+        "jugadores_emails": ["julian@test.com"]
     }
     response = client.post("/api/torneos/999/inscripciones", json=payload)
     assert response.status_code == 404
@@ -134,11 +156,12 @@ def test_error_torneo_inexistente():
 
 
 def test_error_torneo_no_abierto():
+    """No se puede inscribir en un torneo que no está en estado 'abierto'."""
     torneo_id = crear_torneo_base(estado=EstadoTorneo.en_curso)
     
     payload = {
         "nombre": "Los Tardíos",
-        "jugadores_ids": [1]
+        "jugadores_emails": ["julian@test.com"]
     }
     
     response = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload)
@@ -147,32 +170,77 @@ def test_error_torneo_no_abierto():
 
 
 def test_error_sin_cupos_disponibles():
+    """Al llenar el cupo máximo, cualquier nuevo intento de inscripción debe dar 400."""
     torneo_id = crear_torneo_base(max_equipos=1)
     
+    # Primer equipo: llena el único cupo
     payload1 = {
         "nombre": "Equipo Veloz",
-        "jugadores_ids": [1, 2]
+        "jugadores_emails": ["julian@test.com", "tomas@test.com"]
     }
     r1 = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload1)
     assert r1.status_code == 201
     
+    # Segundo equipo: no hay cupos (el chequeo de cupos ocurre antes que el de duplicados)
     payload2 = {
         "nombre": "Equipo Quedado",
-        "jugadores_ids": [1]
+        "jugadores_emails": ["julian@test.com"]
     }
     r2 = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload2)
     assert r2.status_code == 400
     assert "no tiene cupos de inscripción disponibles" in r2.json()["detail"]
 
 
-def test_error_jugadores_no_validos_o_inexistentes():
+def test_error_emails_no_validos_o_inexistentes():
+    """Enviar un email que no pertenece a ningún usuario registrado debe dar 404."""
     torneo_id = crear_torneo_base()
     
     payload = {
         "nombre": "Fantasmas FC",
-        "jugadores_ids": [1, 99]
+        "jugadores_emails": ["julian@test.com", "fantasma@noexiste.com"]
     }
     
     response = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload)
     assert response.status_code == 404
-    assert "Uno o más usuarios del listado no existen" in response.json()["detail"]
+    assert "no pertenecen a usuarios registrados" in response.json()["detail"]
+
+
+def test_error_jugador_ya_inscripto_en_otro_equipo():
+    """Un jugador ya inscripto en el torneo no puede unirse a un segundo equipo."""
+    torneo_id = crear_torneo_base(max_equipos=2, min_integrantes=2)
+
+    # Primer equipo: incluye a ambos jugadores disponibles
+    payload1 = {
+        "nombre": "Primer Equipo",
+        "jugadores_emails": ["julian@test.com", "tomas@test.com"]
+    }
+    r1 = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload1)
+    assert r1.status_code == 201
+
+    # Segundo equipo: intenta incluir a julian+tomas de nuevo (ambos ya inscriptos)
+    # julian (logueado) está en el payload, así que el chequeo de creator pasa.
+    # El chequeo de duplicados es el que debe fallar.
+    payload2 = {
+        "nombre": "Segundo Equipo",
+        "jugadores_emails": ["julian@test.com", "tomas@test.com"]
+    }
+    r2 = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload2)
+    assert r2.status_code == 400
+    assert "ya están inscriptos" in r2.json()["detail"]
+
+
+def test_error_equipo_sin_minimo_jugadores():
+    """Un equipo con menos jugadores que los titulares requeridos no puede inscribirse."""
+    # Torneo de fútbol 5: se necesitan al menos 5 titulares
+    torneo_id = crear_torneo_base(max_equipos=4, min_integrantes=5)
+
+    payload = {
+        "nombre": "Equipo Incompleto",
+        "jugadores_emails": ["julian@test.com"]  # solo 1 de 5 requeridos
+    }
+
+    response = client.post(f"/api/torneos/{torneo_id}/inscripciones", json=payload)
+    assert response.status_code == 400
+    assert "al menos" in response.json()["detail"]
+    assert "titulares" in response.json()["detail"]
+    assert "5" in response.json()["detail"]

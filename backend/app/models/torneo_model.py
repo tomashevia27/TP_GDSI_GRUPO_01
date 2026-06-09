@@ -32,7 +32,7 @@ class Torneo(Base):
     reglas = Column(Text, nullable=True)
     estado = Column(Enum(EstadoTorneo, native_enum=False), nullable=False, default=EstadoTorneo.abierto)
     organizador_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    max_integrantes_por_equipo = Column(Integer, nullable=False, default=10)
+    min_integrantes_por_equipo = Column(Integer, nullable=False, default=5)
     equipos_inscriptos = relationship("Equipo", secondary="torneo_equipos", back_populates="torneos")
     organizador = relationship("Usuario", back_populates="torneos_organizados")
     
