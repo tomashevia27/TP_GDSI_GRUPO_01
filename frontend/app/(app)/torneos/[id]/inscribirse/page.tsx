@@ -6,6 +6,7 @@ import Link from "next/link"
 import { Trophy, ArrowLeft, Loader2, AlertCircle, Users, Shield, Image as ImageIcon, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getTorneo, inscribirEquipo, TorneoData } from "@/hooks/use-api"
+import Swal from "sweetalert2"
 
 interface Jugador {
     nombre: string;
@@ -99,18 +100,47 @@ export default function InscripcionTorneoPage() {
             return
         }
 
+        // Confirmación previa
+        const precioFormateado = new Intl.NumberFormat("es-AR", {
+            style: "currency",
+            currency: "ARS",
+            minimumFractionDigits: 0,
+        }).format(torneo.costo_inscripcion)
+
+        const confirmacion = await Swal.fire({
+            title: "¿Confirmar inscripción?",
+            html: `Estás por anotar tu equipo en <strong>${torneo.nombre}</strong>.<br/>Costo de inscripción: <strong>${precioFormateado}</strong>`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonColor: "#FF6B4A",
+            cancelButtonColor: "#6B7280",
+            confirmButtonText: "Sí, inscribirme",
+            cancelButtonText: "Revisar datos"
+        })
+
+        if (!confirmacion.isConfirmed) return
+
         setIsSubmitting(true)
         try {
             const payload = {
                 nombre_equipo: nombreEquipo,
                 escudo: escudo,
-                jugadores: JSON.stringify(jugadores) 
+                jugadores: JSON.stringify(jugadores)
             }
 
             await inscribirEquipo(torneo.id, payload)
+
+            await Swal.fire({
+                title: "¡Equipo inscripto!",
+                text: `Tu equipo fue anotado exitosamente en ${torneo.nombre}.`,
+                icon: "success",
+                timer: 2500,
+                showConfirmButton: false
+            })
+
             router.push(`/torneos/${torneo.id}`)
         } catch (error: any) {
-            setErrorMsg(error.message || "Error al inscribir el equipo.")
+            Swal.fire("Error", error.message || "Error al inscribir el equipo.", "error")
             setIsSubmitting(false)
         }
     }

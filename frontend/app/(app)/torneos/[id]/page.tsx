@@ -6,6 +6,8 @@ import Link from "next/link"
 import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getTorneo, cancelarTorneo, TorneoData } from "@/hooks/use-api"
+import { useAuthContext } from "@/components/auth-provider"
+import Swal from "sweetalert2"
 
 // Interfaz para el tipado de los jugadores parseados
 interface JugadorObjeto {
@@ -17,9 +19,11 @@ interface JugadorObjeto {
 export default function TorneoDetallePage() {
     const { id } = useParams()
     const router = useRouter()
+    const { role, userId } = useAuthContext()
     const [torneo, setTorneo] = useState<TorneoData | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
+    const [isCancelling, setIsCancelling] = useState(false)
 
     useEffect(() => {
         async function fetchTorneo() {
@@ -68,14 +72,34 @@ export default function TorneoDetallePage() {
     }
 
     const handleCancelar = async () => {
-        if (!confirm("¿Estás seguro de que querés cancelar este torneo? Esta acción no se puede deshacer y notificará a todos los inscriptos.")) return
-        
-        try {
-            await cancelarTorneo(torneo.id)
-            setTorneo({ ...torneo, estado: "Cancelado" })
-            alert("El torneo ha sido cancelado exitosamente.")
-        } catch (err: any) {
-            alert(err.message || "Error al cancelar el torneo")
+        const result = await Swal.fire({
+            title: "¿Cancelar torneo?",
+            text: "Esta acción no se puede deshacer. Se notificará a todos los equipos inscriptos sobre la cancelación.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#EF4444",
+            cancelButtonColor: "#6B7280",
+            confirmButtonText: "Sí, cancelar torneo",
+            cancelButtonText: "No, mantener"
+        })
+
+        if (result.isConfirmed) {
+            setIsCancelling(true)
+            try {
+                await cancelarTorneo(torneo.id)
+                setTorneo({ ...torneo, estado: "Cancelado" })
+                await Swal.fire({
+                    title: "Torneo cancelado",
+                    text: "El torneo fue cancelado y se notificó a los equipos inscriptos.",
+                    icon: "success",
+                    timer: 2500,
+                    showConfirmButton: false
+                })
+            } catch (err: any) {
+                Swal.fire("Error", err.message || "No se pudo cancelar el torneo", "error")
+            } finally {
+                setIsCancelling(false)
+            }
         }
     }
 
@@ -83,13 +107,13 @@ export default function TorneoDetallePage() {
         try {
             // parseador formato JSON array
             const lista: JugadorObjeto[] = JSON.parse(jugadoresRaw)
-            
+
             if (Array.isArray(lista)) {
                 return (
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
                         {lista.map((j, i) => (
-                            <span 
-                                key={i} 
+                            <span
+                                key={i}
                                 className="inline-block bg-muted text-muted-foreground text-[11px] font-medium px-2 py-0.5 rounded-md border border-border/60"
                                 title={j.email ? `Email: ${j.email} | DNI: ${j.dni}` : undefined}
                             >
@@ -118,14 +142,14 @@ export default function TorneoDetallePage() {
                         <ArrowLeft className="w-4 h-4 mr-1" />
                         Volver a Torneos
                     </Link>
-                    
+
                     <div className="flex flex-col md:flex-row gap-6 md:items-end justify-between">
                         <div>
                             <div className="flex items-center gap-3 mb-3">
                                 <span className={`text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md
                                     ${estaAbierto ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                      torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                      'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                                        torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                            'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
                                     }
                                 `}>
                                     {torneo.estado}
@@ -148,7 +172,7 @@ export default function TorneoDetallePage() {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Box de Inscripción en Header */}
                         <div className="bg-card p-5 rounded-xl border border-border shadow-md min-w-[280px]">
                             <div className="text-sm text-muted-foreground mb-1 uppercase tracking-wider font-semibold">Valor de Inscripción</div>
@@ -156,22 +180,26 @@ export default function TorneoDetallePage() {
                                 {formatearPrecio(torneo.costo_inscripcion)}
                                 <span className="text-sm font-normal text-muted-foreground"> / equipo</span>
                             </div>
-                            
+
                             <div className="flex items-center gap-2 mb-4 text-sm">
                                 <Users className="w-4 h-4 text-muted-foreground" />
                                 <span>{cuposRestantes} cupos disponibles de {torneo.max_equipos}</span>
                             </div>
-                            
-                            {estaAbierto && hayCupos ? (
-                                <Link href={`/torneos/${torneo.id}/inscribirse`} className="block w-full">
-                                    <Button className="w-full" size="lg">
-                                        Anotar a mi equipo
-                                    </Button>
-                                </Link>
-                            ) : (
-                                <Button className="w-full" size="lg" disabled variant="secondary">
-                                    {!estaAbierto ? "Inscripción Cerrada" : "Torneo Lleno"}
-                                </Button>
+
+                            {role !== "admin" && (
+                                <>
+                                    {estaAbierto && hayCupos ? (
+                                        <Link href={`/torneos/${torneo.id}/inscribirse`} className="block w-full">
+                                            <Button className="w-full" size="lg">
+                                                Anotar a mi equipo
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        <Button className="w-full" size="lg" disabled variant="secondary">
+                                            {!estaAbierto ? "Inscripción Cerrada" : "Torneo Lleno"}
+                                        </Button>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -181,10 +209,10 @@ export default function TorneoDetallePage() {
             {/* Contenido */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    
+
                     {/* Columna principal (Detalles) */}
                     <div className="md:col-span-2 space-y-8">
-                        
+
                         {/* Descripción */}
                         <section className="space-y-4">
                             <h3 className="text-xl font-bold text-foreground flex items-center gap-2 border-b border-border pb-2">
@@ -222,7 +250,7 @@ export default function TorneoDetallePage() {
                                     {torneo.equipos_inscriptos} de {torneo.max_equipos} equipos
                                 </p>
                             </div>
-                            
+
                             <div className="p-0">
                                 {torneo.equipos && torneo.equipos.length > 0 ? (
                                     <ul className="divide-y divide-border">
@@ -237,7 +265,7 @@ export default function TorneoDetallePage() {
                                 ) : (
                                     <div className="p-8 text-center text-muted-foreground">
                                         <p className="text-sm">Todavía no hay equipos inscriptos.</p>
-                                        {estaAbierto && hayCupos && (
+                                        {estaAbierto && hayCupos && role !== "admin" && (
                                             <p className="text-sm mt-1 font-medium text-primary">¡Sé el primero en anotarte!</p>
                                         )}
                                     </div>
@@ -246,21 +274,22 @@ export default function TorneoDetallePage() {
                         </div>
 
                         {/* Acciones de Organizador */}
-                        {torneo.rol_usuario === "Organizador" && torneo.estado !== "Cancelado" && (
+                        {userId && torneo.organizador_id === Number(userId) && torneo.estado !== "Cancelado" && (
                             <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 mt-6">
                                 <h3 className="font-bold text-destructive mb-2 flex items-center gap-2">
                                     <XCircle className="w-5 h-5" />
-                                    Zona de Peligro
+                                    Dar de baja
                                 </h3>
                                 <p className="text-sm text-muted-foreground mb-4">
                                     Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
                                 </p>
-                                <Button 
-                                    variant="destructive" 
-                                    className="w-full" 
+                                <Button
+                                    variant="destructive"
+                                    className="w-full"
                                     onClick={handleCancelar}
+                                    disabled={isCancelling}
                                 >
-                                    Cancelar Torneo
+                                    {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
                                 </Button>
                             </div>
                         )}

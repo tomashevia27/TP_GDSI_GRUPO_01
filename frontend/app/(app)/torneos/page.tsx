@@ -12,28 +12,37 @@ type MisTorneosCategory = "Próximos" | "En curso" | "Finalizados"
 export default function TorneosPage() {
     const [activeTab, setActiveTab] = useState<"disponibles" | "mis-torneos">("disponibles")
     const [misTorneosCategory, setMisTorneosCategory] = useState<MisTorneosCategory>("Próximos")
+    const [misTorneosRole, setMisTorneosRole] = useState<"Todos" | "Organizados" | "Inscriptos">("Todos")
     const [torneos, setTorneos] = useState<TorneoData[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const { role } = useAuthContext()
 
     useEffect(() => {
+        if (role === "admin" && activeTab === "disponibles") {
+            setActiveTab("mis-torneos")
+        }
+    }, [role])
+
+    useEffect(() => {
+        let isCurrent = true;
         async function fetchTorneos() {
             setIsLoading(true)
             try {
                 if (activeTab === "disponibles") {
                     const data = await getTorneosDisponibles()
-                    setTorneos(data)
+                    if (isCurrent) setTorneos(data)
                 } else {
                     const data = await getMisTorneos()
-                    setTorneos(data)
+                    if (isCurrent) setTorneos(data)
                 }
             } catch (error) {
                 console.error("Error fetching torneos:", error)
             } finally {
-                setIsLoading(false)
+                if (isCurrent) setIsLoading(false)
             }
         }
         fetchTorneos()
+        return () => { isCurrent = false; }
     }, [activeTab])
 
     const formatearPrecio = (precio: number) => {
@@ -48,9 +57,16 @@ export default function TorneosPage() {
     const torneosAMostrar = activeTab === "disponibles" 
         ? torneos 
         : torneos.filter(t => {
+            if (role === "admin" && t.rol_usuario !== "Organizador") return false;
+            
+            if (role === "jugador") {
+                if (misTorneosRole === "Organizados" && t.rol_usuario !== "Organizador") return false;
+                if (misTorneosRole === "Inscriptos" && t.rol_usuario === "Organizador") return false;
+            }
+
             if (misTorneosCategory === "Próximos") return t.estado === "Abierto para inscripción"
             if (misTorneosCategory === "En curso") return t.estado === "En curso"
-            if (misTorneosCategory === "Finalizados") return t.estado === "Finalizado"
+            if (misTorneosCategory === "Finalizados") return t.estado === "Finalizado" || t.estado === "Cancelado"
             return true
         })
 
@@ -63,10 +79,12 @@ export default function TorneosPage() {
                         <div>
                             <h1 className="text-3xl sm:text-4xl font-bold text-foreground flex items-center gap-3">
                                 <Trophy className="h-10 w-10 text-primary" />
-                                Torneos
+                                {role === "admin" ? "Mis Torneos" : "Torneos"}
                             </h1>
                             <p className="text-muted-foreground mt-2 max-w-xl">
-                                Explorá competencias abiertas, anotá a tu equipo, o creá y organizá tu propio torneo de manera sencilla.
+                                {role === "admin" 
+                                    ? "Gestioná y organizá todos tus torneos creados desde un solo lugar."
+                                    : "Explorá competencias abiertas, anotá a tu equipo, o creá y organizá tu propio torneo de manera sencilla."}
                             </p>
                         </div>
                         <Link href="/torneos/nuevo">
@@ -82,51 +100,73 @@ export default function TorneosPage() {
             {/* Tabs & Content */}
             <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
                 {/* Custom Tabs */}
-                <div className="flex border-b border-border mb-6">
-                    <button
-                        onClick={() => setActiveTab("disponibles")}
-                        className={`px-6 py-3 font-medium text-sm transition-all relative ${
-                            activeTab === "disponibles" 
-                                ? "text-primary" 
-                                : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                        Torneos Disponibles
-                        {activeTab === "disponibles" && (
-                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("mis-torneos")}
-                        className={`px-6 py-3 font-medium text-sm transition-all relative ${
-                            activeTab === "mis-torneos" 
-                                ? "text-primary" 
-                                : "text-muted-foreground hover:text-foreground"
-                        }`}
-                    >
-                        Mis Torneos
-                        {activeTab === "mis-torneos" && (
-                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
-                        )}
-                    </button>
-                </div>
+                {role !== "admin" && (
+                    <div className="flex border-b border-border mb-6">
+                        <button
+                            onClick={() => setActiveTab("disponibles")}
+                            className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                                activeTab === "disponibles" 
+                                    ? "text-primary" 
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            Torneos Disponibles
+                            {activeTab === "disponibles" && (
+                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
+                            )}
+                        </button>
+                        <button
+                            onClick={() => setActiveTab("mis-torneos")}
+                            className={`px-6 py-3 font-medium text-sm transition-all relative ${
+                                activeTab === "mis-torneos" 
+                                    ? "text-primary" 
+                                    : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                            Mis Torneos
+                            {activeTab === "mis-torneos" && (
+                                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
+                            )}
+                        </button>
+                    </div>
+                )}
 
                 {/* Sub-tabs for Mis Torneos */}
                 {activeTab === "mis-torneos" && (
-                    <div className="flex gap-2 mb-8 bg-muted p-1.5 rounded-lg inline-flex">
-                        {(["Próximos", "En curso", "Finalizados"] as MisTorneosCategory[]).map(cat => (
-                            <button
-                                key={cat}
-                                onClick={() => setMisTorneosCategory(cat)}
-                                className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                                    misTorneosCategory === cat 
-                                        ? "bg-background text-foreground shadow-sm" 
-                                        : "text-muted-foreground hover:text-foreground"
-                                }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-8">
+                        <div className="flex gap-2 bg-muted p-1.5 rounded-lg inline-flex w-fit">
+                            {(["Próximos", "En curso", "Finalizados"] as MisTorneosCategory[]).map(cat => (
+                                <button
+                                    key={cat}
+                                    onClick={() => setMisTorneosCategory(cat)}
+                                    className={`px-4 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                                        misTorneosCategory === cat 
+                                            ? "bg-background text-foreground shadow-sm" 
+                                            : "text-muted-foreground hover:text-foreground"
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            ))}
+                        </div>
+                        
+                        {role === "jugador" && (
+                            <div className="flex gap-2 bg-muted p-1.5 rounded-lg inline-flex w-fit">
+                                {(["Todos", "Organizados", "Inscriptos"] as const).map(rolCat => (
+                                    <button
+                                        key={rolCat}
+                                        onClick={() => setMisTorneosRole(rolCat)}
+                                        className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                                            misTorneosRole === rolCat 
+                                                ? "bg-background text-foreground shadow-sm border border-border/50" 
+                                                : "text-muted-foreground hover:text-foreground"
+                                        }`}
+                                    >
+                                        {rolCat}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 

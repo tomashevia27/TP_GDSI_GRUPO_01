@@ -132,7 +132,11 @@ def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
             "fecha_inicio": t.fecha_inicio,
             "formato": t.formato,
             "estado": t.estado,
-            "rol": rol
+            "rol": rol,
+            "lugar": t.lugar,
+            "costo_inscripcion": t.costo_inscripcion,
+            "max_equipos": t.max_equipos,
+            "equipos_inscriptos": len(t.equipos_inscriptos) if t.equipos_inscriptos else 0
         }
         
         if t.estado == EstadoTorneo.abierto:

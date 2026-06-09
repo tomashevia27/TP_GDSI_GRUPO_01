@@ -32,7 +32,11 @@ export default function ProfilePage() {
         }
 
         const torneosData = await getMisTorneos()
-        setMisTorneos(torneosData)
+        if (data.rol === "admin") {
+          setMisTorneos(torneosData.filter(t => t.rol_usuario === "Organizador"))
+        } else {
+          setMisTorneos(torneosData)
+        }
       } catch (error) {
         console.warn("Error al cargar el perfil:", error)
       } finally {
@@ -329,43 +333,137 @@ export default function ProfilePage() {
       )}
 
       {/* SECCIÓN DE MIS TORNEOS */}
-      {misTorneos.length > 0 && (
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-semibold text-foreground">Mis Torneos</h2>
-            <Button size="sm" variant="outline" asChild>
-              <Link href="/torneos">Explorar Torneos</Link>
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-foreground">Mis Torneos</h2>
+          <Button size="sm" variant="outline" asChild>
+            <Link href={profile?.rol === "admin" ? "/torneos/nuevo" : "/torneos"}>
+              {profile?.rol === "admin" ? "Crear Torneo" : "Explorar Torneos"}
+            </Link>
+          </Button>
+        </div>
+        
+        {misTorneos.length === 0 ? (
+          <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center bg-secondary/30">
+            <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <Trophy className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="font-semibold mb-1 text-foreground">
+              {profile?.rol === "admin" ? "No organizás ningún torneo" : "No estás inscripto en ningún torneo"}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {profile?.rol === "admin" ? "Creá tu primer torneo para que los equipos se anoten." : "Explorá los torneos disponibles y anotá a tu equipo."}
+            </p>
+            <Button size="sm" asChild>
+              <Link href={profile?.rol === "admin" ? "/torneos/nuevo" : "/torneos"}>
+                {profile?.rol === "admin" ? "Crear Torneo" : "Buscar Torneos"}
+              </Link>
             </Button>
           </div>
-          <div className="bg-card rounded-xl border border-border overflow-hidden">
-            {misTorneos.map((torneo, index) => (
-              <Link key={torneo.id} href={`/torneos/${torneo.id}`}>
-                <div className={`flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors ${index !== misTorneos.length - 1 ? "border-b border-border" : ""
-                  }`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <Trophy className="w-5 h-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground line-clamp-1">{torneo.nombre}</p>
-                      <p className="text-xs text-muted-foreground flex gap-2">
-                        <span>{formatearFecha(torneo.fecha_inicio)}</span>
-                        <span className="text-primary/80 font-medium">{torneo.rol_usuario}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-lg capitalize shrink-0 ml-2 ${torneo.estado.toLowerCase() === "cancelado"
-                    ? "bg-red-500/10 text-red-500"
-                    : "bg-secondary text-muted-foreground"
-                    }`}>
-                    {torneo.estado}
-                  </span>
+        ) : (
+          <div className="space-y-6">
+            {/* Torneos Organizados */}
+            {misTorneos.filter(t => t.rol_usuario === "Organizador").length > 0 && (
+              <div>
+                {profile?.rol === "jugador" && (
+                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                    Torneos que organizo
+                  </h3>
+                )}
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  {misTorneos.filter(t => t.rol_usuario === "Organizador").map((torneo, index, arr) => (
+                    <Link key={torneo.id} href={`/torneos/${torneo.id}`}>
+                      <div className={`flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors ${index !== arr.length - 1 ? "border-b border-border" : ""
+                        }`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Trophy className="w-5 h-5 text-primary" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground line-clamp-1">{torneo.nombre}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}
+                              </span>
+                              {torneo.lugar && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {torneo.lugar}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-lg shrink-0 ml-2 ${
+                          torneo.estado === "Cancelado"
+                            ? "bg-red-500/10 text-red-500"
+                            : torneo.estado === "En curso"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : torneo.estado === "Abierto para inscripción"
+                            ? "bg-green-500/10 text-green-600"
+                            : "bg-secondary text-muted-foreground"
+                        }`}>
+                          {torneo.estado === "Abierto para inscripción" ? "Abierto" : torneo.estado}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              </Link>
-            ))}
+              </div>
+            )}
+
+            {/* Torneos Inscriptos */}
+            {misTorneos.filter(t => t.rol_usuario !== "Organizador").length > 0 && (
+              <div>
+                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+                  Torneos en los que participo
+                </h3>
+                <div className="bg-card rounded-xl border border-border overflow-hidden">
+                  {misTorneos.filter(t => t.rol_usuario !== "Organizador").map((torneo, index, arr) => (
+                    <Link key={torneo.id} href={`/torneos/${torneo.id}`}>
+                      <div className={`flex items-center justify-between p-4 hover:bg-secondary/50 transition-colors ${index !== arr.length - 1 ? "border-b border-border" : ""
+                        }`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                            <Trophy className="w-5 h-5 text-muted-foreground" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-foreground line-clamp-1">{torneo.nombre}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}
+                              </span>
+                              {torneo.lugar && (
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="w-3 h-3" />
+                                  {torneo.lugar}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-medium px-2 py-1 rounded-lg shrink-0 ml-2 ${
+                          torneo.estado === "Cancelado"
+                            ? "bg-red-500/10 text-red-500"
+                            : torneo.estado === "En curso"
+                            ? "bg-amber-500/10 text-amber-600"
+                            : torneo.estado === "Abierto para inscripción"
+                            ? "bg-green-500/10 text-green-600"
+                            : "bg-secondary text-muted-foreground"
+                        }`}>
+                          {torneo.estado === "Abierto para inscripción" ? "Abierto" : torneo.estado}
+                        </span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Action buttons */}
       <div className="mt-8 flex flex-col sm:flex-row gap-3">

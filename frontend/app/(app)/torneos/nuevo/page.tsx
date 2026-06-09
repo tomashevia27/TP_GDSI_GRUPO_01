@@ -6,6 +6,7 @@ import { Trophy, Calendar, MapPin, Users, DollarSign, AlignLeft, Info, AlertCirc
 import { Button } from "@/components/ui/button"
 import { crearTorneo } from "@/hooks/use-api"
 import Link from "next/link"
+import Swal from "sweetalert2"
 
 export default function CrearTorneoPage() {
     const router = useRouter()
@@ -15,7 +16,7 @@ export default function CrearTorneoPage() {
     const [formData, setFormData] = useState({
         nombre: "",
         fecha_inicio: "",
-        formato: "Fase de grupos + eliminación",
+        formato: "Eliminación directa",
         lugar: "",
         max_equipos: 4,
         max_integrantes_por_equipo: 5,
@@ -82,7 +83,6 @@ export default function CrearTorneoPage() {
 
         setIsLoading(true)
         try {
-            // Enviamos los datos sanitizados con los tipos numéricos correctos
             await crearTorneo({
                 nombre: formData.nombre,
                 fecha_inicio: formData.fecha_inicio,
@@ -93,6 +93,13 @@ export default function CrearTorneoPage() {
                 costo_inscripcion: Number(formData.costo_inscripcion),
                 descripcion: formData.descripcion,
                 reglas: formData.reglas
+            })
+            await Swal.fire({
+                title: "¡Torneo creado con éxito!",
+                text: "El torneo fue publicado y ya está disponible en tu lista.",
+                icon: "success",
+                timer: 2000,
+                showConfirmButton: false
             })
             router.push("/torneos")
         } catch (error: any) {
@@ -228,6 +235,7 @@ export default function CrearTorneoPage() {
                                             min="2"
                                             value={formData.max_equipos}
                                             onChange={handleChange}
+                                            onWheel={(e) => e.currentTarget.blur()}
                                             disabled={esFormatoFijo}
                                             className={`w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none ${
                                                 esFormatoFijo ? "opacity-60 bg-muted cursor-not-allowed" : ""
@@ -268,12 +276,12 @@ export default function CrearTorneoPage() {
                                     <div className="relative">
                                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                         <input
-                                            type="number"
+                                            type="text"
+                                            inputMode="numeric"
                                             name="costo_inscripcion"
-                                            min="0"
-                                            step="100"
                                             value={formData.costo_inscripcion}
                                             onChange={handleChange}
+                                            placeholder="Ej: 5000"
                                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                             required
                                         />

@@ -63,7 +63,11 @@ class TorneoMisActividades(BaseModel):
     fecha_inicio: datetime
     formato: FormatoTorneo
     estado: EstadoTorneo
-    rol: str  
+    rol: str
+    lugar: str
+    costo_inscripcion: float
+    max_equipos: int
+    equipos_inscriptos: int
 
     model_config = ConfigDict(from_attributes=True)
 
