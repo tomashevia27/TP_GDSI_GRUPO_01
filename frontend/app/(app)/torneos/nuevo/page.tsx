@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Trophy, Calendar, MapPin, Users, DollarSign, AlignLeft, Info, AlertCircle, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { crearTorneo } from "@/hooks/use-api"
+import { crearTorneo, getCanchas, CanchaData } from "@/hooks/use-api"
 import Link from "next/link"
 import Swal from "sweetalert2"
 
@@ -13,13 +13,19 @@ export default function CrearTorneoPage() {
     const [isLoading, setIsLoading] = useState(false)
     const [errorMsg, setErrorMsg] = useState("")
 
+    const [canchas, setCanchas] = useState<CanchaData[]>([])
+
+    useEffect(() => {
+        getCanchas().then(data => setCanchas(data)).catch(console.error)
+    }, [])
+
     const [formData, setFormData] = useState({
         nombre: "",
         fecha_inicio: "",
+        fecha_fin: "",
         formato: "Eliminación directa",
-        lugar: "",
+        cancha_id: "",
         max_equipos: 4,
-        min_integrantes_por_equipo: 5,
         costo_inscripcion: 0,
         descripcion: "",
         reglas: ""
@@ -55,18 +61,24 @@ export default function CrearTorneoPage() {
     const validateForm = () => {
         if (!formData.nombre.trim()) return "El nombre del torneo es obligatorio."
         if (!formData.fecha_inicio) return "La fecha de inicio es obligatoria."
+        if (!formData.fecha_fin) return "La fecha de fin es obligatoria."
         
         const fechaElegida = new Date(formData.fecha_inicio)
+        const fechaFin = new Date(formData.fecha_fin)
         const hoy = new Date()
         hoy.setHours(0, 0, 0, 0)
         
         const fechaElegidaLocal = new Date(fechaElegida.getTime() + fechaElegida.getTimezoneOffset() * 60000)
+        const fechaFinLocal = new Date(fechaFin.getTime() + fechaFin.getTimezoneOffset() * 60000)
 
         if (fechaElegidaLocal < hoy) {
             return "La fecha de inicio no puede estar en el pasado."
         }
+        if (fechaFinLocal <= fechaElegidaLocal) {
+            return "La fecha de fin debe ser posterior a la fecha de inicio."
+        }
         
-        if (!formData.lugar.trim()) return "El lugar es obligatorio."
+        if (!formData.cancha_id) return "Debe seleccionar una cancha."
         if (Number(formData.max_equipos) < 2) return "El número máximo de equipos debe ser al menos 2."
         if (Number(formData.costo_inscripcion) < 0) return "El costo de inscripción no puede ser negativo."
 
@@ -85,11 +97,11 @@ export default function CrearTorneoPage() {
         try {
             await crearTorneo({
                 nombre: formData.nombre,
-                fecha_inicio: formData.fecha_inicio,
+                fecha_inicio: new Date(formData.fecha_inicio).toISOString(),
+                fecha_fin: new Date(formData.fecha_fin).toISOString(),
                 formato: formData.formato,
-                lugar: formData.lugar,
+                cancha_id: Number(formData.cancha_id),
                 max_equipos: Number(formData.max_equipos),
-                min_integrantes_por_equipo: Number(formData.min_integrantes_por_equipo),
                 costo_inscripcion: Number(formData.costo_inscripcion),
                 descripcion: formData.descripcion,
                 reglas: formData.reglas
@@ -161,7 +173,7 @@ export default function CrearTorneoPage() {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-foreground">
                                         Fecha de Inicio *
@@ -180,19 +192,38 @@ export default function CrearTorneoPage() {
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium mb-1.5 text-foreground">
-                                        Lugar (Cancha / Complejo) *
+                                        Fecha de Fin *
                                     </label>
                                     <div className="relative">
-                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                                         <input
-                                            type="text"
-                                            name="lugar"
-                                            value={formData.lugar}
+                                            type="date"
+                                            name="fecha_fin"
+                                            value={formData.fecha_fin}
                                             onChange={handleChange}
-                                            placeholder="Ej: Complejo El Predio"
                                             className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                             required
                                         />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
+                                        Cancha *
+                                    </label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10 pointer-events-none" />
+                                        <select
+                                            name="cancha_id"
+                                            value={formData.cancha_id}
+                                            onChange={handleChange}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none appearance-none"
+                                            required
+                                        >
+                                            <option value="" disabled>Seleccioná una cancha...</option>
+                                            {canchas.map(c => (
+                                                <option key={c.id} value={c.id}>{c.nombre} (F{c.tamano}) - {c.zona}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -216,8 +247,7 @@ export default function CrearTorneoPage() {
                                     className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                 >
                                     <option value="Eliminación directa">Eliminación directa</option>
-                                    <option value="Fase de grupos + 16avos de final">Fase de grupos + 16avos de final</option>
-                                    <option value="Fase de grupos + 8avos de final">Fase de grupos + 8avos de final</option>
+                                    <option value="Fase de grupos">Fase de grupos</option>
                                     <option value="Todos contra todos">Todos contra todos</option>
                                 </select>
                             </div>
@@ -248,28 +278,6 @@ export default function CrearTorneoPage() {
                                             Fijo para la estructura del formato.
                                         </p>
                                     )} */}
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium mb-1.5 text-foreground">
-                                        Jugadores Titulares por Equipo *
-                                    </label>
-                                    <div className="relative">
-                                        <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none z-10" />
-                                        <select
-                                            name="min_integrantes_por_equipo"
-                                            value={formData.min_integrantes_por_equipo}
-                                            onChange={handleChange}
-                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none appearance-none"
-                                        >
-                                            <option value={5}>5 Jugadores</option>
-                                            <option value={8}>8 Jugadores</option>
-                                            <option value={11}>11 Jugadores</option>
-                                        </select>
-                                    </div>
-                                    <p className="text-[11px] text-muted-foreground mt-1">
-                                        Máximo con suplentes: <span className="font-semibold text-foreground">{Number(formData.min_integrantes_por_equipo) * 2} jugadores</span>
-                                    </p>
                                 </div>
 
                                 <div>

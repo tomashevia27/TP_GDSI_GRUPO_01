@@ -9,6 +9,7 @@ from backend.app.main import app
 from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
+from backend.app.models.cancha_model import Cancha
 from backend.app.models.torneo_model import Torneo, EstadoTorneo
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -48,6 +49,14 @@ def limpiar_db():
         email_confirmado=True
     )
     db.add(usuario)
+    cancha = Cancha(
+        id=1, nombre="Cancha Test", tipo_superficie="Sintético", 
+        tamano=5, zona="CABA", direccion="Calle 123", 
+        precio_por_turno=1000.0, hora_apertura="10:00", 
+        hora_cierre="23:00", propietario_id=1
+    )
+    db.add(cancha)
+
     db.commit()
     db.refresh(usuario)
     db.close()
@@ -60,7 +69,8 @@ def test_listar_torneos_abiertos():
         "nombre": "Abierto",
         "fecha_inicio": fecha,
         "formato": "fase_grupos",
-        "lugar": "Cancha A",
+        "cancha_id": 1,
+        "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
         "max_equipos": 4,
         "costo_inscripcion": 100.0,
         "descripcion": "Desc",
@@ -68,9 +78,10 @@ def test_listar_torneos_abiertos():
     }
     datos2 = {
         "nombre": "Cerrado",
-        "fecha_inicio": fecha,
+        "fecha_inicio": (datetime.now() + timedelta(days=21)).isoformat(),
         "formato": "eliminacion_directa",
-        "lugar": "Cancha B",
+        "cancha_id": 1,
+        "fecha_fin": (datetime.now() + timedelta(days=30)).isoformat(),
         "max_equipos": 8,
         "costo_inscripcion": 200.0
     }
@@ -108,7 +119,8 @@ def test_obtener_detalle_torneo():
         "nombre": "DetalleTorneo",
         "fecha_inicio": fecha,
         "formato": "todos_contra_todos",
-        "lugar": "Cancha X",
+        "cancha_id": 1,
+        "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
         "max_equipos": 6,
         "costo_inscripcion": 150.0,
         "descripcion": "Desc",

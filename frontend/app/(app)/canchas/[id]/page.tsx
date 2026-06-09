@@ -21,6 +21,7 @@ interface Cancha {
     dias_operativos_texto: string
     hora_apertura: string
     hora_cierre: string
+    duracion_turno?: number
     fotos: string | null
     activa: boolean
     propietario_id: number

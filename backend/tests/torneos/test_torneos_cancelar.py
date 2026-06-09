@@ -9,7 +9,9 @@ from backend.app.main import app
 from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
+from backend.app.models.cancha_model import Cancha
 from backend.app.models.torneo_model import Torneo, EstadoTorneo, FormatoTorneo
+from backend.app.models.cancha_model import Cancha
 from backend.app.models.equipo_model import Equipo
 from backend.app.models.notificacion_model import Notificacion
 
@@ -52,6 +54,14 @@ def limpiar_db():
         email_confirmado=True
     )
     db.add(usuario)
+    cancha = Cancha(
+        id=1, nombre="Cancha Test", tipo_superficie="Sintético", 
+        tamano=5, zona="CABA", direccion="Calle 123", 
+        precio_por_turno=1000.0, hora_apertura="10:00", 
+        hora_cierre="23:00", propietario_id=1
+    )
+    db.add(cancha)
+
     db.commit()
     db.refresh(usuario)
     db.close()
@@ -67,7 +77,8 @@ def test_cancelar_torneo_exitoso_y_notifica():
         nombre="Copa de Campeones",
         fecha_inicio=datetime.now() + timedelta(days=7),
         formato=FormatoTorneo.eliminacion_directa,
-        lugar="Complejo Premium",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=4,
         costo_inscripcion=1500.0,
         estado=EstadoTorneo.abierto,
@@ -112,7 +123,8 @@ def test_cancelar_torneo_sin_permisos():
         nombre="Liga Privada Pro",
         fecha_inicio=datetime.now() + timedelta(days=3),
         formato=FormatoTorneo.eliminacion_directa,
-        lugar="Predio Norte",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=8,
         costo_inscripcion=2000.0,
         estado=EstadoTorneo.abierto,
@@ -137,7 +149,8 @@ def test_cancelar_torneo_ya_finalizado():
         nombre="Torneo Relámpago Pasado",
         fecha_inicio=datetime.now() - timedelta(days=15),
         formato=FormatoTorneo.eliminacion_directa,
-        lugar="Cancha 5",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=4,
         costo_inscripcion=0.0,
         estado=EstadoTorneo.finalizado,  
@@ -162,7 +175,8 @@ def test_cancelar_torneo_en_curso():
         nombre="Torneo En Marcha",
         fecha_inicio=datetime.now() - timedelta(days=2),
         formato=FormatoTorneo.eliminacion_directa,
-        lugar="Cancha Central",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=8,
         costo_inscripcion=500.0,
         estado=EstadoTorneo.en_curso,

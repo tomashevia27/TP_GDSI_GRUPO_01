@@ -8,8 +8,6 @@ class FormatoTorneo(str, enum.Enum):
     eliminacion_directa = "eliminacion_directa"
     fase_grupos = "fase_grupos"
     todos_contra_todos = "todos_contra_todos"
-    fase_grupos_16avos = "fase_grupos_16avos"
-    fase_grupos_8avos = "fase_grupos_8avos"
 
 class EstadoTorneo(str, enum.Enum):
     abierto = "abierto"
@@ -23,8 +21,9 @@ class Torneo(Base):
     id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String(100), nullable=False)
     fecha_inicio = Column(DateTime, nullable=False)
+    fecha_fin = Column(DateTime, nullable=False)
     formato = Column(Enum(FormatoTorneo, native_enum=False), nullable=False)
-    lugar = Column(String(200), nullable=False)
+    cancha_id = Column(Integer, ForeignKey("canchas.id"), nullable=False)
     max_equipos = Column(Integer, nullable=False)
     inscriptos = Column(Integer, nullable=False, default=0)
     costo_inscripcion = Column(Float, nullable=False)
@@ -35,6 +34,14 @@ class Torneo(Base):
     min_integrantes_por_equipo = Column(Integer, nullable=False, default=5)
     equipos_inscriptos = relationship("Equipo", secondary="torneo_equipos", back_populates="torneos")
     organizador = relationship("Usuario", back_populates="torneos_organizados")
+    cancha = relationship("Cancha")
+    
+
+    @property
+    def lugar(self) -> str:
+        if self.cancha:
+            return f"{self.cancha.nombre} - {self.cancha.direccion}"
+        return ""
     
 
     @property

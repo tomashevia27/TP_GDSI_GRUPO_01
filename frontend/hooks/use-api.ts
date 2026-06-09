@@ -195,6 +195,7 @@ export async function updateUserProfile(
 }
 
 export interface CanchaData {
+  id?: number
   nombre: string
   tipo_superficie: string
   tamano: number
@@ -205,6 +206,7 @@ export interface CanchaData {
   dias_operativos: number
   hora_apertura: string
   hora_cierre: string
+  duracion_turno?: number
   fotos?: string
 }
 
@@ -324,6 +326,19 @@ export async function getMisCanchas() {
   const data = await response.json()
   if (!response.ok) {
     throw new Error(data.detail || "Error al cargar mis canchas")
+  }
+  return data
+}
+
+export async function getCanchas(): Promise<CanchaData[]> {
+  const response = await fetch(`${API_URL}/canchas`, {
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cargar las canchas")
   }
   return data
 }
@@ -757,10 +772,10 @@ export async function reprogramarReserva(
 export interface TorneoCreateData {
   nombre: string
   fecha_inicio: string
+  fecha_fin: string
   formato: string
-  lugar: string
+  cancha_id: number
   max_equipos: number
-  min_integrantes_por_equipo: number
   costo_inscripcion: number
   descripcion?: string
   reglas?: string
@@ -773,13 +788,22 @@ export interface EquipoInscripto {
   escudo?: string
 }
 
-export interface TorneoData extends TorneoCreateData {
+export interface TorneoData {
   id: number
+  nombre: string
+  fecha_inicio: string
+  fecha_fin: string
+  formato: string
+  cancha_id: number
+  lugar: string
+  max_equipos: number
+  min_integrantes_por_equipo: number
+  costo_inscripcion: number
+  descripcion?: string
+  reglas?: string
   estado: string
   organizador_id: number
   equipos_inscriptos: number
-  min_integrantes_por_equipo: number
-  costo_inscripcion: number
   equipos?: EquipoInscripto[]
   rol_usuario?: "Organizador" | "Jugador"
   cupos_restantes?: number

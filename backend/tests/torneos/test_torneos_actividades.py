@@ -9,7 +9,9 @@ from backend.app.main import app
 from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
+from backend.app.models.cancha_model import Cancha
 from backend.app.models.equipo_model import Equipo
+from backend.app.models.cancha_model import Cancha
 from backend.app.models.torneo_model import Torneo, EstadoTorneo, FormatoTorneo
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -50,6 +52,14 @@ def limpiar_db():
         email_confirmado=True if hasattr(Usuario, 'email_confirmado') else True 
     )
     db.add(usuario)
+    cancha = Cancha(
+        id=1, nombre="Cancha Test", tipo_superficie="Sintético", 
+        tamano=5, zona="CABA", direccion="Calle 123", 
+        precio_por_turno=1000.0, hora_apertura="10:00", 
+        hora_cierre="23:00", propietario_id=1
+    )
+    db.add(cancha)
+
     db.commit()
     db.refresh(usuario)
     db.close()
@@ -76,7 +86,8 @@ def test_obtener_mis_torneos_como_organizador_y_jugador():
         nombre="Torneo del Organizador",
         fecha_inicio=datetime.now() + timedelta(days=5),
         formato=FormatoTorneo.eliminacion_directa,
-        lugar="Cancha 1",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=4,
         costo_inscripcion=1000.0,
         estado=EstadoTorneo.abierto,
@@ -87,7 +98,8 @@ def test_obtener_mis_torneos_como_organizador_y_jugador():
         nombre="Torneo del Jugador",
         fecha_inicio=datetime.now() - timedelta(days=2),
         formato=FormatoTorneo.todos_contra_todos,
-        lugar="Cancha 2",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=6,
         costo_inscripcion=1500.0,
         estado=EstadoTorneo.en_curso,
@@ -129,7 +141,8 @@ def test_obtener_mis_torneos_finalizado():
         nombre="Antiguo Torneo Comercial",
         fecha_inicio=datetime.now() - timedelta(days=30),
         formato=FormatoTorneo.eliminacion_directa,
-        lugar="Predio Norte",
+        cancha_id=1,
+        fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=8,
         costo_inscripcion=0.0,
         estado=EstadoTorneo.finalizado,

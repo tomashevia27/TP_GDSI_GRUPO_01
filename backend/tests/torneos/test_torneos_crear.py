@@ -9,6 +9,7 @@ from backend.app.main import app
 from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
+from backend.app.models.cancha_model import Cancha
 from backend.app.models.torneo_model import EstadoTorneo
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -49,6 +50,14 @@ def limpiar_db():
         email_confirmado=True
     )
     db.add(usuario)
+    cancha = Cancha(
+        id=1, nombre="Cancha Test", tipo_superficie="Sintético", 
+        tamano=5, zona="CABA", direccion="Calle 123", 
+        precio_por_turno=1000.0, hora_apertura="10:00", 
+        hora_cierre="23:00", propietario_id=1
+    )
+    db.add(cancha)
+
     db.commit()
     db.refresh(usuario)
     db.close()
@@ -61,7 +70,8 @@ def test_crear_torneo_exitoso():
         "nombre": "Torneo Relámpago",
         "fecha_inicio": fecha_futura,
         "formato": "eliminacion_directa",
-        "lugar": "Predio Central",
+        "cancha_id": 1,
+        "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
         "max_equipos": 8,
         "costo_inscripcion": 5000.0,
         "descripcion": "Torneo de prueba",
@@ -82,7 +92,8 @@ def test_crear_torneo_fecha_pasado():
         "nombre": "Torneo Pasado",
         "fecha_inicio": fecha_pasada,
         "formato": "fase_grupos",
-        "lugar": "Predio",
+        "cancha_id": 1,
+        "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
         "max_equipos": 4,
         "costo_inscripcion": 1000.0
     }
@@ -97,7 +108,8 @@ def test_crear_torneo_max_equipos_invalido():
         "nombre": "Torneo Chico",
         "fecha_inicio": fecha_futura,
         "formato": "todos_contra_todos",
-        "lugar": "Predio",
+        "cancha_id": 1,
+        "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
         "max_equipos": 1,
         "costo_inscripcion": 0
     }
