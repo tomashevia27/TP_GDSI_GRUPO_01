@@ -243,14 +243,27 @@ export default function TorneosPage() {
                                             <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
                                                 {torneo.nombre}
                                             </h3>
-                                            <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded shrink-0
-                                                ${torneo.estado === 'Abierto para inscripción' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                                  torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                                  'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
-                                                }
-                                            `}>
-                                                {torneo.estado === 'Abierto para inscripción' ? 'Abierto' : torneo.estado}
-                                            </span>
+                                            <div className="flex items-center gap-1.5 shrink-0">
+                                                {torneo.estado === 'Abierto para inscripción' ? (
+                                                    torneo.equipos_inscriptos >= torneo.max_equipos ? (
+                                                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                                            Completo
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                                            Cupos disponibles
+                                                        </span>
+                                                    )
+                                                ) : (
+                                                    <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded
+                                                        ${torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                                          'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                                                        }
+                                                    `}>
+                                                        {torneo.estado}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="space-y-3 text-sm text-muted-foreground mb-4">
                                             <div className="flex items-center gap-2.5">

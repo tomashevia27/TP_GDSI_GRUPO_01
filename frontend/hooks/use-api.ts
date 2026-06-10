@@ -784,7 +784,7 @@ export interface TorneoCreateData {
 export interface EquipoInscripto {
   id: number
   nombre_equipo: string
-  jugadores: string 
+  jugadores: string
   escudo?: string
 }
 
@@ -849,16 +849,16 @@ const FORMATO_MAP: Record<string, string> = {
 }
 
 function normalizarTorneo(t: any): TorneoData {
-  const equiposArray = Array.isArray(t.equipos_inscriptos) 
+  const equiposArray = Array.isArray(t.equipos_inscriptos)
     ? t.equipos_inscriptos.map((eq: any) => ({
-        id: eq.id,
-        nombre_equipo: eq.nombre || eq.nombre_equipo,
-        jugadores: eq.jugadores || "[]",
-        escudo: eq.escudo
-      }))
+      id: eq.id,
+      nombre_equipo: eq.nombre || eq.nombre_equipo,
+      jugadores: eq.jugadores || "[]",
+      escudo: eq.escudo
+    }))
     : (t.equipos || []);
   const inscriptosCount = Array.isArray(t.equipos_inscriptos) ? t.equipos_inscriptos.length : (t.inscriptos ?? t.equipos_inscriptos ?? 0);
-  
+
   return {
     ...t,
     estado: ESTADO_MAP[t.estado] ?? t.estado,
@@ -923,7 +923,7 @@ export async function getMisTorneos(): Promise<TorneoData[]> {
       Authorization: `Bearer ${getAccessToken()}`,
     },
   })
-  
+
   const data: MisTorneosResponse = await response.json()
   if (!response.ok) throw new Error((data as any).detail || "Error al cargar mis torneos")
 
@@ -931,7 +931,7 @@ export async function getMisTorneos(): Promise<TorneoData[]> {
   const enCurso = (data.en_curso || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
   const finalizados = (data.finalizados || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
   const cancelados = (data.cancelados || []).map(t => normalizarTorneo({ ...t, rol_usuario: t.rol }))
-  
+
   return [...proximos, ...enCurso, ...finalizados, ...cancelados]
 }
 

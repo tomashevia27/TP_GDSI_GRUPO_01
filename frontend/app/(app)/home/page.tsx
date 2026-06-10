@@ -318,94 +318,94 @@ export default function HomePage() {
             {canchas.map((cancha, index) => (
               <Link key={cancha.id} href={`/canchas/${cancha.id}`}>
                 <div
-                    className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 group h-full overflow-hidden hover:-translate-y-1 animate-slide-up"
-                    style={{ animationDelay: `${index * 100}ms` }}
+                  className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10 group h-full overflow-hidden hover:-translate-y-1 animate-slide-up"
+                  style={{ animationDelay: `${index * 100}ms` }}
                 >
-                    {cancha.fotos ? (
-                        <div className="aspect-video w-full overflow-hidden relative">
-                            <img
-                                src={cancha.fotos}
-                                alt={cancha.nombre}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            {cancha.iluminacion && (
-                                <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                                    <Zap className="w-3 h-3" />
-                                    Iluminada
-                                </div>
-                            )}
+                  {cancha.fotos ? (
+                    <div className="aspect-video w-full overflow-hidden relative">
+                      <img
+                        src={cancha.fotos}
+                        alt={cancha.nombre}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-foreground/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {cancha.iluminacion && (
+                        <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          Iluminada
                         </div>
-                    ) : (
-                        <div className="aspect-video w-full bg-gradient-to-br from-primary/10 via-secondary to-muted flex items-center justify-center relative overflow-hidden">
-                            <div className="absolute inset-0 opacity-10">
-                                <div className="absolute top-4 left-4">
-                                    <FootballIcon className="w-8 h-8 text-primary animate-float" />
-                                </div>
-                                <div className="absolute bottom-4 right-4">
-                                    <FootballIcon className="w-6 h-6 text-primary animate-float-reverse" />
-                                </div>
-                            </div>
-                            <div className="w-20 h-20 bg-card/80 backdrop-blur rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                                <FootballIcon className="h-10 w-10 text-primary" />
-                            </div>
-                            {cancha.iluminacion && (
-                                <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
-                                    <Zap className="w-3 h-3" />
-                                    Iluminada
-                                </div>
-                            )}
-                        </div>
-                    )}
-                    <div className="p-5">
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                            <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                                {cancha.nombre}
-                            </h3>
-                            <div className="flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
-                                <Star className="w-3 h-3 fill-current" />
-                                <span className="text-xs font-medium">4.8</span>
-                            </div>
-                        </div>
-                        <div className="space-y-2.5 text-sm">
-                            <div className="flex items-center gap-2.5 text-muted-foreground">
-                                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                                    <MapPin className="h-4 w-4 text-primary" />
-                                </div>
-                                <span className="truncate">{cancha.zona} - {cancha.direccion}</span>
-                            </div>
-                            <div className="flex items-center gap-2.5 text-muted-foreground">
-                                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                                    <Clock className="h-4 w-4 text-primary" />
-                                </div>
-                                <span>{cancha.hora_apertura} - {cancha.hora_cierre}</span>
-                            </div>
-                            <div className="flex items-center gap-2.5 text-muted-foreground">
-                                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-                                    <Users className="h-4 w-4 text-primary" />
-                                </div>
-                                <span>Fútbol {cancha.tamano} • {cancha.tipo_superficie}</span>
-                            </div>
-                        </div>
-                        <div className="mt-5 pt-4 border-t border-border flex items-center justify-between">
-                            <div>
-                                <span className="text-2xl font-bold text-primary">
-                                    {formatearPrecio(cancha.precio_por_turno)}
-                                </span>
-                                <span className="text-muted-foreground text-sm ml-1">/turno</span>
-                            </div>
-                            <Button 
-                                size="sm" 
-                                className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    router.push(`/canchas/${cancha.id}/editar`)
-                                }}
-                            >
-                                Editar
-                            </Button>
-                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <div className="aspect-video w-full bg-gradient-to-br from-primary/10 via-secondary to-muted flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-4 left-4">
+                          <FootballIcon className="w-8 h-8 text-primary animate-float" />
+                        </div>
+                        <div className="absolute bottom-4 right-4">
+                          <FootballIcon className="w-6 h-6 text-primary animate-float-reverse" />
+                        </div>
+                      </div>
+                      <div className="w-20 h-20 bg-card/80 backdrop-blur rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                        <FootballIcon className="h-10 w-10 text-primary" />
+                      </div>
+                      {cancha.iluminacion && (
+                        <div className="absolute top-3 right-3 bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1">
+                          <Zap className="w-3 h-3" />
+                          Iluminada
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <div className="flex items-start justify-between gap-2 mb-3">
+                      <h3 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                        {cancha.nombre}
+                      </h3>
+                      <div className="flex items-center gap-1 text-primary bg-primary/10 px-2 py-0.5 rounded-lg">
+                        <Star className="w-3 h-3 fill-current" />
+                        <span className="text-xs font-medium">4.8</span>
+                      </div>
+                    </div>
+                    <div className="space-y-2.5 text-sm">
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                          <MapPin className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="truncate">{cancha.zona} - {cancha.direccion}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                          <Clock className="h-4 w-4 text-primary" />
+                        </div>
+                        <span>{cancha.hora_apertura} - {cancha.hora_cierre}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5 text-muted-foreground">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
+                          <Users className="h-4 w-4 text-primary" />
+                        </div>
+                        <span>Fútbol {cancha.tamano} • {cancha.tipo_superficie}</span>
+                      </div>
+                    </div>
+                    <div className="mt-5 pt-4 border-t border-border flex items-center justify-between">
+                      <div>
+                        <span className="text-2xl font-bold text-primary">
+                          {formatearPrecio(cancha.precio_por_turno)}
+                        </span>
+                        <span className="text-muted-foreground text-sm ml-1">/turno</span>
+                      </div>
+                      <Button
+                        size="sm"
+                        className="group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          router.push(`/canchas/${cancha.id}/editar`)
+                        }}
+                      >
+                        Editar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               </Link>
             ))}
@@ -457,55 +457,55 @@ export default function HomePage() {
                 </Button>
               </div>
             ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {adminTorneos.slice(0, 3).map((torneo) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {adminTorneos.slice(0, 3).map((torneo) => (
                   <Link key={torneo.id} href={`/torneos/${torneo.id}`}>
-                      <div className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden h-full flex flex-col cursor-pointer group">
-                          <div className="bg-gradient-to-br from-primary/10 via-secondary to-muted p-6 flex items-center justify-center border-b border-border relative">
-                              <Trophy className="h-12 w-12 text-primary drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
-                          </div>
-                          <div className="p-5 flex-1 flex flex-col">
-                              <div className="flex items-start justify-between gap-2 mb-3">
-                                  <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
-                                      {torneo.nombre}
-                                  </h3>
-                                  <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400`}>
-                                      {torneo.estado}
-                                  </span>
-                              </div>
-                              <div className="space-y-3 text-sm text-muted-foreground mb-4">
-                                  <div className="flex items-center gap-2.5">
-                                      <Calendar className="h-4 w-4 text-primary shrink-0" />
-                                      <span>Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2.5">
-                                      <MapPin className="h-4 w-4 text-primary shrink-0" />
-                                      <span className="truncate">{torneo.lugar}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2.5">
-                                      <Users className="h-4 w-4 text-primary shrink-0" />
-                                      <span>{torneo.equipos_inscriptos} / {torneo.max_equipos} Equipos</span>
-                                  </div>
-                              </div>
-                              <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
-                                  <div>
-                                      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Inscripción</p>
-                                      <span className="text-lg font-bold text-foreground">
-                                          {formatearPrecio(torneo.costo_inscripcion)}
-                                      </span>
-                                  </div>
-                                  <Button 
-                                      variant="ghost" 
-                                      className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                                  >
-                                      Detalle
-                                  </Button>
-                              </div>
-                          </div>
+                    <div className="bg-card rounded-2xl border border-border hover:border-primary/50 transition-all hover:shadow-lg hover:-translate-y-1 overflow-hidden h-full flex flex-col cursor-pointer group">
+                      <div className="bg-gradient-to-br from-primary/10 via-secondary to-muted p-6 flex items-center justify-center border-b border-border relative">
+                        <Trophy className="h-12 w-12 text-primary drop-shadow-sm group-hover:scale-110 transition-transform duration-300" />
                       </div>
+                      <div className="p-5 flex-1 flex flex-col">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <h3 className="font-bold text-lg text-foreground line-clamp-2 group-hover:text-primary transition-colors">
+                            {torneo.nombre}
+                          </h3>
+                          <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-1 rounded shrink-0 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400`}>
+                            {torneo.estado}
+                          </span>
+                        </div>
+                        <div className="space-y-3 text-sm text-muted-foreground mb-4">
+                          <div className="flex items-center gap-2.5">
+                            <Calendar className="h-4 w-4 text-primary shrink-0" />
+                            <span>Inicio: {new Date(torneo.fecha_inicio).toLocaleDateString('es-AR')}</span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <MapPin className="h-4 w-4 text-primary shrink-0" />
+                            <span className="truncate">{torneo.lugar}</span>
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <Users className="h-4 w-4 text-primary shrink-0" />
+                            <span>{torneo.equipos_inscriptos} / {torneo.max_equipos} Equipos</span>
+                          </div>
+                        </div>
+                        <div className="mt-auto pt-4 border-t border-border flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Inscripción</p>
+                            <span className="text-lg font-bold text-foreground">
+                              {formatearPrecio(torneo.costo_inscripcion)}
+                            </span>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            className="group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                          >
+                            Detalle
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   </Link>
-              ))}
-            </div>
+                ))}
+              </div>
             )}
           </div>
         )}
@@ -518,209 +518,209 @@ export default function HomePage() {
     <div className="min-h-screen bg-background pb-12">
       {/* Hero Section */}
       <div className="relative h-[280px] sm:h-[360px] overflow-hidden">
-          <Image
-              src="/football-bg.jpg"
-              alt="Inicio"
-              fill
-              className="object-cover"
-              priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+        <Image
+          src="/football-bg.jpg"
+          alt="Inicio"
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
 
-          <div className="absolute top-10 left-10 opacity-20 animate-float">
-              <FootballIcon className="w-12 h-12 text-card" />
-          </div>
-          <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
-              <FootballIcon className="w-8 h-8 text-card" />
-          </div>
-          <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
-              <FootballIcon className="w-16 h-16 text-card" />
-          </div>
+        <div className="absolute top-10 left-10 opacity-20 animate-float">
+          <FootballIcon className="w-12 h-12 text-card" />
+        </div>
+        <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
+          <FootballIcon className="w-8 h-8 text-card" />
+        </div>
+        <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
+          <FootballIcon className="w-16 h-16 text-card" />
+        </div>
 
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-              <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
-                  ¡Hola{userProfile?.nombre ? `, ${userProfile.nombre.split(' ')[0]}` : ''}!
-              </h1>
-              <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
-                  ¿Qué tenés ganas de jugar hoy?
-              </p>
-          </div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+          <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
+            ¡Hola{userProfile?.nombre ? `, ${userProfile.nombre.split(' ')[0]}` : ''}!
+          </h1>
+          <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
+            ¿Qué tenés ganas de jugar hoy?
+          </p>
+        </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-12 relative z-10">
 
-      {/* Quick Actions Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-        <Link href="/partidos/nuevo" className="group">
-          <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Plus className="w-7 h-7 text-primary" />
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          <Link href="/partidos/nuevo" className="group">
+            <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Plus className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Crear Partido</h3>
+              <p className="text-sm text-muted-foreground">Reservá una cancha y armá tu partido</p>
             </div>
-            <h3 className="font-semibold text-lg mb-2">Crear Partido</h3>
-            <p className="text-sm text-muted-foreground">Reservá una cancha y armá tu partido</p>
-          </div>
-        </Link>
+          </Link>
 
-        <Link href="/partidos/disponibles" className="group">
-          <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
-            <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Users className="w-7 h-7 text-accent" />
+          <Link href="/partidos/disponibles" className="group">
+            <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
+              <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Users className="w-7 h-7 text-accent" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Unirse a Partido</h3>
+              <p className="text-sm text-muted-foreground">Buscá partidos abiertos y sumate</p>
             </div>
-            <h3 className="font-semibold text-lg mb-2">Unirse a Partido</h3>
-            <p className="text-sm text-muted-foreground">Buscá partidos abiertos y sumate</p>
-          </div>
-        </Link>
+          </Link>
 
-        <Link href="/torneos" className="group">
-          <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
-            <div className="w-14 h-14 bg-secondary text-secondary-foreground rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Trophy className="w-7 h-7 text-primary" />
+          <Link href="/torneos" className="group">
+            <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
+              <div className="w-14 h-14 bg-secondary text-secondary-foreground rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Trophy className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Ver Torneos</h3>
+              <p className="text-sm text-muted-foreground">Explorá competencias y anotá a tu equipo</p>
             </div>
-            <h3 className="font-semibold text-lg mb-2">Ver Torneos</h3>
-            <p className="text-sm text-muted-foreground">Explorá competencias y anotá a tu equipo</p>
-          </div>
-        </Link>
+          </Link>
 
-        <Link href="/torneos/nuevo" className="group">
-          <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
-              <Star className="w-7 h-7 text-primary" />
+          <Link href="/torneos/nuevo" className="group">
+            <div className="bg-card rounded-2xl border border-border p-6 hover:border-primary/50 hover:shadow-lg hover:-translate-y-1 transition-all flex flex-col items-center text-center h-full">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-5 group-hover:scale-110 transition-transform">
+                <Star className="w-7 h-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">Crear Torneo</h3>
+              <p className="text-sm text-muted-foreground">Organizá tu propio torneo</p>
             </div>
-            <h3 className="font-semibold text-lg mb-2">Crear Torneo</h3>
-            <p className="text-sm text-muted-foreground">Organizá tu propio torneo</p>
-          </div>
-        </Link>
-      </div>
+          </Link>
+        </div>
 
-      {/* Recommended Content */}
-      <div className="grid lg:grid-cols-2 gap-8">
-        
-        {/* Partidos Cercanos */}
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+        {/* Recommended Content */}
+        <div className="grid lg:grid-cols-2 gap-8">
+
+          {/* Partidos Cercanos */}
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-primary" />
-                Partidos Disponibles
+                  <MapPin className="w-5 h-5 text-primary" />
+                  Partidos Disponibles
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                    {userZona ? `Cerca de ${userZona}` : "Partidos abiertos próximamente"}
+                  {userZona ? `Cerca de ${userZona}` : "Partidos abiertos próximamente"}
                 </p>
-            </div>
-            <Button variant="ghost" size="sm" asChild className="text-primary">
+              </div>
+              <Button variant="ghost" size="sm" asChild className="text-primary">
                 <Link href="/partidos/disponibles">
-                    Ver todos <ChevronRight className="w-4 h-4 ml-1" />
+                  Ver todos <ChevronRight className="w-4 h-4 ml-1" />
                 </Link>
-            </Button>
-          </div>
-          
-          {isLoading ? (
-            <div className="py-12 flex items-center justify-center">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-          ) : partidos.length === 0 ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center">
-              <Frown className="w-12 h-12 text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">No hay partidos abiertos.</p>
-              <Button variant="link" asChild className="mt-2">
-                <Link href="/partidos/nuevo">¡Creá uno ahora!</Link>
               </Button>
             </div>
-          ) : (
-            <div className="space-y-4">
-              {partidos.slice(0, 4).map(partido => (
-                <Link key={partido.id} href={`/partidos/${partido.id}`} className="block group">
-                    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
-                        <div className="w-14 h-14 bg-secondary rounded-xl flex flex-col items-center justify-center flex-shrink-0">
-                            <span className="text-xs font-semibold text-muted-foreground uppercase">{formatearFechaRelativa(partido.fecha).split(' ')[0]}</span>
-                            <span className="text-lg font-bold text-foreground leading-none mt-0.5">{partido.fecha.split('-')[2]}</span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                                    {partido.cancha?.nombre || "Cancha TBD"}
-                                </h4>
-                                <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded uppercase">
-                                    {partido.modalidad}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {partido.horario.substring(0, 5)}</span>
-                                <span className="flex items-center gap-1 truncate"><MapPin className="w-3.5 h-3.5" /> {partido.cancha?.zona || "N/A"}</span>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-lg font-bold text-primary block">{partido.cupos_disponibles}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Lugares</span>
-                        </div>
-                    </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
 
-        {/* Torneos */}
-        <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <div>
+            {isLoading ? (
+              <div className="py-12 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : partidos.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center">
+                <Frown className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                <p className="text-muted-foreground">No hay partidos abiertos.</p>
+                <Button variant="link" asChild className="mt-2">
+                  <Link href="/partidos/nuevo">¡Creá uno ahora!</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {partidos.slice(0, 4).map(partido => (
+                  <Link key={partido.id} href={`/partidos/${partido.id}`} className="block group">
+                    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
+                      <div className="w-14 h-14 bg-secondary rounded-xl flex flex-col items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">{formatearFechaRelativa(partido.fecha).split(' ')[0]}</span>
+                        <span className="text-lg font-bold text-foreground leading-none mt-0.5">{partido.fecha.split('-')[2]}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                            {partido.cancha?.nombre || "Cancha TBD"}
+                          </h4>
+                          <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded uppercase">
+                            {partido.modalidad}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {partido.horario.substring(0, 5)}</span>
+                          <span className="flex items-center gap-1 truncate"><MapPin className="w-3.5 h-3.5" /> {partido.cancha?.zona || "N/A"}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-primary block">{partido.cupos_disponibles}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Lugares</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Torneos */}
+          <div className="bg-card rounded-2xl border border-border p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <div>
                 <h2 className="text-xl font-bold flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                Torneos Destacados
+                  <Trophy className="w-5 h-5 text-primary" />
+                  Torneos Destacados
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                    Compite con tu equipo por la gloria
+                  Compite con tu equipo por la gloria
                 </p>
-            </div>
-            <Button variant="ghost" size="sm" asChild className="text-primary">
+              </div>
+              <Button variant="ghost" size="sm" asChild className="text-primary">
                 <Link href="/torneos">
-                    Ver todos <ChevronRight className="w-4 h-4 ml-1" />
+                  Ver todos <ChevronRight className="w-4 h-4 ml-1" />
                 </Link>
-            </Button>
-          </div>
-          
-          {isLoading ? (
-            <div className="py-12 flex items-center justify-center">
-               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </Button>
             </div>
-          ) : torneos.length === 0 ? (
-            <div className="py-12 flex flex-col items-center justify-center text-center">
-              <Trophy className="w-12 h-12 text-muted-foreground/30 mb-3" />
-              <p className="text-muted-foreground">No hay torneos disponibles.</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {torneos.slice(0, 3).map(torneo => (
-                 <Link key={torneo.id} href={`/torneos/${torneo.id}`} className="block group">
-                    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
-                        <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
-                            <Trophy className="w-7 h-7 text-primary opacity-80" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                                    {torneo.nombre}
-                                </h4>
-                            </div>
-                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {torneo.fecha_inicio.split('-')[2]}/{torneo.fecha_inicio.split('-')[1]}</span>
-                                <span className="flex items-center gap-1 truncate"><MapPin className="w-3.5 h-3.5" /> {torneo.lugar.split(' - ')[0]}</span>
-                            </div>
-                        </div>
-                        <div className="text-right">
-                            <span className="text-sm font-bold text-foreground block">{torneo.equipos_inscriptos}/{torneo.max_equipos}</span>
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Equipos</span>
-                        </div>
-                    </div>
-                 </Link>
-              ))}
-            </div>
-          )}
-        </div>
 
+            {isLoading ? (
+              <div className="py-12 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              </div>
+            ) : torneos.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center">
+                <Trophy className="w-12 h-12 text-muted-foreground/30 mb-3" />
+                <p className="text-muted-foreground">No hay torneos disponibles.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {torneos.slice(0, 3).map(torneo => (
+                  <Link key={torneo.id} href={`/torneos/${torneo.id}`} className="block group">
+                    <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
+                      <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Trophy className="w-7 h-7 text-primary opacity-80" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                            {torneo.nombre}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {torneo.fecha_inicio.split('-')[2]}/{torneo.fecha_inicio.split('-')[1]}</span>
+                          <span className="flex items-center gap-1 truncate"><MapPin className="w-3.5 h-3.5" /> {torneo.lugar.split(' - ')[0]}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-bold text-foreground block">{torneo.equipos_inscriptos}/{torneo.max_equipos}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Equipos</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+        </div>
       </div>
+
     </div>
-  
-      </div>
-)
+  )
 }

@@ -342,7 +342,7 @@ export default function ProfilePage() {
             </Link>
           </Button>
         </div>
-        
+
         {misTorneos.length === 0 ? (
           <div className="border-2 border-dashed border-border rounded-2xl p-8 text-center bg-secondary/30">
             <div className="w-12 h-12 bg-secondary rounded-2xl flex items-center justify-center mx-auto mb-3">
@@ -395,17 +395,28 @@ export default function ProfilePage() {
                             </div>
                           </div>
                         </div>
-                        <span className={`text-xs font-medium px-2 py-1 rounded-lg shrink-0 ml-2 ${
-                          torneo.estado === "Cancelado"
-                            ? "bg-red-500/10 text-red-500"
-                            : torneo.estado === "En curso"
-                            ? "bg-amber-500/10 text-amber-600"
-                            : torneo.estado === "Abierto para inscripción"
-                            ? "bg-green-500/10 text-green-600"
-                            : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {torneo.estado === "Abierto para inscripción" ? "Abierto" : torneo.estado}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {torneo.estado === "Abierto para inscripción" ? (
+                            torneo.equipos_inscriptos >= torneo.max_equipos ? (
+                              <span className="text-xs font-medium px-2 py-1 rounded-lg bg-blue-500/10 text-blue-600">
+                                Completo
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium px-2 py-1 rounded-lg bg-green-500/10 text-green-600">
+                                Cupos disponibles
+                              </span>
+                            )
+                          ) : (
+                            <span className={`text-xs font-medium px-2 py-1 rounded-lg ${torneo.estado === "Cancelado"
+                                ? "bg-red-500/10 text-red-500"
+                                : torneo.estado === "En curso"
+                                  ? "bg-amber-500/10 text-amber-600"
+                                  : "bg-secondary text-muted-foreground"
+                              }`}>
+                              {torneo.estado}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </Link>
                   ))}
@@ -444,17 +455,28 @@ export default function ProfilePage() {
                             </div>
                           </div>
                         </div>
-                        <span className={`text-xs font-medium px-2 py-1 rounded-lg shrink-0 ml-2 ${
-                          torneo.estado === "Cancelado"
-                            ? "bg-red-500/10 text-red-500"
-                            : torneo.estado === "En curso"
-                            ? "bg-amber-500/10 text-amber-600"
-                            : torneo.estado === "Abierto para inscripción"
-                            ? "bg-green-500/10 text-green-600"
-                            : "bg-secondary text-muted-foreground"
-                        }`}>
-                          {torneo.estado === "Abierto para inscripción" ? "Abierto" : torneo.estado}
-                        </span>
+                        <div className="flex items-center gap-2 shrink-0 ml-2">
+                          {torneo.estado === "Abierto para inscripción" ? (
+                            torneo.equipos_inscriptos >= torneo.max_equipos ? (
+                              <span className="text-xs font-medium px-2 py-1 rounded-lg bg-blue-500/10 text-blue-600">
+                                Completo
+                              </span>
+                            ) : (
+                              <span className="text-xs font-medium px-2 py-1 rounded-lg bg-green-500/10 text-green-600">
+                                Cupos disponibles
+                              </span>
+                            )
+                          ) : (
+                            <span className={`text-xs font-medium px-2 py-1 rounded-lg ${torneo.estado === "Cancelado"
+                                ? "bg-red-500/10 text-red-500"
+                                : torneo.estado === "En curso"
+                                  ? "bg-amber-500/10 text-amber-600"
+                                  : "bg-secondary text-muted-foreground"
+                              }`}>
+                              {torneo.estado}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </Link>
                   ))}

@@ -146,14 +146,25 @@ export default function TorneoDetallePage() {
                     <div className="flex flex-col md:flex-row gap-6 md:items-end justify-between">
                         <div>
                             <div className="flex items-center gap-3 mb-3">
-                                <span className={`text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md
-                                    ${estaAbierto ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                                        torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                            'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
-                                    }
-                                `}>
-                                    {torneo.estado}
-                                </span>
+                                {estaAbierto ? (
+                                    cuposRestantes <= 0 ? (
+                                        <span className="text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                            Completo
+                                        </span>
+                                    ) : (
+                                        <span className="text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                                            Cupos disponibles
+                                        </span>
+                                    )
+                                ) : (
+                                    <span className={`text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md
+                                        ${torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                                          'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                                        }
+                                    `}>
+                                        {torneo.estado}
+                                    </span>
+                                )}
                                 <span className="text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground border border-border">
                                     {torneo.formato}
                                 </span>

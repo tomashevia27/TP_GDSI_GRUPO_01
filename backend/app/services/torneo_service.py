@@ -145,7 +145,8 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
 def listar_torneos_abiertos(db: Session) -> List[Torneo]:
     """Devuelve una lista de torneos con estado 'abierto' incluyendo cupos_restantes.  
     """
-    return torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
+    torneos = torneo_repository.obtener_todos(db, EstadoTorneo.abierto)
+    return [t for t in torneos if t.inscriptos < t.max_equipos]
 
 
 def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
