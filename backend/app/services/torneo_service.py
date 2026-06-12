@@ -17,42 +17,30 @@ from typing import List, Dict
 def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torneo:
     """
     Crea un nuevo torneo asociado al organizador.
-    Verifica que la cancha exista, determina el min de integrantes, y verifica que no haya superposición con otro torneo.
+    La zona y franja horaria se eligen al momento de la creación;
+    la cancha concreta se asignará durante la generación del fixture.
     """
-    from ..models.cancha_model import Cancha
-    cancha = db.query(Cancha).filter(Cancha.id == datos.cancha_id).first()
-    if not cancha:
-        raise HTTPException(status_code=404, detail="La cancha especificada no existe")
-
-    torneos_solapados = db.query(Torneo).filter(
-        Torneo.cancha_id == datos.cancha_id,
-        Torneo.estado.in_([EstadoTorneo.abierto, EstadoTorneo.en_curso]),
-        Torneo.fecha_inicio < datos.fecha_fin,
-        Torneo.fecha_fin > datos.fecha_inicio
-    ).all()
-
-    if torneos_solapados:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, 
-            detail="Ya existe un torneo activo en esta cancha que se solapa con las fechas seleccionadas."
-        )
-
     nuevo_torneo = Torneo(
         nombre=datos.nombre,
         fecha_inicio=datos.fecha_inicio,
         fecha_fin=datos.fecha_fin,
         formato=datos.formato,
-        cancha_id=datos.cancha_id,
+        zona=datos.zona,
+        dias_operativos=datos.dias_operativos,
+        franja_horaria=datos.franja_horaria,
         max_equipos=datos.max_equipos,
         costo_inscripcion=datos.costo_inscripcion,
         descripcion=datos.descripcion,
         reglas=datos.reglas,
+        ida_y_vuelta=datos.ida_y_vuelta,
+        fase_final=datos.fase_final,
         estado=EstadoTorneo.abierto,
         organizador_id=organizador_id,
-        min_integrantes_por_equipo=cancha.tamano
+        min_integrantes_por_equipo=datos.min_integrantes_por_equipo,
     )
 
     return torneo_repository.crear_torneo(db, nuevo_torneo)
+
 
 def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate, creador_accion_id: int) -> Equipo:
     
@@ -170,10 +158,16 @@ def listar_mis_torneos(db: Session, usuario_id: int) -> Dict[str, List[Dict]]:
             "estado": t.estado,
             "rol": rol,
             "lugar": t.lugar,
+            "zona": t.zona,
+            "dias_operativos": t.dias_operativos,
+            "franja_horaria": t.franja_horaria,
             "costo_inscripcion": t.costo_inscripcion,
             "max_equipos": t.max_equipos,
-            "equipos_inscriptos": len(t.equipos_inscriptos) if t.equipos_inscriptos else 0
+            "equipos_inscriptos": len(t.equipos_inscriptos) if t.equipos_inscriptos else 0,
+            "ida_y_vuelta": t.ida_y_vuelta,
+            "fase_final": t.fase_final,
         }
+
         
         if t.estado == EstadoTorneo.abierto:
             resultado["proximos"].append(dto_torneo)

@@ -774,9 +774,14 @@ export interface TorneoCreateData {
   fecha_inicio: string
   fecha_fin: string
   formato: string
-  cancha_id: number
+  zona: string
+  dias_operativos: number        // bitmask 7 días
+  franja_horaria: string        // "HH:MM-HH:MM"
+  min_integrantes_por_equipo: number  // 5 | 7 | 9 | 11
   max_equipos: number
   costo_inscripcion: number
+  ida_y_vuelta: boolean          // solo todos_contra_todos
+  fase_final?: string | null     // "semis" | "cuartos" | "octavos" (fase_grupos)
   descripcion?: string
   reglas?: string
 }
@@ -794,7 +799,8 @@ export interface TorneoData {
   fecha_inicio: string
   fecha_fin: string
   formato: string
-  cancha_id: number
+  zona: string
+  franja_horaria: string
   lugar: string
   max_equipos: number
   min_integrantes_por_equipo: number
@@ -804,6 +810,8 @@ export interface TorneoData {
   estado: string
   organizador_id: number
   equipos_inscriptos: number
+  ida_y_vuelta: boolean
+  fase_final?: string | null
   equipos?: EquipoInscripto[]
   rol_usuario?: "Organizador" | "Jugador"
   cupos_restantes?: number
@@ -873,33 +881,22 @@ function normalizarTorneo(t: any): TorneoData {
 }
 
 export async function crearTorneo(data: TorneoCreateData): Promise<TorneoData> {
-  const formatoMap: Record<string, string> = {
-    "Eliminación directa": "eliminacion_directa",
-    "Fase de grupos + 8avos de final": "fase_grupos_8avos",
-    "Fase de grupos + 16avos de final": "fase_grupos_16avos",
-    "Todos contra todos": "todos_contra_todos"
-  }
-
-  const payload = {
-    ...data,
-    formato: formatoMap[data.formato] || data.formato
-  }
-
   const response = await fetch(`${API_URL}/api/torneos/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${sessionStorage.getItem("partidoya_auth_access_token")}`,
+      Authorization: `Bearer ${getAccessToken()}`,
     },
-    body: JSON.stringify(payload),
+    body: JSON.stringify(data),
   })
 
   const result = await response.json()
   if (!response.ok) {
     if (Array.isArray(result.detail)) {
-      // Desarmamos el array de errores de Pydantic de FastAPI para mostrárselo limpio al usuario
-      const erroresCampos = result.detail.map((err: any) => `• Campo [${err.loc[err.loc.length - 1]}]: ${err.msg}`).join("\n")
-      throw new Error("Errores de validación en el servidor:\n" + erroresCampos)
+      const erroresCampos = result.detail
+        .map((err: any) => `• ${err.msg}`)
+        .join("\n")
+      throw new Error("Errores de validación:\n" + erroresCampos)
     }
     throw new Error(result.detail || "Error al crear el torneo")
   }
