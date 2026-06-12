@@ -843,6 +843,7 @@ const ESTADO_MAP: Record<string, string> = {
 }
 const FORMATO_MAP: Record<string, string> = {
   "eliminacion_directa": "Eliminación directa",
+  "fase_grupos": "Fase de grupos",
   "fase_grupos_8avos": "Fase de grupos + 8vos",
   "fase_grupos_16avos": "Fase de grupos + 16vos",
   "todos_contra_todos": "Todos contra todos",

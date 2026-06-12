@@ -23,7 +23,7 @@ export default function CrearTorneoPage() {
         nombre: "",
         fecha_inicio: "",
         fecha_fin: "",
-        formato: "Eliminación directa",
+        formato: "eliminacion_directa",
         cancha_id: "",
         max_equipos: 4,
         costo_inscripcion: 0,
@@ -34,29 +34,8 @@ export default function CrearTorneoPage() {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target
         setErrorMsg("") 
-
-        if (name === "formato") {
-            let nuevosEquipos = formData.max_equipos
-
-            if (value === "Fase de grupos + 8avos de final") {
-                nuevosEquipos = 16
-            } else if (value === "Fase de grupos + 16avos de final") {
-                nuevosEquipos = 32
-            }
-
-            setFormData(prev => ({
-                ...prev,
-                formato: value,
-                max_equipos: nuevosEquipos
-            }))
-        } else {
-            setFormData(prev => ({ ...prev, [name]: value }))
-        }
+        setFormData(prev => ({ ...prev, [name]: value }))
     }
-
-    const esFormatoFijo = 
-        formData.formato === "Fase de grupos + 8avos de final" || 
-        formData.formato === "Fase de grupos + 16avos de final"
 
     const validateForm = () => {
         if (!formData.nombre.trim()) return "El nombre del torneo es obligatorio."
@@ -246,9 +225,9 @@ export default function CrearTorneoPage() {
                                     onChange={handleChange}
                                     className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                 >
-                                    <option value="Eliminación directa">Eliminación directa</option>
-                                    <option value="Fase de grupos">Fase de grupos</option>
-                                    <option value="Todos contra todos">Todos contra todos</option>
+                                    <option value="eliminacion_directa">Eliminación directa</option>
+                                    <option value="fase_grupos">Fase de grupos</option>
+                                    <option value="todos_contra_todos">Todos contra todos</option>
                                 </select>
                             </div>
 
@@ -266,18 +245,10 @@ export default function CrearTorneoPage() {
                                             value={formData.max_equipos}
                                             onChange={handleChange}
                                             onWheel={(e) => e.currentTarget.blur()}
-                                            disabled={esFormatoFijo}
-                                            className={`w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none ${
-                                                esFormatoFijo ? "opacity-60 bg-muted cursor-not-allowed" : ""
-                                            }`}
+                                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                             required
                                         />
                                     </div>
-                                   {/*  {esFormatoFijo && (
-                                        <p className="text-[11px] text-primary mt-1 font-medium">
-                                            Fijo para la estructura del formato.
-                                        </p>
-                                    )} */}
                                 </div>
 
                                 <div>
