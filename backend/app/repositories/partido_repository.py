@@ -1,5 +1,7 @@
-from datetime import datetime, date, timedelta, timezone
+from datetime import datetime, date, timedelta, timezone, time
 from sqlalchemy.orm import Session, joinedload
+
+from backend.app.models.partido_torneo import PartidoTorneo
 from ..models.partido_model import Partido
 from ..models.usuario_model import Usuario
 from sqlalchemy import or_, and_, func
@@ -85,28 +87,44 @@ def obtener_filtros_disponibles(db: Session):
         "modalidades": [{"valor": m[0], "cantidad": m[1]} for m in modalidades if m[0]]
     }
 
-def verificar_disponibilidad_cancha(db: Session, cancha_id: int, fecha: datetime.date, horario: datetime.time, duracion_turno: int = 60, excluir_partido_id: int = None) -> bool:
-    """Verifica si una cancha está disponible en una fecha y horario específicos, sin solapamientos."""
-    query = db.query(Partido).filter(
+def verificar_disponibilidad_cancha(
+    db: Session, 
+    cancha_id: int, 
+    fecha: date, 
+    horario: time, 
+    duracion_turno: int = 60, 
+    excluir_id: int = None,
+    es_partido_torneo: bool = False
+) -> bool:
+    
+    nuevo_inicio = datetime.combine(fecha, horario)
+    nuevo_fin = nuevo_inicio + timedelta(minutes=duracion_turno)
+
+    query_casuales = db.query(Partido).filter(
         Partido.cancha_id == cancha_id,
         Partido.fecha == fecha,
         Partido.estado.in_(["confirmado", "pendiente", "bloqueado"])
     )
-    
-    if excluir_partido_id is not None:
-        query = query.filter(Partido.id != excluir_partido_id)
-        
-    partidos_del_dia = query.all()
-    
-    delta_duracion = timedelta(minutes=duracion_turno)
-    nuevo_inicio = datetime.combine(fecha, horario)
-    nuevo_fin = nuevo_inicio + delta_duracion
 
-    for p in partidos_del_dia:
-        p_inicio = datetime.combine(p.fecha, p.horario)
-        p_fin = p_inicio + delta_duracion
+    if excluir_id is not None and not es_partido_torneo:
+        query_casuales = query_casuales.filter(Partido.id != excluir_id)
+    
+    query_torneos = db.query(PartidoTorneo).filter(
+        PartidoTorneo.cancha_id == cancha_id,
+        PartidoTorneo.fecha == fecha,
+        PartidoTorneo.estado == "pendiente"
+    )
+
+    if excluir_id is not None and es_partido_torneo:
+        query_torneos = query_torneos.filter(PartidoTorneo.id != excluir_id)
+
+    todos_los_eventos = list(query_casuales.all()) + list(query_torneos.all())
+
+    for evento in todos_los_eventos:
+        e_inicio = datetime.combine(evento.fecha, evento.horario)
+        e_fin = e_inicio + timedelta(minutes=duracion_turno)
         
-        if nuevo_inicio < p_fin and nuevo_fin > p_inicio:
+        if nuevo_inicio < e_fin and nuevo_fin > e_inicio:
             return False
 
     return True
