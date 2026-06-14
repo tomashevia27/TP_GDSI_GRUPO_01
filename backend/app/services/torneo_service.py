@@ -11,6 +11,8 @@ from ..repositories import torneo_repository
 from ..models.equipo_model import Equipo
 from ..schemas.equipo_schemas import InscripcionEquipoCreate 
 from .torneo_notificador import notificar_torneo_cancelado
+from ..services.fixture.fixture_service import FixtureService
+from ..models.partido_torneo import PartidoTorneo
 
 from typing import List, Dict
 
@@ -206,3 +208,47 @@ def cancelar_torneo(db: Session, torneo_id: int, usuario_accion_id: int):
     db.commit()
     db.refresh(torneo)    
     return torneo
+
+def generar_fixture(
+    db: Session,
+    torneo_id: int,
+    usuario_accion_id: int,
+):
+    torneo = torneo_repository.obtener_por_id(db, torneo_id)
+
+    if not torneo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Torneo no encontrado"
+        )
+
+    if torneo.organizador_id != usuario_accion_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el organizador puede generar el fixture"
+        )
+
+    if torneo.estado != EstadoTorneo.abierto:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El fixture solo puede generarse para torneos abiertos"
+        )
+
+    if torneo.partidos:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El fixture ya fue generado"
+        )
+
+    partidos = FixtureService.generar(torneo)
+
+    db.add_all(partidos)
+    torneo.estado = EstadoTorneo.en_curso
+
+    db.commit()
+    
+    for partido in partidos:
+        db.refresh(partido)
+    db.refresh(torneo)
+
+    return partidos

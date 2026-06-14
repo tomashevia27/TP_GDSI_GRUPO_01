@@ -69,15 +69,17 @@ def test_crear_torneo_exitoso():
     datos = {
         "nombre": "Torneo Relámpago",
         "fecha_inicio": fecha_futura,
-        "formato": "eliminacion_directa",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
+        "formato": "eliminacion_directa",
+        "zona": "CABA",
+        "dias_operativos": 127,
+        "franja_horaria": "10:00-12:00",
         "max_equipos": 8,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 5000.0,
         "descripcion": "Torneo de prueba",
         "reglas": "Sin reglas"
     }
-    
     response = client.post("/api/torneos/", json=datos)
     assert response.status_code == 201
     data = response.json()
@@ -91,13 +93,16 @@ def test_crear_torneo_fecha_pasado():
     datos = {
         "nombre": "Torneo Pasado",
         "fecha_inicio": fecha_pasada,
-        "formato": "fase_grupos",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
+        "formato": "fase_grupos",
+        "zona": "CABA",
+        "dias_operativos": 127,
+        "franja_horaria": "10:00-12:00",
         "max_equipos": 4,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 1000.0
     }
-    
+        
     response = client.post("/api/torneos/", json=datos)
     assert response.status_code == 422
     assert "pasado" in response.json()["detail"][0]["msg"].lower()
@@ -107,10 +112,13 @@ def test_crear_torneo_max_equipos_invalido():
     datos = {
         "nombre": "Torneo Chico",
         "fecha_inicio": fecha_futura,
-        "formato": "todos_contra_todos",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
+        "formato": "todos_contra_todos",
+        "zona": "CABA",
+        "dias_operativos": 127,
+        "franja_horaria": "10:00-12:00",
         "max_equipos": 1,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 0
     }
     

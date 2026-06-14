@@ -33,7 +33,7 @@ class Partido(Base):
     cancha = relationship("Cancha", back_populates="partidos")
     organizador = relationship("Usuario", back_populates="partidos_organizados")
     jugadores = relationship("Usuario", secondary=partido_jugadores, back_populates="partidos_inscritos")
-
+    
     # ─────────────────────────────────────────────
     # Factory Methods
     # ─────────────────────────────────────────────

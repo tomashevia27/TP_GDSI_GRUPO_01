@@ -10,6 +10,7 @@ from ..models.usuario_model import Usuario
 from ..services import torneo_service
 from ..repositories import torneo_repository
 from ..schemas.equipo_schemas import InscripcionEquipoCreate, EquipoResponse
+from ..schemas.partido_torneo_schemas import PartidoTorneoResponse
  
 
 router = APIRouter(
@@ -78,3 +79,18 @@ def cancelar_torneo(
     db: Session = Depends(get_db)
 ):
     return torneo_service.cancelar_torneo(db, torneo_id, current_user.id)
+
+@router.post(
+    "/{torneo_id}/fixture",
+    response_model=list[PartidoTorneoResponse]
+)
+def generar_fixture(
+    torneo_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return torneo_service.generar_fixture(
+        db,
+        torneo_id,
+        current_user.id
+    )

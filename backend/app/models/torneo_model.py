@@ -40,6 +40,7 @@ class Torneo(Base):
 
     equipos_inscriptos = relationship("Equipo", secondary="torneo_equipos", back_populates="torneos")
     organizador = relationship("Usuario", back_populates="torneos_organizados")
+    partidos = relationship("PartidoTorneo", back_populates="torneo", cascade="all, delete-orphan")
 
     @property
     def lugar(self) -> str:
