@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, time
@@ -32,6 +32,55 @@ class ProgramarPartidoRequest(BaseModel):
     fecha: date
     horario: time
 
+
+class EstadisticaJugadorPartidoRequest(BaseModel):
+    usuario_id: int = Field(..., description="ID del jugador")
+    equipo_id: int = Field(..., description="ID del equipo del jugador")
+    goles: int = Field(ge=0, default=0)
+    amarillas: int = Field(ge=0, default=0)
+    rojas: int = Field(ge=0, default=0)
+
+
 class CargarResultadoRequest(BaseModel):
     goles_local: int = Field(ge=0, description="Goles del equipo local")
     goles_visitante: int = Field(ge=0, description="Goles del equipo visitante")
+    estadisticas_jugadores: List[EstadisticaJugadorPartidoRequest] = Field(
+        default_factory=list,
+        description="Participaciones individuales a registrar para este partido",
+    )
+
+
+class EstadisticaJugadorPartidoResponse(BaseModel):
+    usuario_id: int
+    equipo_id: int
+    goles: int
+    amarillas: int
+    rojas: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class EstadisticaJugadorTorneoResponse(BaseModel):
+    usuario_id: int
+    usuario_nombre: str
+    usuario_apellido: str
+    equipo_id: int
+    equipo_nombre: str
+    goles: int
+    amarillas: int
+    rojas: int
+
+
+class EstadisticaEquipoTorneoResponse(BaseModel):
+    equipo_id: int
+    equipo_nombre: str
+    goles: int
+    amarillas: int
+    rojas: int
+
+
+class EstadisticasTorneoResponse(BaseModel):
+    jugadores: List[EstadisticaJugadorTorneoResponse] = Field(default_factory=list)
+    equipos: List[EstadisticaEquipoTorneoResponse] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)

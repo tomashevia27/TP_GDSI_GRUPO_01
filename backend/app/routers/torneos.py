@@ -10,7 +10,12 @@ from ..models.usuario_model import Usuario
 from ..services import torneo_service, partido_torneo_service
 from ..repositories import torneo_repository
 from ..schemas.equipo_schemas import InscripcionEquipoCreate, EquipoResponse
-from ..schemas.partido_torneo_schemas import PartidoTorneoResponse, ProgramarPartidoRequest, CargarResultadoRequest
+from ..schemas.partido_torneo_schemas import (
+    PartidoTorneoResponse,
+    ProgramarPartidoRequest,
+    CargarResultadoRequest,
+    EstadisticasTorneoResponse,
+)
 from ..models.partido_torneo import PartidoTorneo
  
 
@@ -113,3 +118,11 @@ def cargar_resultado_partido_torneo(
     db: Session = Depends(get_db)
 ):
     return partido_torneo_service.cargar_resultado_partido(db, partido_id, data)
+
+
+@router.get("/{torneo_id}/estadisticas", response_model=EstadisticasTorneoResponse)
+def obtener_estadisticas_torneo(
+    torneo_id: int,
+    db: Session = Depends(get_db),
+):
+    return partido_torneo_service.obtener_estadisticas_torneo(db, torneo_id)

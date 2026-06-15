@@ -1,13 +1,21 @@
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date, time
+from collections import defaultdict
 
 from ..models.tabla_posicion import TablaPosiciones
 from ..models.cancha_model import Cancha
 from ..models.torneo_model import Torneo, FormatoTorneo
 from ..models.partido_torneo import EstadoPartidoTorneo, PartidoTorneo, FaseTorneo
+from ..models.estadistica_jugador_partido_torneo import EstadisticaJugadorPartidoTorneo
 from ..repositories import cancha_repository, partido_repository
-from ..schemas.partido_torneo_schemas import CargarResultadoRequest, ProgramarPartidoRequest
+from ..schemas.partido_torneo_schemas import (
+    CargarResultadoRequest,
+    ProgramarPartidoRequest,
+    EstadisticasTorneoResponse,
+    EstadisticaJugadorTorneoResponse,
+    EstadisticaEquipoTorneoResponse,
+)
 from ..services.fixture.eliminacion_directa_generator import EliminacionDirectaGenerator    
 
 
@@ -131,6 +139,31 @@ def cargar_resultado_partido(db: Session, partido_id: int, data: CargarResultado
     partido.goles_local = data.goles_local
     partido.goles_visitante = data.goles_visitante
     partido.estado = EstadoPartidoTorneo.finalizado
+
+    for estadistica in data.estadisticas_jugadores:
+        if estadistica.goles == 0 and estadistica.amarillas == 0 and estadistica.rojas == 0:
+            continue
+
+        registro = db.query(EstadisticaJugadorPartidoTorneo).filter(
+            EstadisticaJugadorPartidoTorneo.partido_id == partido.id,
+            EstadisticaJugadorPartidoTorneo.usuario_id == estadistica.usuario_id,
+        ).first()
+
+        if not registro:
+            registro = EstadisticaJugadorPartidoTorneo(
+                torneo_id=partido.torneo_id,
+                partido_id=partido.id,
+                equipo_id=estadistica.equipo_id,
+                usuario_id=estadistica.usuario_id,
+                goles=0,
+                amarillas=0,
+                rojas=0,
+            )
+            db.add(registro)
+
+        registro.goles = estadistica.goles
+        registro.amarillas = estadistica.amarillas
+        registro.rojas = estadistica.rojas
     
     if partido.torneo.formato in [FormatoTorneo.fase_grupos, FormatoTorneo.todos_contra_todos]:
         actualizar_tabla_posiciones(db, partido)
@@ -148,6 +181,67 @@ def cargar_resultado_partido(db: Session, partido_id: int, data: CargarResultado
     db.commit()
     db.refresh(partido)
     return partido
+
+
+def obtener_estadisticas_torneo(db: Session, torneo_id: int) -> EstadisticasTorneoResponse:
+    torneo = db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    if not torneo:
+        raise HTTPException(status_code=404, detail="Torneo no encontrado")
+
+    registros = db.query(EstadisticaJugadorPartidoTorneo).filter(
+        EstadisticaJugadorPartidoTorneo.torneo_id == torneo_id
+    ).all()
+
+    if not registros:
+        return EstadisticasTorneoResponse()
+
+    jugadores = defaultdict(lambda: {"goles": 0, "amarillas": 0, "rojas": 0, "usuario": None, "equipo": None})
+    equipos = defaultdict(lambda: {"goles": 0, "amarillas": 0, "rojas": 0, "nombre": None})
+
+    for registro in registros:
+        jugador_key = (registro.usuario_id, registro.equipo_id)
+        jugador_bucket = jugadores[jugador_key]
+        jugador_bucket["goles"] += registro.goles
+        jugador_bucket["amarillas"] += registro.amarillas
+        jugador_bucket["rojas"] += registro.rojas
+        jugador_bucket["usuario"] = registro.usuario
+        jugador_bucket["equipo"] = registro.equipo
+
+        equipo_bucket = equipos[registro.equipo_id]
+        equipo_bucket["goles"] += registro.goles
+        equipo_bucket["amarillas"] += registro.amarillas
+        equipo_bucket["rojas"] += registro.rojas
+        equipo_bucket["nombre"] = registro.equipo.nombre
+
+    jugadores_response = [
+        EstadisticaJugadorTorneoResponse(
+            usuario_id=usuario_id,
+            usuario_nombre=data["usuario"].nombre if data["usuario"] else "",
+            usuario_apellido=data["usuario"].apellido if data["usuario"] else "",
+            equipo_id=equipo_id,
+            equipo_nombre=data["equipo"].nombre if data["equipo"] else "",
+            goles=data["goles"],
+            amarillas=data["amarillas"],
+            rojas=data["rojas"],
+        )
+        for (usuario_id, equipo_id), data in jugadores.items()
+    ]
+
+    equipos_response = [
+        EstadisticaEquipoTorneoResponse(
+            equipo_id=equipo_id,
+            equipo_nombre=data["nombre"] or "",
+            goles=data["goles"],
+            amarillas=data["amarillas"],
+            rojas=data["rojas"],
+        )
+        for equipo_id, data in equipos.items()
+    ]
+
+    jugadores_response.sort(key=lambda item: (item.goles, item.amarillas, item.rojas), reverse=True)
+    equipos_response.sort(key=lambda item: (item.goles, item.amarillas, item.rojas), reverse=True)
+
+    return EstadisticasTorneoResponse(jugadores=jugadores_response, equipos=equipos_response)
 
 
 

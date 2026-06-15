@@ -8,6 +8,7 @@ from backend.app.core.db import Base
 from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
 from backend.app.models.cancha_model import Cancha
+from backend.app.models.equipo_model import Equipo
 from backend.app.models.torneo_model import EstadoTorneo
 from backend.app.models.partido_torneo import PartidoTorneo
 from backend.app.models.tabla_posicion import TablaPosiciones
@@ -259,6 +260,65 @@ def test_fixture_sin_equipos_falla():
     response = client.post(f"/api/torneos/{torneo_id}/fixture")
 
     assert response.status_code == 400
+
+
+def test_estadisticas_de_jugadores_se_guardan_y_agregan():
+    torneo_id = crear_torneo_base(max_equipos=4, formato="eliminacion_directa")
+    inscribir_equipos(torneo_id, 4)
+
+    response = client.post(f"/api/torneos/{torneo_id}/fixture")
+    assert response.status_code == 200
+
+    partido = response.json()[0]
+
+    hoy = datetime.now().date().isoformat()
+    prog_resp = client.put(
+        f"/api/torneos/partidos/{partido['id']}",
+        json={"cancha_id": 1, "fecha": hoy, "horario": "10:30"},
+    )
+    assert prog_resp.status_code == 200
+
+    db = TestingSessionLocal()
+    equipo_local = db.query(Equipo).filter(Equipo.id == partido["equipo_local"]["id"]).first()
+    equipo_visitante = db.query(Equipo).filter(Equipo.id == partido["equipo_visitante"]["id"]).first()
+
+    res_resp = client.post(
+        f"/api/torneos/partidos/{partido['id']}/resultado",
+        json={
+            "goles_local": 2,
+            "goles_visitante": 1,
+            "estadisticas_jugadores": [
+                {
+                    "usuario_id": equipo_local.jugadores[0].id,
+                    "equipo_id": equipo_local.id,
+                    "goles": 2,
+                    "amarillas": 0,
+                    "rojas": 0,
+                },
+                {
+                    "usuario_id": equipo_visitante.jugadores[0].id,
+                    "equipo_id": equipo_visitante.id,
+                    "goles": 1,
+                    "amarillas": 1,
+                    "rojas": 1,
+                },
+            ],
+        },
+    )
+    assert res_resp.status_code == 200
+
+    stats_resp = client.get(f"/api/torneos/{torneo_id}/estadisticas")
+    assert stats_resp.status_code == 200
+
+    data = stats_resp.json()
+    assert len(data["jugadores"]) == 2
+    assert data["jugadores"][0]["goles"] == 2
+    assert data["jugadores"][1]["amarillas"] == 1
+    assert len(data["equipos"]) == 2
+    assert data["equipos"][0]["goles"] == 2
+    assert data["equipos"][1]["rojas"] == 1
+
+    db.close()
 
 def test_transicion_fase_grupos_a_playoffs():
     # 1. Crear torneo con 8 equipos, fase de grupos, playoffs desde semis
