@@ -7,10 +7,11 @@ from ..core.dependencies import get_current_user, get_db
 from ..schemas.torneo_schemas import MisTorneosResponse, TorneoCreate, TorneoResponse, TorneoListado, TorneoDetalleResponse
 from ..schemas.usuario_schemas import UsuarioRespuesta
 from ..models.usuario_model import Usuario
-from ..services import torneo_service
+from ..services import torneo_service, partido_torneo_service
 from ..repositories import torneo_repository
 from ..schemas.equipo_schemas import InscripcionEquipoCreate, EquipoResponse
-from ..schemas.partido_torneo_schemas import PartidoTorneoResponse
+from ..schemas.partido_torneo_schemas import PartidoTorneoResponse, ProgramarPartidoRequest, CargarResultadoRequest
+from ..models.partido_torneo import PartidoTorneo
  
 
 router = APIRouter(
@@ -94,3 +95,21 @@ def generar_fixture(
         torneo_id,
         current_user.id
     )
+
+@router.put("/partidos/{partido_id}", response_model=PartidoTorneoResponse)
+def programar_partido_torneo(
+    partido_id: int,
+    data: ProgramarPartidoRequest,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return partido_torneo_service.programar_partido(db, partido_id, data)
+
+@router.post("/partidos/{partido_id}/resultado", response_model=PartidoTorneoResponse)
+def cargar_resultado_partido_torneo(
+    partido_id: int,
+    data: CargarResultadoRequest,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    return partido_torneo_service.cargar_resultado_partido(db, partido_id, data)

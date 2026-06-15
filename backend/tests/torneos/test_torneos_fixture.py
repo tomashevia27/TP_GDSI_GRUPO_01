@@ -9,6 +9,8 @@ from backend.app.core.dependencies import get_db, get_current_user
 from backend.app.models.usuario_model import Usuario, RolUsuario
 from backend.app.models.cancha_model import Cancha
 from backend.app.models.torneo_model import EstadoTorneo
+from backend.app.models.partido_torneo import PartidoTorneo
+from backend.app.models.tabla_posicion import TablaPosiciones
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -176,12 +178,17 @@ def test_fixture_eliminacion_directa():
 
     data = response.json()
 
-    assert len(data) == 2
+    assert len(data) == 3
 
-    for p in data:
-        assert p["equipo_local"]
-        assert p["equipo_visitante"]
-        assert p["fase"] is not None
+    for p in data[:2]:
+        assert p["equipo_local"] is not None
+        assert p["equipo_visitante"] is not None
+        assert p["fase"] == "semifinal"
+
+    final = data[2]
+    assert final["equipo_local"] is None
+    assert final["equipo_visitante"] is None
+    assert final["fase"] == "final"
 
 
 def test_fixture_todos_contra_todos():
@@ -252,3 +259,151 @@ def test_fixture_sin_equipos_falla():
     response = client.post(f"/api/torneos/{torneo_id}/fixture")
 
     assert response.status_code == 400
+
+def test_transicion_fase_grupos_a_playoffs():
+    # 1. Crear torneo con 8 equipos, fase de grupos, playoffs desde semis
+    torneo_id = crear_torneo_base(max_equipos=8, formato="fase_grupos", fase_final="semis")
+    inscribir_equipos(torneo_id, 8)
+
+    # 2. Generar fixture inicial (12 partidos de fase de grupos)
+    response = client.post(f"/api/torneos/{torneo_id}/fixture")
+    assert response.status_code == 200
+    partidos_iniciales = response.json()
+    assert len(partidos_iniciales) == 12
+
+    hoy = datetime.now().date().isoformat()
+
+    for p in partidos_iniciales:
+        p_id = p["id"]
+        # Programar partido para hoy (para poder cargarle resultados)
+        prog_resp = client.put(
+            f"/api/torneos/partidos/{p_id}",
+            json={
+                "cancha_id": 1,
+                "fecha": hoy,
+                "horario": "10:30"
+            }
+        )
+        assert prog_resp.status_code == 200
+
+        loc_nombre = p["equipo_local"]["nombre"]
+        vis_nombre = p["equipo_visitante"]["nombre"]
+
+        # Extraemos el número del equipo de su nombre (ej. "Equipo 0" -> 0)
+        loc_num = int(loc_nombre.split(" ")[1])
+        vis_num = int(vis_nombre.split(" ")[1])
+
+        # El equipo con número menor siempre gana (orden determinista)
+        if loc_num < vis_num:
+            goles_loc = 2
+            goles_vis = 0
+        else:
+            goles_loc = 0
+            goles_vis = 2
+
+        res_resp = client.post(
+            f"/api/torneos/partidos/{p_id}/resultado",
+            json={
+                "goles_local": goles_loc,
+                "goles_visitante": goles_vis
+            }
+        )
+        assert res_resp.status_code == 200
+
+    # 3. Verificar que se generaron los partidos de playoffs (2 semis + 1 final)
+    db = TestingSessionLocal()
+
+    todos_los_partidos = db.query(PartidoTorneo).filter(PartidoTorneo.torneo_id == torneo_id).all()
+    assert len(todos_los_partidos) == 15, f"Esperado 15 partidos, encontrado {len(todos_los_partidos)}"  # 12 grupos + 2 semis + 1 final
+
+    semis = [p for p in todos_los_partidos if p.fase == "semifinal"]
+    assert len(semis) == 2
+
+    # Obtener los clasificados reales de cada grupo desde la tabla de posiciones
+    posiciones = db.query(TablaPosiciones).filter_by(torneo_id=torneo_id).all()
+    grupos_dict = {}
+    for pos in posiciones:
+        grupos_dict.setdefault(pos.grupo, []).append(pos)
+    for g in grupos_dict:
+        grupos_dict[g].sort(key=lambda x: (x.pts, x.dg, x.gf), reverse=True)
+
+    nombres_grupos = sorted(grupos_dict.keys())
+    assert len(nombres_grupos) == 2, f"Se esperaban 2 grupos, hay {len(nombres_grupos)}"
+    g1_nombre, g2_nombre = nombres_grupos[0], nombres_grupos[1]
+
+    lider_g1 = grupos_dict[g1_nombre][0].equipo
+    segundo_g1 = grupos_dict[g1_nombre][1].equipo
+    lider_g2 = grupos_dict[g2_nombre][0].equipo
+    segundo_g2 = grupos_dict[g2_nombre][1].equipo
+
+    # Cruces esperados: 1ro G1 vs 2do G2, y 1ro G2 vs 2do G1
+    cruce_esperado_1 = {lider_g1.nombre, segundo_g2.nombre}
+    cruce_esperado_2 = {lider_g2.nombre, segundo_g1.nombre}
+
+    semis_equipos = [{s.equipo_local.nombre, s.equipo_visitante.nombre} for s in semis]
+    assert cruce_esperado_1 in semis_equipos, f"Cruce {cruce_esperado_1} no encontrado en {semis_equipos}"
+    assert cruce_esperado_2 in semis_equipos, f"Cruce {cruce_esperado_2} no encontrado en {semis_equipos}"
+
+    # 4. Programar y cargar resultado de las semifinales
+    # Ganador = equipo con número menor
+    for semi in semis:
+        prog = client.put(
+            f"/api/torneos/partidos/{semi.id}",
+            json={"cancha_id": 1, "fecha": hoy, "horario": "11:00"}
+        )
+        assert prog.status_code == 200
+
+        loc_num = int(semi.equipo_local.nombre.split(" ")[1])
+        vis_num = int(semi.equipo_visitante.nombre.split(" ")[1])
+        gol_loc = 2 if loc_num < vis_num else 0
+        gol_vis = 0 if loc_num < vis_num else 2
+
+        res = client.post(
+            f"/api/torneos/partidos/{semi.id}/resultado",
+            json={"goles_local": gol_loc, "goles_visitante": gol_vis}
+        )
+        assert res.status_code == 200
+
+    # 5. Verificar que la final tiene los equipos correctos (ganadores de cada semi)
+    db.expire_all()
+    final = db.query(PartidoTorneo).filter(
+        PartidoTorneo.torneo_id == torneo_id,
+        PartidoTorneo.fase == "final"
+    ).first()
+
+    assert final is not None
+    assert final.equipo_local is not None
+    assert final.equipo_visitante is not None
+
+    # Los finalistas deben ser los líderes de cada grupo (número menor gana siempre)
+    lider_g1_num = int(lider_g1.nombre.split(" ")[1])
+    lider_g2_num = int(lider_g2.nombre.split(" ")[1])
+    segundo_g1_num = int(segundo_g1.nombre.split(" ")[1])
+    segundo_g2_num = int(segundo_g2.nombre.split(" ")[1])
+
+    ganador_semi_1 = lider_g1 if lider_g1_num < segundo_g2_num else segundo_g2
+    ganador_semi_2 = lider_g2 if lider_g2_num < segundo_g1_num else segundo_g1
+
+    final_nombres = {final.equipo_local.nombre, final.equipo_visitante.nombre}
+    assert ganador_semi_1.nombre in final_nombres, f"{ganador_semi_1.nombre} debería estar en la final"
+    assert ganador_semi_2.nombre in final_nombres, f"{ganador_semi_2.nombre} debería estar en la final"
+
+    # 6. Jugar la final
+    prog_f = client.put(
+        f"/api/torneos/partidos/{final.id}",
+        json={"cancha_id": 1, "fecha": hoy, "horario": "12:00"}
+    )
+    assert prog_f.status_code == 200
+
+    loc_num_f = int(final.equipo_local.nombre.split(" ")[1])
+    vis_num_f = int(final.equipo_visitante.nombre.split(" ")[1])
+    gol_loc_f = 1 if loc_num_f < vis_num_f else 0
+    gol_vis_f = 0 if loc_num_f < vis_num_f else 1
+
+    res_f = client.post(
+        f"/api/torneos/partidos/{final.id}/resultado",
+        json={"goles_local": gol_loc_f, "goles_visitante": gol_vis_f}
+    )
+    assert res_f.status_code == 200
+
+    db.close()
