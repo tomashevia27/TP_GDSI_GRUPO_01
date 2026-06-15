@@ -42,13 +42,13 @@ class PartidoTorneo(Base):
     equipo_local_id = Column(
         Integer,
         ForeignKey("equipos.id"),
-        nullable=False
+        nullable=True
     )
 
     equipo_visitante_id = Column(
         Integer,
         ForeignKey("equipos.id"),
-        nullable=False
+        nullable=True
     )
 
     cancha_id = Column(
@@ -84,4 +84,20 @@ class PartidoTorneo(Base):
         foreign_keys=[equipo_visitante_id]
     )
 
+    partido_padre_local_id = Column(
+        Integer, ForeignKey("partidos_torneo.id"), nullable=True
+    )
+    partido_padre_visitante_id = Column(
+        Integer, ForeignKey("partidos_torneo.id"), nullable=True
+    )
+    padre_local = relationship(
+        "PartidoTorneo", 
+        foreign_keys=[partido_padre_local_id], 
+        remote_side=[id]
+    )
+    padre_visitante = relationship(
+        "PartidoTorneo", 
+        foreign_keys=[partido_padre_visitante_id], 
+        remote_side=[id]
+    )
     cancha = relationship("Cancha")
