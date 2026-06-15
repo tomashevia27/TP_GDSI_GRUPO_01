@@ -16,6 +16,7 @@ from ..schemas.partido_torneo_schemas import (
     CargarResultadoRequest,
     EstadisticasTorneoResponse,
 )
+from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
 from ..models.partido_torneo import PartidoTorneo
  
 
@@ -126,3 +127,28 @@ def obtener_estadisticas_torneo(
     db: Session = Depends(get_db),
 ):
     return partido_torneo_service.obtener_estadisticas_torneo(db, torneo_id)
+
+
+@router.get("/{torneo_id}/top/goleadores", response_model=list[TopJugadorResponse])
+def obtener_top_goleadores(torneo_id: int, limit: int = 10, db: Session = Depends(get_db)):
+    return partido_torneo_service.top_jugadores_por_goles(db, torneo_id, limit)
+
+
+@router.get("/{torneo_id}/top/amarillas", response_model=list[TopJugadorResponse])
+def obtener_top_amarillas(torneo_id: int, limit: int = 10, db: Session = Depends(get_db)):
+    return partido_torneo_service.top_jugadores_por_amarillas(db, torneo_id, limit)
+
+
+@router.get("/{torneo_id}/top/rojas", response_model=list[TopJugadorResponse])
+def obtener_top_rojas(torneo_id: int, limit: int = 10, db: Session = Depends(get_db)):
+    return partido_torneo_service.top_jugadores_por_rojas(db, torneo_id, limit)
+
+
+@router.get("/{torneo_id}/tabla-posiciones", response_model=list[TablaPosicionResponse])
+def obtener_tabla_posiciones(torneo_id: int, db: Session = Depends(get_db)):
+    return partido_torneo_service.tabla_posiciones_torneo(db, torneo_id)
+
+
+@router.get("/{torneo_id}/jugador/{usuario_id}/estadisticas", response_model=list["PlayerStatPerMatchResponse"])
+def obtener_estadisticas_jugador_en_torneo(torneo_id: int, usuario_id: int, db: Session = Depends(get_db)):
+    return partido_torneo_service.estadisticas_jugador_por_torneo(db, torneo_id, usuario_id)

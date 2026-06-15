@@ -84,3 +84,41 @@ class EstadisticasTorneoResponse(BaseModel):
     equipos: List[EstadisticaEquipoTorneoResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class TopJugadorResponse(BaseModel):
+    usuario_id: int
+    usuario_nombre: str
+    usuario_apellido: str
+    equipo_id: int
+    equipo_nombre: str
+    valor: int
+
+
+class TablaPosicionResponse(BaseModel):
+    equipo_id: int
+    equipo_nombre: str
+    pts: int
+    pj: int
+    pg: int
+    pe: int
+    pp: int
+    gf: int
+    gc: int
+    dg: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class PlayerStatPerMatchResponse(BaseModel):
+    partido_id: int
+    fecha: Optional[date] = None
+    equipo_id: int
+    equipo_nombre: str
+    equipo_oponente_id: Optional[int] = None
+    equipo_oponente_nombre: Optional[str] = None
+    goles: int
+    amarillas: int
+    rojas: int
+
+    model_config = ConfigDict(from_attributes=True)

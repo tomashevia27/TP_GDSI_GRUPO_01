@@ -7,6 +7,7 @@ from ..models.tabla_posicion import TablaPosiciones
 from ..models.cancha_model import Cancha
 from ..models.torneo_model import Torneo, FormatoTorneo
 from ..models.partido_torneo import EstadoPartidoTorneo, PartidoTorneo, FaseTorneo
+from ..models.partido_torneo import PartidoTorneo
 from ..models.estadistica_jugador_partido_torneo import EstadisticaJugadorPartidoTorneo
 from ..repositories import cancha_repository, partido_repository
 from ..schemas.partido_torneo_schemas import (
@@ -16,6 +17,7 @@ from ..schemas.partido_torneo_schemas import (
     EstadisticaJugadorTorneoResponse,
     EstadisticaEquipoTorneoResponse,
 )
+from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
 from ..services.fixture.eliminacion_directa_generator import EliminacionDirectaGenerator    
 
 
@@ -242,6 +244,138 @@ def obtener_estadisticas_torneo(db: Session, torneo_id: int) -> EstadisticasTorn
     equipos_response.sort(key=lambda item: (item.goles, item.amarillas, item.rojas), reverse=True)
 
     return EstadisticasTorneoResponse(jugadores=jugadores_response, equipos=equipos_response)
+
+
+def top_jugadores_por_goles(db: Session, torneo_id: int, limit: int = 10) -> list[TopJugadorResponse]:
+    registros = db.query(EstadisticaJugadorPartidoTorneo).filter(
+        EstadisticaJugadorPartidoTorneo.torneo_id == torneo_id
+    ).all()
+
+    acumulado = {}
+    for r in registros:
+        key = (r.usuario_id, r.equipo_id)
+        acumulado.setdefault(key, {"usuario": r.usuario, "equipo": r.equipo, "valor": 0})
+        acumulado[key]["valor"] += r.goles
+
+    items = [TopJugadorResponse(
+        usuario_id=k[0],
+        usuario_nombre=v["usuario"].nombre if v["usuario"] else "",
+        usuario_apellido=v["usuario"].apellido if v["usuario"] else "",
+        equipo_id=k[1],
+        equipo_nombre=v["equipo"].nombre if v["equipo"] else "",
+        valor=v["valor"],
+    ) for k, v in acumulado.items()]
+
+    items.sort(key=lambda x: x.valor, reverse=True)
+    return items[:limit]
+
+
+def top_jugadores_por_amarillas(db: Session, torneo_id: int, limit: int = 10) -> list[TopJugadorResponse]:
+    registros = db.query(EstadisticaJugadorPartidoTorneo).filter(
+        EstadisticaJugadorPartidoTorneo.torneo_id == torneo_id
+    ).all()
+
+    acumulado = {}
+    for r in registros:
+        key = (r.usuario_id, r.equipo_id)
+        acumulado.setdefault(key, {"usuario": r.usuario, "equipo": r.equipo, "valor": 0})
+        acumulado[key]["valor"] += r.amarillas
+
+    items = [TopJugadorResponse(
+        usuario_id=k[0],
+        usuario_nombre=v["usuario"].nombre if v["usuario"] else "",
+        usuario_apellido=v["usuario"].apellido if v["usuario"] else "",
+        equipo_id=k[1],
+        equipo_nombre=v["equipo"].nombre if v["equipo"] else "",
+        valor=v["valor"],
+    ) for k, v in acumulado.items()]
+
+    items.sort(key=lambda x: x.valor, reverse=True)
+    return items[:limit]
+
+
+def top_jugadores_por_rojas(db: Session, torneo_id: int, limit: int = 10) -> list[TopJugadorResponse]:
+    registros = db.query(EstadisticaJugadorPartidoTorneo).filter(
+        EstadisticaJugadorPartidoTorneo.torneo_id == torneo_id
+    ).all()
+
+    acumulado = {}
+    for r in registros:
+        key = (r.usuario_id, r.equipo_id)
+        acumulado.setdefault(key, {"usuario": r.usuario, "equipo": r.equipo, "valor": 0})
+        acumulado[key]["valor"] += r.rojas
+
+    items = [TopJugadorResponse(
+        usuario_id=k[0],
+        usuario_nombre=v["usuario"].nombre if v["usuario"] else "",
+        usuario_apellido=v["usuario"].apellido if v["usuario"] else "",
+        equipo_id=k[1],
+        equipo_nombre=v["equipo"].nombre if v["equipo"] else "",
+        valor=v["valor"],
+    ) for k, v in acumulado.items()]
+
+    items.sort(key=lambda x: x.valor, reverse=True)
+    return items[:limit]
+
+
+def tabla_posiciones_torneo(db: Session, torneo_id: int) -> list[TablaPosicionResponse]:
+    posiciones = db.query(TablaPosiciones).filter(TablaPosiciones.torneo_id == torneo_id).all()
+    if not posiciones:
+        return []
+
+    tabla = []
+    for pos in posiciones:
+        tabla.append(TablaPosicionResponse(
+            equipo_id=pos.equipo.id,
+            equipo_nombre=pos.equipo.nombre,
+            pts=pos.pts,
+            pj=pos.pj,
+            pg=pos.pg,
+            pe=pos.pe,
+            pp=pos.pp,
+            gf=pos.gf,
+            gc=pos.gc,
+            dg=pos.dg,
+        ))
+
+    tabla.sort(key=lambda x: (x.pts, x.dg, x.gf, -x.gc), reverse=True)
+    return tabla
+
+
+def estadisticas_jugador_por_torneo(db: Session, torneo_id: int, usuario_id: int) -> list:
+    registros = db.query(EstadisticaJugadorPartidoTorneo).filter(
+        EstadisticaJugadorPartidoTorneo.torneo_id == torneo_id,
+        EstadisticaJugadorPartidoTorneo.usuario_id == usuario_id,
+    ).all()
+
+    resultado = []
+    for r in registros:
+        partido = db.query(PartidoTorneo).filter(PartidoTorneo.id == r.partido_id).first()
+        equipo_oponente_id = None
+        equipo_oponente_nombre = None
+        if partido:
+            if partido.equipo_local_id == r.equipo_id:
+                equipo_oponente_id = partido.equipo_visitante_id
+                equipo_oponente_nombre = partido.equipo_visitante.nombre if partido.equipo_visitante else None
+            else:
+                equipo_oponente_id = partido.equipo_local_id
+                equipo_oponente_nombre = partido.equipo_local.nombre if partido.equipo_local else None
+
+        resultado.append({
+            "partido_id": r.partido_id,
+            "fecha": partido.fecha if partido else None,
+            "equipo_id": r.equipo_id,
+            "equipo_nombre": r.equipo.nombre if r.equipo else "",
+            "equipo_oponente_id": equipo_oponente_id,
+            "equipo_oponente_nombre": equipo_oponente_nombre,
+            "goles": r.goles,
+            "amarillas": r.amarillas,
+            "rojas": r.rojas,
+        })
+
+    # order by partido fecha asc
+    resultado.sort(key=lambda x: (x["fecha"] or date.min))
+    return resultado
 
 
 
