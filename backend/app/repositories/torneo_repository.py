@@ -1,5 +1,5 @@
-from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy import or_, select, exists
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 
 from ..models.equipo_model import Equipo
@@ -13,8 +13,25 @@ def crear_torneo(db: Session, torneo: Torneo) -> Torneo:
     db.refresh(torneo)
     return torneo
 
+def actualizar_torneo(db: Session, torneo: Torneo, update_data: dict) -> Torneo:
+    for key, value in update_data.items():
+        setattr(torneo, key, value)
+    db.commit()
+    db.refresh(torneo)
+    return torneo
+
 def obtener_por_id(db: Session, torneo_id: int) -> Optional[Torneo]:
-    return db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    return db.query(Torneo).options(
+        joinedload(Torneo.organizador),
+        joinedload(Torneo.equipos_inscriptos).joinedload(Equipo.jugadores)
+    ).filter(Torneo.id == torneo_id).first()
+
+def verificar_jugadores_inscriptos(db: Session, torneo_id: int, jugador_ids: List[int]) -> List[Usuario]:
+    """Devuelve los jugadores que ya están inscriptos en algún equipo del torneo especificado."""
+    return db.query(Usuario).join(Equipo.jugadores).filter(
+        Equipo.torneo_id == torneo_id,
+        Usuario.id.in_(jugador_ids)
+    ).all()
 
 def obtener_todos(db: Session, estado: Optional[EstadoTorneo] = None) -> List[Torneo]:
     query = db.query(Torneo)

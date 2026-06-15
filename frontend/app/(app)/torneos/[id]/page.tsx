@@ -286,22 +286,42 @@ export default function TorneoDetallePage() {
 
                         {/* Acciones de Organizador */}
                         {userId && torneo.organizador_id === Number(userId) && torneo.estado !== "Cancelado" && (
-                            <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 mt-6">
-                                <h3 className="font-bold text-destructive mb-2 flex items-center gap-2">
-                                    <XCircle className="w-5 h-5" />
-                                    Dar de baja
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
-                                </p>
-                                <Button
-                                    variant="destructive"
-                                    className="w-full"
-                                    onClick={handleCancelar}
-                                    disabled={isCancelling}
-                                >
-                                    {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
-                                </Button>
+                            <div className="bg-card rounded-xl border border-border shadow-sm p-5 mt-6 flex flex-col gap-5">
+                                <div>
+                                    <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                                        <Shield className="w-5 h-5 text-primary" />
+                                        Administración
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Opciones de gestión del torneo.
+                                    </p>
+                                </div>
+
+                                {estaAbierto && (
+                                    <Link href={`/torneos/${torneo.id}/editar`} className="block w-full">
+                                        <Button variant="outline" className="w-full">
+                                            Editar Configuración
+                                        </Button>
+                                    </Link>
+                                )}
+
+                                <div className="pt-4 border-t border-border">
+                                    <h4 className="font-bold text-destructive mb-1.5 flex items-center gap-1.5 text-sm">
+                                        <XCircle className="w-4 h-4" />
+                                        Zona de peligro
+                                    </h4>
+                                    <p className="text-[13px] text-muted-foreground mb-3 leading-relaxed">
+                                        Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
+                                    </p>
+                                    <Button
+                                        variant="destructive"
+                                        className="w-full"
+                                        onClick={handleCancelar}
+                                        disabled={isCancelling}
+                                    >
+                                        {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
+                                    </Button>
+                                </div>
                             </div>
                         )}
                     </div>

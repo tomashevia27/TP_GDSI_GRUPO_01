@@ -69,10 +69,13 @@ def test_crear_torneo_exitoso():
     datos = {
         "nombre": "Torneo Relámpago",
         "fecha_inicio": fecha_futura,
-        "formato": "eliminacion_directa",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
+        "formato": "eliminacion_directa",
+        "zona": "CABA",
+        "dias_operativos": 31,
+        "franja_horaria": "09:00-11:00",
         "max_equipos": 8,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 5000.0,
         "descripcion": "Torneo de prueba",
         "reglas": "Sin reglas"
@@ -91,26 +94,33 @@ def test_crear_torneo_fecha_pasado():
     datos = {
         "nombre": "Torneo Pasado",
         "fecha_inicio": fecha_pasada,
-        "formato": "fase_grupos",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
-        "max_equipos": 4,
+        "formato": "fase_grupos",
+        "fase_final": "semis",
+        "zona": "CABA",
+        "dias_operativos": 31,
+        "franja_horaria": "09:00-11:00",
+        "max_equipos": 8,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 1000.0
     }
     
     response = client.post("/api/torneos/", json=datos)
-    assert response.status_code == 422
-    assert "pasado" in response.json()["detail"][0]["msg"].lower()
+    assert response.status_code == 400
+    assert "pasado" in response.json()["detail"].lower()
 
 def test_crear_torneo_max_equipos_invalido():
     fecha_futura = (datetime.now() + timedelta(days=10)).isoformat()
     datos = {
         "nombre": "Torneo Chico",
         "fecha_inicio": fecha_futura,
-        "formato": "todos_contra_todos",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
+        "formato": "todos_contra_todos",
+        "zona": "CABA",
+        "dias_operativos": 31,
+        "franja_horaria": "09:00-11:00",
         "max_equipos": 1,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 0
     }
     

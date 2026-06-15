@@ -786,6 +786,8 @@ export interface TorneoCreateData {
   reglas?: string
 }
 
+export type TorneoUpdateData = Partial<TorneoCreateData>
+
 export interface EquipoInscripto {
   id: number
   nombre_equipo: string
@@ -800,21 +802,39 @@ export interface TorneoData {
   fecha_fin: string
   formato: string
   zona: string
+  dias_operativos: number
   franja_horaria: string
-  lugar: string
-  max_equipos: number
   min_integrantes_por_equipo: number
+  max_equipos: number
   costo_inscripcion: number
+  ida_y_vuelta: boolean
+  fase_final?: string | null
   descripcion?: string
   reglas?: string
   estado: string
   organizador_id: number
   equipos_inscriptos: number
-  ida_y_vuelta: boolean
-  fase_final?: string | null
   equipos?: EquipoInscripto[]
-  rol_usuario?: "Organizador" | "Jugador"
-  cupos_restantes?: number
+  lugar: string
+}
+
+export async function editarTorneo(torneoId: string | number, torneoData: TorneoUpdateData): Promise<TorneoData> {
+  const response = await fetch(`${API_URL}/torneos/${torneoId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(torneoData),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error("Revisá los datos ingresados.")
+    }
+    throw new Error(data.detail || "Error al editar el torneo")
+  }
+  return data
 }
 
 export interface TorneoMisActividades {

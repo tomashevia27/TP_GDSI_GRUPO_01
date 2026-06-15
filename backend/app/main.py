@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core.exceptions import DomainRuleError, DomainPermissionError
+from .core.exceptions import DomainRuleError, DomainPermissionError, DomainNotFoundError
 
 from .routers import auth, canchas, users, partidos, notificaciones, reservas, torneos
 from .core.db import engine, Base
@@ -39,6 +39,14 @@ async def domain_permission_exception_handler(request: Request, exc: DomainPermi
         status_code=403,
         content={"detail": str(exc)},
     )
+
+@app.exception_handler(DomainNotFoundError)
+async def domain_not_found_exception_handler(request: Request, exc: DomainNotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": str(exc)},
+    )
+
 
 # Incluir routers
 app.include_router(auth.router)
