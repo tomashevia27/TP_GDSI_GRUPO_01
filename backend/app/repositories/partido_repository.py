@@ -1,7 +1,7 @@
 from datetime import datetime, date, timedelta, timezone, time
 from sqlalchemy.orm import Session, joinedload
 
-from backend.app.models.partido_torneo import PartidoTorneo
+from ..models.partido_torneo import PartidoTorneo
 from ..models.partido_model import Partido
 from ..models.usuario_model import Usuario
 from sqlalchemy import or_, and_, func
@@ -93,12 +93,14 @@ def verificar_disponibilidad_cancha(
     fecha: date, 
     horario: time, 
     duracion_turno: int = 60, 
-    excluir_id: int = None,
-    es_partido_torneo: bool = False
+    excluir_partido_id: int = None,
+    es_partido_torneo: bool = False,
+    **kwargs
 ) -> bool:
     
+    duracion = kwargs.get("duracion", duracion_turno)
     nuevo_inicio = datetime.combine(fecha, horario)
-    nuevo_fin = nuevo_inicio + timedelta(minutes=duracion_turno)
+    nuevo_fin = nuevo_inicio + timedelta(minutes=duracion)
 
     query_casuales = db.query(Partido).filter(
         Partido.cancha_id == cancha_id,
@@ -106,8 +108,8 @@ def verificar_disponibilidad_cancha(
         Partido.estado.in_(["confirmado", "pendiente", "bloqueado"])
     )
 
-    if excluir_id is not None and not es_partido_torneo:
-        query_casuales = query_casuales.filter(Partido.id != excluir_id)
+    if excluir_partido_id is not None and not es_partido_torneo:
+        query_casuales = query_casuales.filter(Partido.id != excluir_partido_id)
     
     query_torneos = db.query(PartidoTorneo).filter(
         PartidoTorneo.cancha_id == cancha_id,
@@ -115,14 +117,14 @@ def verificar_disponibilidad_cancha(
         PartidoTorneo.estado == "pendiente"
     )
 
-    if excluir_id is not None and es_partido_torneo:
-        query_torneos = query_torneos.filter(PartidoTorneo.id != excluir_id)
+    if excluir_partido_id is not None and es_partido_torneo:
+        query_torneos = query_torneos.filter(PartidoTorneo.id != excluir_partido_id)
 
     todos_los_eventos = list(query_casuales.all()) + list(query_torneos.all())
 
     for evento in todos_los_eventos:
         e_inicio = datetime.combine(evento.fecha, evento.horario)
-        e_fin = e_inicio + timedelta(minutes=duracion_turno)
+        e_fin = e_inicio + timedelta(minutes=duracion)
         
         if nuevo_inicio < e_fin and nuevo_fin > e_inicio:
             return False
