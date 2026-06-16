@@ -1147,7 +1147,34 @@ export async function getTablaPosiciones(torneoId: number): Promise<TablaPosicio
   if (!response.ok) throw new Error(data.detail || "Error al cargar tabla de posiciones")
   return data
 }
+
+export interface ProgramarPartidoData {
+  cancha_id: number
+  fecha: string   // "YYYY-MM-DD"
+  horario: string // "HH:MM:SS"
+}
+
+export async function programarPartido(partidoId: number, payload: ProgramarPartidoData): Promise<PartidoTorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/partidos/${partidoId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(payload),
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+      throw new Error(data.detail[0]?.msg || "Error de validación")
+    }
+    throw new Error(data.detail || "Error al programar el partido")
+  }
+  return data
+}
+
 /* 
+
 // ─────────────────────────────────────────────
 // US: Torneos (MOCK PARA FRONTEND ACTUALIZADO)
 // ─────────────────────────────────────────────
