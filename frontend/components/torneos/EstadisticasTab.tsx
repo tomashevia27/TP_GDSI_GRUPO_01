@@ -1,18 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TorneoData, getTopJugadores, TopJugadorData } from "@/hooks/use-api"
+import { TorneoData, getTopJugadores, TopJugadorData, getVallasInvictas, VallaInvictaData } from "@/hooks/use-api"
 import { Loader2, Goal, ShieldCheck } from "lucide-react"
 
 interface Props {
   torneo: TorneoData
-}
-
-// Tipo simulado para vallas invictas (back aún no implementado)
-interface VallaInvictaData {
-  equipo_id: number
-  equipo_nombre: string
-  partidos_invicto: number
 }
 
 export function EstadisticasTab({ torneo }: Props) {
@@ -23,10 +16,12 @@ export function EstadisticasTab({ torneo }: Props) {
   useEffect(() => {
     const loadStats = async () => {
       try {
-        const g = await getTopJugadores(torneo.id, "goleadores", 50).catch(() => [])
+        const [g, v] = await Promise.all([
+          getTopJugadores(torneo.id, "goleadores", 50).catch(() => []),
+          getVallasInvictas(torneo.id, 50).catch(() => []),
+        ])
         setGoleadores(g)
-        // TODO: cuando el back implemente el endpoint, reemplazar esto:
-        setVallas([])
+        setVallas(v)
       } finally {
         setIsLoading(false)
       }

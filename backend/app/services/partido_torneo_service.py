@@ -17,7 +17,7 @@ from ..schemas.partido_torneo_schemas import (
     EstadisticaJugadorTorneoResponse,
     EstadisticaEquipoTorneoResponse,
 )
-from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
+from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse, VallaInvictaResponse
 from ..services.fixture.eliminacion_directa_generator import EliminacionDirectaGenerator    
 
 def obtener_partidos_torneo(db: Session, torneo_id: int) -> list[PartidoTorneo]:
@@ -444,3 +444,34 @@ def actualizar_tabla_posiciones(db: Session, partido: PartidoTorneo):
         else:
             pos.pp += 1
     
+
+def top_equipos_vallas_invictas(db: Session, torneo_id: int, limit: int = 10) -> list[VallaInvictaResponse]:
+    torneo = db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    if not torneo:
+        return []
+
+    partidos = db.query(PartidoTorneo).filter(
+        PartidoTorneo.torneo_id == torneo_id,
+        PartidoTorneo.estado == EstadoPartidoTorneo.finalizado,
+    ).all()
+
+    # invictos por equipo_id
+    invictos: dict[int, int] = {}
+    for p in partidos:
+        if p.goles_visitante == 0 and p.equipo_local_id:
+            invictos[p.equipo_local_id] = invictos.get(p.equipo_local_id, 0) + 1
+        if p.goles_local == 0 and p.equipo_visitante_id:
+            invictos[p.equipo_visitante_id] = invictos.get(p.equipo_visitante_id, 0) + 1
+
+    # todos los equipos aunque tengan 0
+    resultado = [
+        VallaInvictaResponse(
+            equipo_id=equipo.id,
+            equipo_nombre=equipo.nombre,
+            partidos_invicto=invictos.get(equipo.id, 0),
+        )
+        for equipo in torneo.equipos_inscriptos
+    ]
+
+    resultado.sort(key=lambda x: x.partidos_invicto, reverse=True)
+    return resultado[:limit]

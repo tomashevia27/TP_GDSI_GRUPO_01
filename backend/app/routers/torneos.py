@@ -16,7 +16,7 @@ from ..schemas.partido_torneo_schemas import (
     CargarResultadoRequest,
     EstadisticasTorneoResponse,
 )
-from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
+from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse, VallaInvictaResponse
 from ..models.partido_torneo import PartidoTorneo
  
 
@@ -152,6 +152,10 @@ def obtener_top_amarillas(torneo_id: int, limit: int = 10, db: Session = Depends
 @router.get("/{torneo_id}/top/rojas", response_model=list[TopJugadorResponse])
 def obtener_top_rojas(torneo_id: int, limit: int = 10, db: Session = Depends(get_db)):
     return partido_torneo_service.top_jugadores_por_rojas(db, torneo_id, limit)
+
+@router.get("/{torneo_id}/top/vallas-invictas", response_model=list[VallaInvictaResponse])
+def obtener_vallas_invictas(torneo_id: int, limit: int = 10, db: Session = Depends(get_db)):
+    return partido_torneo_service.top_equipos_vallas_invictas(db, torneo_id, limit)
 
 
 @router.get("/{torneo_id}/tabla-posiciones", response_model=list[TablaPosicionResponse])

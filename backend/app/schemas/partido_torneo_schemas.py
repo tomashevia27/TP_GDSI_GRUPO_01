@@ -114,6 +114,12 @@ class TablaPosicionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class VallaInvictaResponse(BaseModel):
+    equipo_id: int
+    equipo_nombre: str
+    partidos_invicto: int
+
+
 class PlayerStatPerMatchResponse(BaseModel):
     partido_id: int
     fecha: Optional[date] = None

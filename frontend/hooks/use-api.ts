@@ -1148,6 +1148,21 @@ export async function getTablaPosiciones(torneoId: number): Promise<TablaPosicio
   return data
 }
 
+export interface VallaInvictaData {
+  equipo_id: number
+  equipo_nombre: string
+  partidos_invicto: number
+}
+
+export async function getVallasInvictas(torneoId: number, limit: number = 10): Promise<VallaInvictaData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/top/vallas-invictas?limit=${limit}`, {
+    method: "GET",
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar vallas invictas")
+  return data
+}
+
 export interface ProgramarPartidoData {
   cancha_id: number
   fecha: string   // "YYYY-MM-DD"
