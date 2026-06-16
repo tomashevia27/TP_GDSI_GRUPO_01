@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, time
 
-from .equipo_schemas import EquipoResponse
+from .equipo_schemas import EquipoResponse, EquipoDetalleResponse
 from ..models.partido_torneo import (
     EstadoPartidoTorneo,
     FaseTorneo,
@@ -13,8 +13,8 @@ from ..models.partido_torneo import (
 class PartidoTorneoResponse(BaseModel):
     id: int
 
-    equipo_local: Optional[EquipoResponse] = None
-    equipo_visitante: Optional[EquipoResponse] = None
+    equipo_local: Optional[EquipoDetalleResponse] = None
+    equipo_visitante: Optional[EquipoDetalleResponse] = None
 
     goles_local: Optional[int] = None
     goles_visitante: Optional[int] = None
@@ -23,6 +23,10 @@ class PartidoTorneoResponse(BaseModel):
     grupo: Optional[str] = None
 
     estado: EstadoPartidoTorneo
+
+    fecha: Optional[date] = None
+    horario: Optional[time] = None
+    cancha_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 

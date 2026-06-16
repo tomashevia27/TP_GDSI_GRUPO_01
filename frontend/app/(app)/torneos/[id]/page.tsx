@@ -5,19 +5,13 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getTorneo, cancelarTorneo, TorneoData } from "@/hooks/use-api"
+import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FixtureTab } from "@/components/torneos/FixtureTab"
 import { EstadisticasTab } from "@/components/torneos/EstadisticasTab"
 import Swal from "sweetalert2"
 
-// Interfaz para el tipado de los jugadores parseados
-interface JugadorObjeto {
-    nombre: string;
-    email?: string;
-    dni?: string;
-}
 
 export default function TorneoDetallePage() {
     const { id } = useParams()
@@ -106,11 +100,26 @@ export default function TorneoDetallePage() {
         }
     }
 
-    const renderizarJugadores = (jugadoresRaw: string) => {
+    const renderizarJugadores = (jugadoresRaw: string | JugadorSimple[]) => {
+        // Si ya es un array de objetos (viene del backend con jugadores cargados)
+        if (Array.isArray(jugadoresRaw)) {
+            if (jugadoresRaw.length === 0) return null
+            return (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {jugadoresRaw.map((j, i) => (
+                        <span
+                            key={i}
+                            className="inline-block bg-muted text-muted-foreground text-[11px] font-medium px-2 py-0.5 rounded-md border border-border/60"
+                        >
+                            {j.nombre} {j.apellido}
+                        </span>
+                    ))}
+                </div>
+            )
+        }
+        // Si viene como string JSON
         try {
-            // parseador formato JSON array
-            const lista: JugadorObjeto[] = JSON.parse(jugadoresRaw)
-
+            const lista: { nombre: string; email?: string; dni?: string }[] = JSON.parse(jugadoresRaw)
             if (Array.isArray(lista)) {
                 return (
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -128,7 +137,6 @@ export default function TorneoDetallePage() {
             }
         } catch (e) {
         }
-
         return <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{jugadoresRaw}</p>
     }
 

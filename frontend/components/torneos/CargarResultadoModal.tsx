@@ -29,7 +29,8 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
   const [golesLocal, setGolesLocal] = useState<number | "">("")
   const [golesVisitante, setGolesVisitante] = useState<number | "">("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [stats, setStats] = useState<Record<number, PlayerStats>>({})
+  // Clave compuesta "equipoId_usuarioId" para distinguir stats por equipo
+  const [stats, setStats] = useState<Record<string, PlayerStats>>({})
 
   // Limpiar estados cuando se abre un nuevo partido
   useEffect(() => {
@@ -40,12 +41,15 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
     }
   }, [isOpen, partido])
 
+  const statKey = (equipoId: number, usuarioId: number) => `${equipoId}_${usuarioId}`
+
   const updateStat = (usuario_id: number, equipo_id: number, field: keyof PlayerStats, value: number) => {
     setStats(prev => {
-      const current = prev[usuario_id] || { usuario_id, equipo_id, goles: 0, amarillas: 0, rojas: 0 };
+      const key = statKey(equipo_id, usuario_id)
+      const current = prev[key] || { usuario_id, equipo_id, goles: 0, amarillas: 0, rojas: 0 };
       return {
         ...prev,
-        [usuario_id]: { ...current, [field]: value }
+        [key]: { ...current, [field]: value }
       }
     })
   }
@@ -53,18 +57,22 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!partido || golesLocal === "" || golesVisitante === "") return
+    if (!partido.equipo_local || !partido.equipo_visitante) return
 
     if (Number(golesLocal) < 0 || Number(golesVisitante) < 0) {
       Swal.fire("Error", "Los goles no pueden ser negativos", "error")
       return
     }
 
+    const localId = partido.equipo_local.id
+    const visitanteId = partido.equipo_visitante.id
+
     const golesLocalAsignados = Object.values(stats)
-      .filter(s => s.equipo_id === partido.equipo_local.id)
+      .filter(s => s.equipo_id === localId)
       .reduce((acc, s) => acc + s.goles, 0);
 
     const golesVisitanteAsignados = Object.values(stats)
-      .filter(s => s.equipo_id === partido.equipo_visitante.id)
+      .filter(s => s.equipo_id === visitanteId)
       .reduce((acc, s) => acc + s.goles, 0);
 
     if (golesLocalAsignados !== Number(golesLocal)) {
@@ -103,9 +111,11 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
   }
 
   const renderPlayerRow = (jugador: any, equipoId: number) => {
-    const pStat = stats[jugador.id] || { goles: 0, amarillas: 0, rojas: 0 };
+    // Usa clave compuesta para que los stats sean independientes por equipo
+    const key = statKey(equipoId, jugador.id)
+    const pStat = stats[key] || { goles: 0, amarillas: 0, rojas: 0 };
     return (
-      <div key={jugador.id} className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-muted/30 px-2 rounded transition-colors">
+      <div key={`${equipoId}-${jugador.id}`} className="flex items-center justify-between py-2 border-b last:border-0 hover:bg-muted/30 px-2 rounded transition-colors">
         <span className="text-sm font-medium truncate flex-1" title={`${jugador.nombre} ${jugador.apellido}`}>{jugador.nombre} {jugador.apellido}</span>
         <div className="flex gap-3">
           <div className="flex flex-col items-center gap-1" title="Goles">
@@ -181,16 +191,16 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
               </TabsList>
               
               <TabsContent value="local" className="flex-1 overflow-y-auto pr-2 mt-2 border rounded-md p-2">
-                {partido.equipo_local?.jugadores?.length > 0 ? (
-                  partido.equipo_local.jugadores.map((j: any) => renderPlayerRow(j, partido.equipo_local.id))
+                {(partido.equipo_local?.jugadores?.length ?? 0) > 0 ? (
+                  partido.equipo_local!.jugadores.map((j: any) => renderPlayerRow(j, partido.equipo_local!.id))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">No hay jugadores registrados</p>
                 )}
               </TabsContent>
               
               <TabsContent value="visitante" className="flex-1 overflow-y-auto pr-2 mt-2 border rounded-md p-2">
-                {partido.equipo_visitante?.jugadores?.length > 0 ? (
-                  partido.equipo_visitante.jugadores.map((j: any) => renderPlayerRow(j, partido.equipo_visitante.id))
+                {(partido.equipo_visitante?.jugadores?.length ?? 0) > 0 ? (
+                  partido.equipo_visitante!.jugadores.map((j: any) => renderPlayerRow(j, partido.equipo_visitante!.id))
                 ) : (
                   <p className="text-sm text-muted-foreground text-center py-4">No hay jugadores registrados</p>
                 )}

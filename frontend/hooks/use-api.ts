@@ -786,11 +786,18 @@ export interface TorneoCreateData {
   reglas?: string
 }
 
+export interface JugadorSimple {
+  id: number
+  nombre: string
+  apellido: string
+  email?: string
+}
+
 export interface EquipoInscripto {
   id: number
   nombre?: string
   nombre_equipo?: string
-  jugadores: string
+  jugadores: string | JugadorSimple[]
   escudo?: string
 }
 
@@ -988,8 +995,20 @@ export interface PartidoTorneoData {
   torneo_id: number
   equipo_local_id?: number
   equipo_visitante_id?: number
-  equipo_local?: EquipoInscripto
-  equipo_visitante?: EquipoInscripto
+  equipo_local?: {
+    id: number
+    nombre?: string
+    nombre_equipo?: string
+    escudo?: string
+    jugadores: JugadorSimple[]
+  }
+  equipo_visitante?: {
+    id: number
+    nombre?: string
+    nombre_equipo?: string
+    escudo?: string
+    jugadores: JugadorSimple[]
+  }
   goles_local?: number
   goles_visitante?: number
   estado: string
