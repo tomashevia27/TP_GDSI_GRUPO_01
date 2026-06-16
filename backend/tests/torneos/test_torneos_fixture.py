@@ -467,3 +467,57 @@ def test_transicion_fase_grupos_a_playoffs():
     assert res_f.status_code == 200
 
     db.close()
+
+
+def test_obtener_fixture_por_fechas():
+    n_equipos = 4
+    torneo_id = crear_torneo_base(max_equipos=n_equipos, formato="todos_contra_todos")
+    inscribir_equipos(torneo_id, n_equipos)
+
+    client.post(f"/api/torneos/{torneo_id}/fixture")
+
+    response = client.get(f"/api/torneos/{torneo_id}/fixture")
+    assert response.status_code == 200
+
+    data = response.json()
+    
+    # Validamos el número de fechas
+    fechas_esperadas = n_equipos - 1
+    assert len(data["fechas"]) == fechas_esperadas
+    
+    # Validamos contenido de cada fecha
+    partidos_por_fecha = n_equipos // 2
+    for i, fecha in enumerate(data["fechas"]):
+        assert fecha["numero"] == i + 1
+        
+        assert len(fecha["partidos"]) == partidos_por_fecha
+        
+        for partido in fecha["partidos"]:
+            assert "id" in partido
+            assert partido["equipo_local"] is not None
+            assert partido["equipo_visitante"] is not None
+            assert partido["estado"] == "pendiente"  
+            assert partido["equipo_local"]["id"] != partido["equipo_visitante"]["id"]
+
+
+def test_obtener_bracket_torneo():
+    torneo_id = crear_torneo_base(max_equipos=4, formato="eliminacion_directa")
+    inscribir_equipos(torneo_id, 4)
+
+    client.post(f"/api/torneos/{torneo_id}/fixture")
+
+    response = client.get(f"/api/torneos/{torneo_id}/bracket")
+    assert response.status_code == 200
+
+    data = response.json()
+    
+    assert "rondas" in data
+    assert len(data["rondas"]) == 2
+    assert data["rondas"][0]["nombre"].lower() == "final"
+    assert data["rondas"][1]["nombre"].lower() == "semifinal"
+    assert len(data["rondas"][1]["partidos"]) == 2
+    assert len(data["rondas"][0]["partidos"]) == 1
+    partido_semi = data["rondas"][1]["partidos"][0]
+    assert "equipo_local" in partido_semi
+    assert "equipo_visitante" in partido_semi
+    assert partido_semi["estado"] == "pendiente"

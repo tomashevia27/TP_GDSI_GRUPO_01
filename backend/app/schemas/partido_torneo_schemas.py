@@ -127,3 +127,28 @@ class PlayerStatPerMatchResponse(BaseModel):
     rojas: int
 
     model_config = ConfigDict(from_attributes=True)
+
+class PartidoBracketResponse(BaseModel):
+    id: int
+    equipo_local: Optional[EquipoResponse] = None
+    equipo_visitante: Optional[EquipoResponse] = None
+    goles_local: Optional[int] = None
+    goles_visitante: Optional[int] = None
+    estado: str
+    fecha: Optional[str] = None 
+
+    model_config = ConfigDict(from_attributes=True)
+
+class RondaResponse(BaseModel):
+    nombre: str  
+    partidos: List[PartidoBracketResponse]
+
+class BracketResponse(BaseModel):
+    rondas: List[RondaResponse]
+
+class FechaResponse(BaseModel):
+    numero: int
+    partidos: List[PartidoBracketResponse]
+
+class FixtureResponse(BaseModel):
+    fechas: List[FechaResponse]

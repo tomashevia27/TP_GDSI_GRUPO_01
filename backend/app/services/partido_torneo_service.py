@@ -16,6 +16,8 @@ from ..schemas.partido_torneo_schemas import (
     EstadisticasTorneoResponse,
     EstadisticaJugadorTorneoResponse,
     EstadisticaEquipoTorneoResponse,
+    BracketResponse,
+    FixtureResponse,
 )
 from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
 from ..services.fixture.eliminacion_directa_generator import EliminacionDirectaGenerator    
@@ -436,3 +438,48 @@ def actualizar_tabla_posiciones(db: Session, partido: PartidoTorneo):
         else:
             pos.pp += 1
     
+def obtener_bracket_torneo(db: Session, torneo_id: int) -> BracketResponse:
+    fases_eliminatorias = [FaseTorneo.final, FaseTorneo.semifinal, FaseTorneo.cuartos, FaseTorneo.octavos]
+    partidos = db.query(PartidoTorneo).filter(
+        PartidoTorneo.torneo_id == torneo_id,
+        PartidoTorneo.fase.in_(fases_eliminatorias)
+    ).all()
+
+    bracket_dict = {}
+    for p in partidos:
+        if p.fase.value not in bracket_dict:
+            bracket_dict[p.fase.value] = []
+        bracket_dict[p.fase.value].append(p)
+
+    rondas = []
+    orden_fases = [FaseTorneo.final, FaseTorneo.semifinal, FaseTorneo.cuartos, FaseTorneo.octavos]
+    
+    for fase in orden_fases:
+        if fase.value in bracket_dict:
+            rondas.append({
+                "nombre": fase.value.capitalize(),
+                "partidos": bracket_dict[fase.value]
+            })
+            
+    return {"rondas": rondas}
+
+
+def obtener_fixture_por_fechas(db: Session, torneo_id: int) -> FixtureResponse:
+    partidos = db.query(PartidoTorneo).filter(
+        PartidoTorneo.torneo_id == torneo_id,
+        PartidoTorneo.fase.in_([FaseTorneo.grupos, FaseTorneo.liga]),
+        PartidoTorneo.numero_fecha.isnot(None)
+    ).order_by(PartidoTorneo.numero_fecha.asc()).all()
+
+    fechas_dict = {}
+    for p in partidos:
+        if p.numero_fecha not in fechas_dict:
+            fechas_dict[p.numero_fecha] = []
+        fechas_dict[p.numero_fecha].append(p)
+
+    lista_fechas = [
+        {"numero": num, "partidos": partidos_lista}
+        for num, partidos_lista in sorted(fechas_dict.items())
+    ]
+            
+    return {"fechas": lista_fechas}

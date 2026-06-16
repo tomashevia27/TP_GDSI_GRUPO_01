@@ -15,6 +15,8 @@ from ..schemas.partido_torneo_schemas import (
     ProgramarPartidoRequest,
     CargarResultadoRequest,
     EstadisticasTorneoResponse,
+    BracketResponse,
+    FixtureResponse,
 )
 from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
 from ..models.partido_torneo import PartidoTorneo
@@ -161,3 +163,11 @@ def obtener_tabla_posiciones(torneo_id: int, db: Session = Depends(get_db)):
 @router.get("/{torneo_id}/jugador/{usuario_id}/estadisticas", response_model=list["PlayerStatPerMatchResponse"])
 def obtener_estadisticas_jugador_en_torneo(torneo_id: int, usuario_id: int, db: Session = Depends(get_db)):
     return partido_torneo_service.estadisticas_jugador_por_torneo(db, torneo_id, usuario_id)
+
+@router.get("/{torneo_id}/bracket", response_model=BracketResponse)
+def get_bracket(torneo_id: int, db: Session = Depends(get_db)):
+    return partido_torneo_service.obtener_bracket_torneo(db, torneo_id)
+
+@router.get("/{torneo_id}/fixture", response_model=FixtureResponse)
+def obtener_fixture(torneo_id: int, db: Session = Depends(get_db)):
+    return partido_torneo_service.obtener_fixture_por_fechas(db, torneo_id)
