@@ -819,7 +819,7 @@ export interface TorneoData {
 }
 
 export async function editarTorneo(torneoId: string | number, torneoData: TorneoUpdateData): Promise<TorneoData> {
-  const response = await fetch(`${API_URL}/torneos/${torneoId}`, {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -830,7 +830,8 @@ export async function editarTorneo(torneoId: string | number, torneoData: Torneo
   const data = await response.json()
   if (!response.ok) {
     if (Array.isArray(data.detail)) {
-      throw new Error("Revisá los datos ingresados.")
+      const msgs = data.detail.map((e: any) => e.loc.join('.') + ': ' + e.msg).join(', ')
+      throw new Error("Revisá los datos ingresados: " + msgs)
     }
     throw new Error(data.detail || "Error al editar el torneo")
   }

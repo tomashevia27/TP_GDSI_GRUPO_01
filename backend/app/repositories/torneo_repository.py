@@ -28,8 +28,8 @@ def obtener_por_id(db: Session, torneo_id: int) -> Optional[Torneo]:
 
 def verificar_jugadores_inscriptos(db: Session, torneo_id: int, jugador_ids: List[int]) -> List[Usuario]:
     """Devuelve los jugadores que ya están inscriptos en algún equipo del torneo especificado."""
-    return db.query(Usuario).join(Equipo.jugadores).filter(
-        Equipo.torneo_id == torneo_id,
+    return db.query(Usuario).join(Equipo.jugadores).join(Equipo.torneos).filter(
+        Torneo.id == torneo_id,
         Usuario.id.in_(jugador_ids)
     ).all()
 

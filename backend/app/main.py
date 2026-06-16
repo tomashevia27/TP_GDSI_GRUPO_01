@@ -49,6 +49,19 @@ async def domain_not_found_exception_handler(request: Request, exc: DomainNotFou
 
 
 # Incluir routers
+
+from fastapi.exceptions import RequestValidationError
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    import json
+    body = await request.body()
+    print("VALIDATION ERROR:", exc.errors())
+    print("REQUEST BODY:", body)
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(canchas.router)

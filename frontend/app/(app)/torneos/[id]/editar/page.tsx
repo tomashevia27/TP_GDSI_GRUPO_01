@@ -73,12 +73,17 @@ export default function EditarTorneoPage() {
                 const [apertura, cierre] = data.franja_horaria.split('-')
                 const [ah, am] = apertura.split(':')
                 const [ch, cm] = cierre.split(':')
+                const REVERSE_FORMATO_MAP: Record<string, string> = {
+                    "Eliminación directa": "eliminacion_directa",
+                    "Fase de grupos": "fase_grupos",
+                    "Todos contra todos": "todos_contra_todos"
+                }
 
                 setFormData({
                     nombre: data.nombre,
                     fecha_inicio: fi,
                     fecha_fin: ff,
-                    formato: data.formato,
+                    formato: REVERSE_FORMATO_MAP[data.formato] || data.formato,
                     zona: data.zona,
                     dias_operativos: data.dias_operativos,
                     apertura_h: ah,
@@ -119,9 +124,12 @@ export default function EditarTorneoPage() {
     ) => {
         const { name, value, type } = e.target
         setErrorMsg("")
-        const parsed = type === "checkbox"
-            ? (e.target as HTMLInputElement).checked
-            : value
+        let parsed: any = value
+        if (type === "checkbox") {
+            parsed = (e.target as HTMLInputElement).checked
+        } else if (name === "max_equipos" || name === "min_integrantes_por_equipo" || name === "costo_inscripcion") {
+            parsed = Number(value)
+        }
         setFormData(prev => ({ ...prev, [name]: parsed }))
     }
 

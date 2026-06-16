@@ -76,9 +76,12 @@ export default function CrearTorneoPage() {
     ) => {
         const { name, value, type } = e.target
         setErrorMsg("")
-        const parsed = type === "checkbox"
-            ? (e.target as HTMLInputElement).checked
-            : value
+        let parsed: any = value
+        if (type === "checkbox") {
+            parsed = (e.target as HTMLInputElement).checked
+        } else if (name === "max_equipos" || name === "min_integrantes_por_equipo" || name === "costo_inscripcion") {
+            parsed = Number(value)
+        }
         setFormData(prev => ({ ...prev, [name]: parsed }))
     }
 
