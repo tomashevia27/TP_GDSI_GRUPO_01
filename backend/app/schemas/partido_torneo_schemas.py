@@ -143,6 +143,9 @@ class PartidoBracketResponse(BaseModel):
     estado: str
     fecha: Optional[str] = None 
 
+    partido_padre_local_id: Optional[int] = None
+    partido_padre_visitante_id: Optional[int] = None
+
     model_config = ConfigDict(from_attributes=True)
 
 class RondaResponse(BaseModel):
