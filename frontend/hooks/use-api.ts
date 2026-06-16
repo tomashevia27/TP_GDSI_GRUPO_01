@@ -788,7 +788,8 @@ export interface TorneoCreateData {
 
 export interface EquipoInscripto {
   id: number
-  nombre_equipo: string
+  nombre?: string
+  nombre_equipo?: string
   jugadores: string
   escudo?: string
 }
@@ -979,6 +980,152 @@ export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
   })
   const data = await response.json()
   if (!response.ok) throw new Error(data.detail || "Error al cancelar el torneo")
+  return data
+}
+
+export interface PartidoTorneoData {
+  id: number
+  torneo_id: number
+  equipo_local_id?: number
+  equipo_visitante_id?: number
+  equipo_local?: EquipoInscripto
+  equipo_visitante?: EquipoInscripto
+  goles_local?: number
+  goles_visitante?: number
+  estado: string
+  fecha?: string
+  horario?: string
+  cancha_id?: number
+  fase: string
+  grupo?: string
+}
+
+export interface CargarResultadoData {
+  goles_local: number
+  goles_visitante: number
+  estadisticas_jugadores: {
+    usuario_id: number
+    equipo_id: number
+    goles: number
+    amarillas: number
+    rojas: number
+  }[]
+}
+
+export interface EstadisticaJugadorTorneoData {
+  usuario_id: number
+  usuario_nombre: string
+  usuario_apellido: string
+  equipo_id: number
+  equipo_nombre: string
+  goles: number
+  amarillas: number
+  rojas: number
+}
+
+export interface EstadisticaEquipoTorneoData {
+  equipo_id: number
+  equipo_nombre: string
+  goles: number
+  amarillas: number
+  rojas: number
+}
+
+export interface EstadisticasTorneoData {
+  jugadores: EstadisticaJugadorTorneoData[]
+  equipos: EstadisticaEquipoTorneoData[]
+}
+
+export interface TopJugadorData {
+  usuario_id: number
+  usuario_nombre: string
+  usuario_apellido: string
+  equipo_id: number
+  equipo_nombre: string
+  valor: number
+}
+
+export interface TablaPosicionData {
+  equipo_id: number
+  equipo_nombre: string
+  pts: number
+  pj: number
+  pg: number
+  pe: number
+  pp: number
+  gf: number
+  gc: number
+  dg: number
+}
+
+export async function generarFixture(torneoId: number): Promise<PartidoTorneoData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/fixture`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al generar fixture")
+  return data
+}
+
+export async function getFixtureTorneo(torneoId: number): Promise<PartidoTorneoData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/partidos`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar fixture")
+  return data
+}
+
+export async function cargarResultadoPartido(partidoId: number, payload: CargarResultadoData): Promise<PartidoTorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/partidos/${partidoId}/resultado`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+    body: JSON.stringify(payload)
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    if (Array.isArray(data.detail)) {
+        throw new Error(data.detail[0]?.msg || "Error de validación")
+    }
+    throw new Error(data.detail || "Error al cargar resultado")
+  }
+  return data
+}
+
+export async function getEstadisticasTorneo(torneoId: number): Promise<EstadisticasTorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/estadisticas`, {
+    method: "GET",
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar estadísticas")
+  return data
+}
+
+export async function getTopJugadores(torneoId: number, tipo: "goleadores" | "amarillas" | "rojas", limit: number = 10): Promise<TopJugadorData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/top/${tipo}?limit=${limit}`, {
+    method: "GET",
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || `Error al cargar top de ${tipo}`)
+  return data
+}
+
+export async function getTablaPosiciones(torneoId: number): Promise<TablaPosicionData[]> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/tabla-posiciones`, {
+    method: "GET",
+  })
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar tabla de posiciones")
   return data
 }
 /* 

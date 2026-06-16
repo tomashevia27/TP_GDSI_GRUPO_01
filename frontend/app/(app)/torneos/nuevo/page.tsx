@@ -15,18 +15,18 @@ import Swal from "sweetalert2"
 // ─── Constantes de opciones por formato ───────────────────────────────────────
 const ED_OPCIONES = [2, 4, 8, 16, 32, 64]
 const FG_POR_FASE: Record<string, number[]> = {
-    semis:   [6, 8, 10],
+    semis: [6, 8, 10],
     cuartos: [12, 16, 20],
     octavos: [24, 32, 40],
 }
 const DIAS = [
-    { abbr: "Lun", full: "Lunes",     bit: 0 },
-    { abbr: "Mar", full: "Martes",    bit: 1 },
+    { abbr: "Lun", full: "Lunes", bit: 0 },
+    { abbr: "Mar", full: "Martes", bit: 1 },
     { abbr: "Mié", full: "Miércoles", bit: 2 },
-    { abbr: "Jue", full: "Jueves",    bit: 3 },
-    { abbr: "Vie", full: "Viernes",   bit: 4 },
-    { abbr: "Sáb", full: "Sábado",   bit: 5 },
-    { abbr: "Dom", full: "Domingo",   bit: 6 },
+    { abbr: "Jue", full: "Jueves", bit: 3 },
+    { abbr: "Vie", full: "Viernes", bit: 4 },
+    { abbr: "Sáb", full: "Sábado", bit: 5 },
+    { abbr: "Dom", full: "Domingo", bit: 6 },
 ]
 
 export default function CrearTorneoPage() {
@@ -65,8 +65,8 @@ export default function CrearTorneoPage() {
             ...prev,
             formato: nuevoFormato,
             max_equipos: nuevoFormato === "eliminacion_directa" ? 8
-                       : nuevoFormato === "fase_grupos"         ? 16
-                       : 8,
+                : nuevoFormato === "fase_grupos" ? 16
+                    : 8,
             fase_final: "cuartos",
         }))
     }
@@ -100,8 +100,8 @@ export default function CrearTorneoPage() {
         if (!formData.fecha_fin) return "La fecha de fin es obligatoria."
         const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
         const inicio = new Date(formData.fecha_inicio + "T00:00:00")
-        const fin    = new Date(formData.fecha_fin    + "T00:00:00")
-        if (inicio < hoy)  return "La fecha de inicio no puede estar en el pasado."
+        const fin = new Date(formData.fecha_fin + "T00:00:00")
+        if (inicio < hoy) return "La fecha de inicio no puede estar en el pasado."
         if (fin <= inicio) return "La fecha de fin debe ser posterior a la fecha de inicio."
         if (!formData.zona.trim()) return "La zona es obligatoria."
         if (formData.dias_operativos === 0) return "Debe seleccionar al menos un día operativo."
@@ -126,20 +126,20 @@ export default function CrearTorneoPage() {
 
         try {
             await crearTorneo({
-                nombre:         formData.nombre,
-                fecha_inicio:   new Date(formData.fecha_inicio + "T12:00:00").toISOString(),
-                fecha_fin:      new Date(formData.fecha_fin    + "T12:00:00").toISOString(),
-                formato:        formData.formato,
-                zona:           formData.zona,
+                nombre: formData.nombre,
+                fecha_inicio: new Date(formData.fecha_inicio + "T12:00:00").toISOString(),
+                fecha_fin: new Date(formData.fecha_fin + "T12:00:00").toISOString(),
+                formato: formData.formato,
+                zona: formData.zona,
                 dias_operativos: formData.dias_operativos,
                 franja_horaria,
-                max_equipos:    Number(formData.max_equipos),
+                max_equipos: Number(formData.max_equipos),
                 min_integrantes_por_equipo: Number(formData.min_integrantes_por_equipo),
                 costo_inscripcion: Number(formData.costo_inscripcion),
-                ida_y_vuelta:   formData.formato === "todos_contra_todos" ? formData.ida_y_vuelta : false,
-                fase_final:     formData.formato === "fase_grupos" ? formData.fase_final : null,
-                descripcion:    formData.descripcion,
-                reglas:         formData.reglas,
+                ida_y_vuelta: formData.formato === "todos_contra_todos" ? formData.ida_y_vuelta : false,
+                fase_final: formData.formato === "fase_grupos" ? formData.fase_final : null,
+                descripcion: formData.descripcion,
+                reglas: formData.reglas,
             })
             await Swal.fire({
                 title: "¡Torneo creado!",
@@ -253,13 +253,18 @@ export default function CrearTorneoPage() {
                         {/* Días operativos — idéntico a canchas/nueva */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <label className={labelClass + " mb-0"}>Días operativos *</label>
+                                <div>
+                                    <label className={labelClass + " mb-0"}>¿Qué días se juegan los partidos? *</label>
+                                    <p className="text-xs text-muted-foreground mt-1 mb-2">
+                                        Seleccioná los días de la semana habilitados para armar el fixture.
+                                    </p>
+                                </div>
                                 <div className="flex gap-2 flex-wrap justify-end">
                                     {[
-                                        { label: "Lun – Vie",      value: 31  },
-                                        { label: "Fin de semana",  value: 96  },
+                                        { label: "Lun – Vie", value: 31 },
+                                        { label: "Fin de semana", value: 96 },
                                         { label: "Todos los días", value: 127 },
-                                        { label: "Limpiar",        value: 0   },
+                                        { label: "Limpiar", value: 0 },
                                     ].map(({ label, value }) => (
                                         <button
                                             key={label}
@@ -280,11 +285,10 @@ export default function CrearTorneoPage() {
                                             key={d.bit}
                                             type="button"
                                             onClick={() => toggleDia(d.bit)}
-                                            className={`w-[72px] h-[72px] rounded-xl border flex flex-col items-center justify-center gap-[2px] transition-all select-none ${
-                                                active
-                                                    ? "bg-primary/10 border-primary border-[1.5px]"
-                                                    : "bg-background border-border hover:bg-secondary hover:border-primary/50"
-                                            }`}
+                                            className={`w-[72px] h-[72px] rounded-xl border flex flex-col items-center justify-center gap-[2px] transition-all select-none ${active
+                                                ? "bg-primary/10 border-primary border-[1.5px]"
+                                                : "bg-background border-border hover:bg-secondary hover:border-primary/50"
+                                                }`}
                                         >
                                             <span className={`text-[13px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>{d.abbr}</span>
                                             <span className={`text-[11px] ${active ? "text-primary/80" : "text-muted-foreground"}`}>{d.full}</span>
@@ -295,10 +299,15 @@ export default function CrearTorneoPage() {
                         </div>
 
                         {/* Franja horaria — idéntico a canchas/nueva */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className={labelClass}>Apertura (24hs) *</label>
-                                <div className="flex items-center space-x-2">
+                        <div className="pt-2">
+                            <label className={labelClass + " mb-0"}>Franja Horaria de los Partidos *</label>
+                            <p className="text-xs text-muted-foreground mt-1 mb-3">
+                                ¿En qué horario se juegan los partidos en esos días?
+                            </p>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-xs font-semibold text-muted-foreground">Hora de inicio (24hs)</label>
+                                    <div className="flex items-center space-x-2">
                                     <input
                                         name="apertura_h" type="number" min="0" max="23"
                                         placeholder="HH" value={formData.apertura_h}
@@ -317,7 +326,7 @@ export default function CrearTorneoPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className={labelClass}>Cierre (24hs) *</label>
+                                <label className="text-xs font-semibold text-muted-foreground">Hora de finalización (24hs)</label>
                                 <div className="flex items-center space-x-2">
                                     <input
                                         name="cierre_h" type="number" min="0" max="23"
@@ -336,6 +345,7 @@ export default function CrearTorneoPage() {
                                     </select>
                                 </div>
                             </div>
+                        </div>
                         </div>
                     </section>
 
@@ -384,13 +394,12 @@ export default function CrearTorneoPage() {
                                                 key={fase}
                                                 type="button"
                                                 onClick={() => handleFaseFinalChange(fase)}
-                                                className={`py-3 px-2 rounded-xl border text-sm font-medium transition-all ${
-                                                    formData.fase_final === fase
-                                                        ? "bg-primary/10 border-primary border-[1.5px] text-primary"
-                                                        : "bg-background border-border text-muted-foreground hover:bg-secondary hover:border-primary/50"
-                                                }`}
+                                                className={`py-3 px-2 rounded-xl border text-sm font-medium transition-all ${formData.fase_final === fase
+                                                    ? "bg-primary/10 border-primary border-[1.5px] text-primary"
+                                                    : "bg-background border-border text-muted-foreground hover:bg-secondary hover:border-primary/50"
+                                                    }`}
                                             >
-                                                {fase === "semis"   && "Semifinales"}
+                                                {fase === "semis" && "Semifinales"}
                                                 {fase === "cuartos" && "Cuartos de final"}
                                                 {fase === "octavos" && "Octavos de final"}
                                             </button>

@@ -7,6 +7,9 @@ import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, S
 import { Button } from "@/components/ui/button"
 import { getTorneo, cancelarTorneo, TorneoData } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FixtureTab } from "@/components/torneos/FixtureTab"
+import { EstadisticasTab } from "@/components/torneos/EstadisticasTab"
 import Swal from "sweetalert2"
 
 // Interfaz para el tipado de los jugadores parseados
@@ -219,11 +222,15 @@ export default function TorneoDetallePage() {
 
             {/* Contenido */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Tabs defaultValue="informacion" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4 mb-8">
+                        <TabsTrigger value="informacion">Información</TabsTrigger>
+                        <TabsTrigger value="equipos">Equipos</TabsTrigger>
+                        <TabsTrigger value="fixture">Fixture</TabsTrigger>
+                        <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
+                    </TabsList>
 
-                    {/* Columna principal (Detalles) */}
-                    <div className="md:col-span-2 space-y-8">
-
+                    <TabsContent value="informacion" className="space-y-8">
                         {/* Descripción */}
                         <section className="space-y-4">
                             <h3 className="text-xl font-bold text-foreground flex items-center gap-2 border-b border-border pb-2">
@@ -247,10 +254,30 @@ export default function TorneoDetallePage() {
                                 </p>
                             </div>
                         </section>
-                    </div>
+                        
+                        {/* Acciones de Organizador */}
+                        {userId && torneo.organizador_id === Number(userId) && torneo.estado !== "Cancelado" && (
+                            <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 mt-6">
+                                <h3 className="font-bold text-destructive mb-2 flex items-center gap-2">
+                                    <XCircle className="w-5 h-5" />
+                                    Dar de baja
+                                </h3>
+                                <p className="text-sm text-muted-foreground mb-4">
+                                    Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
+                                </p>
+                                <Button
+                                    variant="destructive"
+                                    className="w-full"
+                                    onClick={handleCancelar}
+                                    disabled={isCancelling}
+                                >
+                                    {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
+                                </Button>
+                            </div>
+                        )}
+                    </TabsContent>
 
-                    {/* Columna lateral (Equipos Inscriptos) */}
-                    <div className="md:col-span-1 space-y-6">
+                    <TabsContent value="equipos" className="space-y-6">
                         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-border bg-muted/30">
                                 <h3 className="font-bold text-foreground flex items-center gap-2">
@@ -283,30 +310,16 @@ export default function TorneoDetallePage() {
                                 )}
                             </div>
                         </div>
+                    </TabsContent>
 
-                        {/* Acciones de Organizador */}
-                        {userId && torneo.organizador_id === Number(userId) && torneo.estado !== "Cancelado" && (
-                            <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 mt-6">
-                                <h3 className="font-bold text-destructive mb-2 flex items-center gap-2">
-                                    <XCircle className="w-5 h-5" />
-                                    Dar de baja
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
-                                </p>
-                                <Button
-                                    variant="destructive"
-                                    className="w-full"
-                                    onClick={handleCancelar}
-                                    disabled={isCancelling}
-                                >
-                                    {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                    <TabsContent value="fixture">
+                        <FixtureTab torneo={torneo} isOrganizer={userId ? torneo.organizador_id === Number(userId) : false} />
+                    </TabsContent>
 
-                </div>
+                    <TabsContent value="estadisticas">
+                        <EstadisticasTab torneo={torneo} />
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     )

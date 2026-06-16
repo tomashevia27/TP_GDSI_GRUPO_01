@@ -20,6 +20,11 @@ from ..schemas.partido_torneo_schemas import (
 from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
 from ..services.fixture.eliminacion_directa_generator import EliminacionDirectaGenerator    
 
+def obtener_partidos_torneo(db: Session, torneo_id: int) -> list[PartidoTorneo]:
+    torneo = db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    if not torneo:
+        raise HTTPException(status_code=404, detail="Torneo no encontrado")
+    return db.query(PartidoTorneo).filter(PartidoTorneo.torneo_id == torneo_id).all()
 
 def _validar_reglas_torneo(cancha: Cancha, torneo: Torneo, fecha: date, horario: time):
     if cancha.zona != torneo.zona:

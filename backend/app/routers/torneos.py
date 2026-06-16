@@ -102,6 +102,16 @@ def generar_fixture(
         current_user.id
     )
 
+@router.get(
+    "/{torneo_id}/partidos",
+    response_model=list[PartidoTorneoResponse]
+)
+def obtener_partidos_torneo(
+    torneo_id: int,
+    db: Session = Depends(get_db)
+):
+    return partido_torneo_service.obtener_partidos_torneo(db, torneo_id)
+
 @router.put("/partidos/{partido_id}", response_model=PartidoTorneoResponse)
 def programar_partido_torneo(
     partido_id: int,
