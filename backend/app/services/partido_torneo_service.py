@@ -130,6 +130,12 @@ def cargar_resultado_partido(db: Session, partido_id: int, data: CargarResultado
     if partido.fecha > hoy:
         raise HTTPException(status_code=400, detail="No podés cargar resultados de partidos futuros")
 
+    if partido.equipo_local_id is None or partido.equipo_visitante_id is None:
+        raise HTTPException(
+            status_code=400, 
+            detail="No se puede cargar el resultado porque aún no se han definido los dos equipos."
+        )
+
     # Si hay un partido siguiente en la llave (eliminación directa o playoffs de fase de grupos)
     siguiente_partido = db.query(PartidoTorneo).filter(
         (PartidoTorneo.partido_padre_local_id == partido.id) |
