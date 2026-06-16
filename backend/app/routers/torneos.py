@@ -119,7 +119,7 @@ def programar_partido_torneo(
     current_user: Usuario = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    return partido_torneo_service.programar_partido(db, partido_id, data)
+    return partido_torneo_service.programar_partido(db, partido_id, data, current_user.id)
 
 @router.post("/partidos/{partido_id}/resultado", response_model=PartidoTorneoResponse)
 def cargar_resultado_partido_torneo(
@@ -137,7 +137,6 @@ def obtener_estadisticas_torneo(
     db: Session = Depends(get_db),
 ):
     return partido_torneo_service.obtener_estadisticas_torneo(db, torneo_id)
-
 
 @router.get("/{torneo_id}/top/goleadores", response_model=list[TopJugadorResponse])
 def obtener_top_goleadores(torneo_id: int, limit: int = 10, db: Session = Depends(get_db)):

@@ -61,11 +61,17 @@ def _verificar_fin_fase_grupos(db: Session, partido: PartidoTorneo):
         generar_playoffs_desde_grupos(db, partido.torneo)
 
 
-def programar_partido(db: Session, partido_id: int, data: ProgramarPartidoRequest):
+def programar_partido(db: Session, partido_id: int, data: ProgramarPartidoRequest, user_id: int):
     partido = db.query(PartidoTorneo).filter(PartidoTorneo.id == partido_id).first()
     if not partido:
         raise HTTPException(status_code=404, detail="Partido no encontrado")
     
+    if partido.torneo.organizador_id != user_id:
+        raise HTTPException(
+            status_code=403, 
+            detail="Solo el organizador del torneo puede programar partidos"
+        )
+
     cancha = cancha_repository.obtener_por_id(db, data.cancha_id)
     if not cancha:
         raise HTTPException(status_code=404, detail="Cancha no encontrada")
