@@ -19,7 +19,7 @@ from ..schemas.partido_torneo_schemas import (
     BracketResponse,
     FixtureResponse,
 )
-from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse
+from ..schemas.partido_torneo_schemas import TopJugadorResponse, TablaPosicionResponse, VallaInvictaResponse
 from ..services.fixture.eliminacion_directa_generator import EliminacionDirectaGenerator    
 
 def obtener_partidos_torneo(db: Session, torneo_id: int) -> list[PartidoTorneo]:
@@ -338,24 +338,44 @@ def top_jugadores_por_rojas(db: Session, torneo_id: int, limit: int = 10) -> lis
 
 
 def tabla_posiciones_torneo(db: Session, torneo_id: int) -> list[TablaPosicionResponse]:
-    posiciones = db.query(TablaPosiciones).filter(TablaPosiciones.torneo_id == torneo_id).all()
-    if not posiciones:
+    torneo = db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    if not torneo:
         return []
 
+    # Mapa de posiciones existentes por equipo_id
+    posiciones_existentes = db.query(TablaPosiciones).filter(TablaPosiciones.torneo_id == torneo_id).all()
+    posiciones_map = {pos.equipo_id: pos for pos in posiciones_existentes}
+
     tabla = []
-    for pos in posiciones:
-        tabla.append(TablaPosicionResponse(
-            equipo_id=pos.equipo.id,
-            equipo_nombre=pos.equipo.nombre,
-            pts=pos.pts,
-            pj=pos.pj,
-            pg=pos.pg,
-            pe=pos.pe,
-            pp=pos.pp,
-            gf=pos.gf,
-            gc=pos.gc,
-            dg=pos.dg,
-        ))
+    for equipo in torneo.equipos_inscriptos:
+        pos = posiciones_map.get(equipo.id)
+        if pos:
+            tabla.append(TablaPosicionResponse(
+                equipo_id=equipo.id,
+                equipo_nombre=equipo.nombre,
+                pts=pos.pts,
+                pj=pos.pj,
+                pg=pos.pg,
+                pe=pos.pe,
+                pp=pos.pp,
+                gf=pos.gf,
+                gc=pos.gc,
+                dg=pos.dg,
+            ))
+        else:
+            # Equipo inscripto pero sin partidos jugados aún
+            tabla.append(TablaPosicionResponse(
+                equipo_id=equipo.id,
+                equipo_nombre=equipo.nombre,
+                pts=0,
+                pj=0,
+                pg=0,
+                pe=0,
+                pp=0,
+                gf=0,
+                gc=0,
+                dg=0,
+            ))
 
     tabla.sort(key=lambda x: (x.pts, x.dg, x.gf, -x.gc), reverse=True)
     return tabla
@@ -483,3 +503,34 @@ def obtener_fixture_por_fechas(db: Session, torneo_id: int) -> FixtureResponse:
     ]
             
     return {"fechas": lista_fechas}
+
+def top_equipos_vallas_invictas(db: Session, torneo_id: int, limit: int = 10) -> list[VallaInvictaResponse]:
+    torneo = db.query(Torneo).filter(Torneo.id == torneo_id).first()
+    if not torneo:
+        return []
+
+    partidos = db.query(PartidoTorneo).filter(
+        PartidoTorneo.torneo_id == torneo_id,
+        PartidoTorneo.estado == EstadoPartidoTorneo.finalizado,
+    ).all()
+
+    # invictos por equipo_id
+    invictos: dict[int, int] = {}
+    for p in partidos:
+        if p.goles_visitante == 0 and p.equipo_local_id:
+            invictos[p.equipo_local_id] = invictos.get(p.equipo_local_id, 0) + 1
+        if p.goles_local == 0 and p.equipo_visitante_id:
+            invictos[p.equipo_visitante_id] = invictos.get(p.equipo_visitante_id, 0) + 1
+
+    # todos los equipos aunque tengan 0
+    resultado = [
+        VallaInvictaResponse(
+            equipo_id=equipo.id,
+            equipo_nombre=equipo.nombre,
+            partidos_invicto=invictos.get(equipo.id, 0),
+        )
+        for equipo in torneo.equipos_inscriptos
+    ]
+
+    resultado.sort(key=lambda x: x.partidos_invicto, reverse=True)
+    return resultado[:limit]

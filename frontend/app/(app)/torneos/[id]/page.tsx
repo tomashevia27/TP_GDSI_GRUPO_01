@@ -10,6 +10,7 @@ import { useAuthContext } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FixtureTab } from "@/components/torneos/FixtureTab"
 import { EstadisticasTab } from "@/components/torneos/EstadisticasTab"
+import { TablaTab } from "@/components/torneos/TablaTab"
 import Swal from "sweetalert2"
 
 
@@ -231,10 +232,11 @@ export default function TorneoDetallePage() {
             {/* Contenido */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                 <Tabs defaultValue="informacion" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4 mb-8">
+                    <TabsList className="grid w-full grid-cols-5 mb-8">
                         <TabsTrigger value="informacion">Información</TabsTrigger>
                         <TabsTrigger value="equipos">Equipos</TabsTrigger>
                         <TabsTrigger value="fixture">Fixture</TabsTrigger>
+                        <TabsTrigger value="tabla">Tabla</TabsTrigger>
                         <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
                     </TabsList>
 
@@ -322,6 +324,10 @@ export default function TorneoDetallePage() {
 
                     <TabsContent value="fixture">
                         <FixtureTab torneo={torneo} isOrganizer={userId ? torneo.organizador_id === Number(userId) : false} />
+                    </TabsContent>
+
+                    <TabsContent value="tabla">
+                        <TablaTab torneo={torneo} />
                     </TabsContent>
 
                     <TabsContent value="estadisticas">
