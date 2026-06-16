@@ -3,6 +3,7 @@ from random import shuffle
 from ...core.exceptions import DomainRuleError
 
 from .fixture_generator import FixtureGenerator
+from .todos_contra_todos_generator import _generar_rondas_round_robin
 from ...models.partido_torneo import (
     PartidoTorneo,
     FaseTorneo,
@@ -54,15 +55,18 @@ class FaseGruposGenerator(FixtureGenerator):
         partidos = []
         for indice_grupo, grupo in enumerate(grupos):
             nombre_grupo = self.NOMBRES_GRUPOS[indice_grupo]
-            for i in range(len(grupo)):
-                for j in range(i + 1, len(grupo)):
+            rondas = _generar_rondas_round_robin(grupo)
+
+            for numero_fecha, emparejamientos in enumerate(rondas, start=1):
+                for local, visitante in emparejamientos:
                     partidos.append(
                         PartidoTorneo(
                             torneo_id=torneo.id,
-                            equipo_local_id=grupo[i].id,
-                            equipo_visitante_id=grupo[j].id,
+                            equipo_local_id=local.id,
+                            equipo_visitante_id=visitante.id,
                             fase=FaseTorneo.grupos,
                             grupo=nombre_grupo,
+                            numero_fecha=numero_fecha,
                         )
                     )
 

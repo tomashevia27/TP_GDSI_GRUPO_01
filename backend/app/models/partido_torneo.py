@@ -63,6 +63,7 @@ class PartidoTorneo(Base):
     goles_visitante = Column(Integer, nullable=True)
     fase = Column(Enum(FaseTorneo, native_enum=False), nullable=False)
     grupo = Column(String(10), nullable=True)
+    numero_fecha = Column(Integer, nullable=True)
     estado = Column(
         Enum(EstadoPartidoTorneo, native_enum=False),
         nullable=False,

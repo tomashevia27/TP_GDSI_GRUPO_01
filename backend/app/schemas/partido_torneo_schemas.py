@@ -21,6 +21,7 @@ class PartidoTorneoResponse(BaseModel):
 
     fase: FaseTorneo
     grupo: Optional[str] = None
+    numero_fecha: Optional[int] = None
 
     estado: EstadoPartidoTorneo
 
