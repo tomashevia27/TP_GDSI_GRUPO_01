@@ -5,3 +5,8 @@ class DomainRuleError(Exception):
 class DomainPermissionError(Exception):
     """Excepción lanzada cuando un usuario no tiene permisos sobre una entidad del dominio."""
     pass
+
+class DomainNotFoundError(Exception):
+    """Excepción lanzada cuando no se encuentra una entidad."""
+    pass
+

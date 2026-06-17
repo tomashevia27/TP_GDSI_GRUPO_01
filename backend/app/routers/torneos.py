@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from ..core.db import engine
 from ..core.dependencies import get_current_user, get_db
-from ..schemas.torneo_schemas import MisTorneosResponse, TorneoCreate, TorneoResponse, TorneoListado, TorneoDetalleResponse
+from ..schemas.torneo_schemas import MisTorneosResponse, TorneoCreate, TorneoUpdate, TorneoResponse, TorneoListado, TorneoDetalleResponse
 from ..schemas.usuario_schemas import UsuarioRespuesta
 from ..models.usuario_model import Usuario
 from ..services import torneo_service, partido_torneo_service
@@ -39,6 +39,20 @@ def crear_torneo(
     Queda asociado al usuario creador (organizador) y con estado Abierto para inscripción.
     """
     return torneo_service.crear_torneo(db, torneo_in, current_user.id)
+    
+
+@router.patch("/{torneo_id}", response_model=TorneoResponse)
+def editar_torneo(
+    torneo_id: int,
+    torneo_in: TorneoUpdate,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Edita la configuración de un torneo que aún no comenzó (estado abierto).
+    """
+    return torneo_service.editar_torneo(db, torneo_id, torneo_in, current_user.id)
+
 
 
 @router.get("/", response_model=List[TorneoListado])
@@ -62,10 +76,7 @@ def obtener_torneo(
     torneo = torneo_repository.obtener_por_id(db, torneo_id)
     if not torneo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Torneo no encontrado")
-    # Asegurar que el organizador esté poblado para la serialización
-    if getattr(torneo, "organizador", None) is None:
-        organizador = db.query(Usuario).filter(Usuario.id == torneo.organizador_id).first()
-        torneo.organizador = organizador
+
     return torneo
 
 

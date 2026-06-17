@@ -85,6 +85,11 @@ def test_obtener_mis_torneos_como_organizador_y_jugador():
     torneo_org = Torneo(
         nombre="Torneo del Organizador",
         fecha_inicio=datetime.now() + timedelta(days=5),
+<<<<<<< HEAD
+=======
+        formato=FormatoTorneo.eliminacion_directa,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
         formato=FormatoTorneo.eliminacion_directa,
         zona="CABA",
@@ -102,9 +107,14 @@ def test_obtener_mis_torneos_como_organizador_y_jugador():
         fecha_inicio=datetime.now() - timedelta(days=2),
         fecha_fin=datetime.now() + timedelta(days=5),
         formato=FormatoTorneo.todos_contra_todos,
+<<<<<<< HEAD
         zona="CABA",
         dias_operativos=127,
         franja_horaria="10:00-12:00",
+=======
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+        fecha_fin=datetime.now() + timedelta(days=20),
+>>>>>>> us-editar-cancha-back
         max_equipos=6,
         min_integrantes_por_equipo=5,
         costo_inscripcion=1500.0,
@@ -148,9 +158,14 @@ def test_obtener_mis_torneos_finalizado():
         fecha_inicio=datetime.now() - timedelta(days=30),
         fecha_fin=datetime.now() - timedelta(days=10),
         formato=FormatoTorneo.eliminacion_directa,
+<<<<<<< HEAD
         zona="CABA",
         dias_operativos=127,
         franja_horaria="10:00-12:00",
+=======
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+        fecha_fin=datetime.now() + timedelta(days=20),
+>>>>>>> us-editar-cancha-back
         max_equipos=8,
         min_integrantes_por_equipo=5,
         costo_inscripcion=0.0,
