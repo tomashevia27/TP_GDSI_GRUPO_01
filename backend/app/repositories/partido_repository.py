@@ -132,14 +132,27 @@ def verificar_disponibilidad_cancha(
     return True
 
 def obtener_partidos_por_cancha_y_fecha(db: Session, cancha_id: int, fecha: date):
-    """Obtiene todos los partidos no cancelados de una cancha en una fecha."""
-    return db.query(Partido).options(
+    """Obtiene todos los partidos (casuales y de torneo) de una cancha en una fecha."""
+    # Partidos casuales no cancelados
+    partidos_casuales = db.query(Partido).options(
         joinedload(Partido.organizador)
     ).filter(
         Partido.cancha_id == cancha_id,
         Partido.fecha == fecha,
         Partido.estado != "Cancelado"
     ).all()
+
+    # Partidos de torneo programados (con cancha y horario asignado)
+    partidos_torneo = db.query(PartidoTorneo).filter(
+        PartidoTorneo.cancha_id == cancha_id,
+        PartidoTorneo.fecha == fecha,
+        PartidoTorneo.horario.isnot(None),
+    ).all()
+
+    # El AgendaBuilder solo usa .id, .fecha, .horario, .estado
+    # PartidoTorneo tiene todos esos campos, así que los podemos mezclar directamente.
+    # Los marcamos como "ocupado" para que aparezcan en gris en la UI.
+    return partidos_casuales + partidos_torneo
 
 def guardar_partido(db: Session, partido: Partido):
     """Guarda un nuevo partido en la base de datos."""

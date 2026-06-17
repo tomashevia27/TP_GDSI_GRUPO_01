@@ -1017,6 +1017,55 @@ export interface PartidoTorneoData {
   cancha_id?: number
   fase: string
   grupo?: string
+  numero_fecha?: number
+  partido_padre_local_id?: number
+  partido_padre_visitante_id?: number
+}
+
+// ─── Fixture por fechas ───────────────────────────────────────────────────────
+
+export interface PartidoBracketData {
+  id: number
+  equipo_local?: { id: number; nombre?: string; nombre_equipo?: string }
+  equipo_visitante?: { id: number; nombre?: string; nombre_equipo?: string }
+  goles_local?: number
+  goles_visitante?: number
+  estado: string
+  fecha?: string
+  partido_padre_local_id?: number
+  partido_padre_visitante_id?: number
+}
+
+export interface FechaFixtureData {
+  numero: number
+  partidos: PartidoBracketData[]
+}
+
+export interface FixtureResponse {
+  fechas: FechaFixtureData[]
+}
+
+export interface RondaBracketData {
+  nombre: string
+  partidos: PartidoBracketData[]
+}
+
+export interface BracketResponse {
+  rondas: RondaBracketData[]
+}
+
+export async function getFixturePorFechas(torneoId: number): Promise<FixtureResponse> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/fixture`)
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar fixture por fechas")
+  return data
+}
+
+export async function getBracketTorneo(torneoId: number): Promise<BracketResponse> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/bracket`)
+  const data = await response.json()
+  if (!response.ok) throw new Error(data.detail || "Error al cargar bracket")
+  return data
 }
 
 export interface CargarResultadoData {
