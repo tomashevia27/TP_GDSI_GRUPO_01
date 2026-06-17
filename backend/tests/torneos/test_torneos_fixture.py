@@ -91,7 +91,7 @@ def setup_db():
 # HELPERS
 # ----------------------------
 
-def crear_torneo_base(max_equipos=4, formato="eliminacion_directa", fase_final=None, ida_y_vuelta=False):
+def crear_torneo_base(max_equipos=4, formato="eliminacion_directa", fase_final=None, ida_y_vuelta=False, dias_operativos=127):
     fecha_futura = (datetime.now() + timedelta(days=10)).isoformat()
     fecha_fin = (datetime.now() + timedelta(days=20)).isoformat()
 
@@ -102,7 +102,7 @@ def crear_torneo_base(max_equipos=4, formato="eliminacion_directa", fase_final=N
         "fecha_fin": fecha_fin,
         "formato": formato,
         "zona": "CABA",
-        "dias_operativos": 127,
+        "dias_operativos": dias_operativos,
         "franja_horaria": "10:00-12:00",
         "max_equipos": max_equipos,
         "ida_y_vuelta": ida_y_vuelta,
@@ -163,6 +163,14 @@ def inscribir_equipos(torneo_id, cantidad_equipos):
     
     usuario_original = db.query(Usuario).filter(Usuario.email == "organizador@test.com").first()
     app.dependency_overrides[get_current_user] = lambda: usuario_original
+
+
+def proxima_fecha_weekday(weekday_objetivo: int) -> str:
+    hoy = datetime.now().date()
+    delta = (weekday_objetivo - hoy.weekday()) % 7
+    if delta == 0:
+        delta = 7
+    return (hoy + timedelta(days=delta)).isoformat()
 
 
 # ----------------------------
@@ -498,6 +506,28 @@ def test_obtener_fixture_por_fechas():
             assert partido["equipo_visitante"] is not None
             assert partido["estado"] == "pendiente"  
             assert partido["equipo_local"]["id"] != partido["equipo_visitante"]["id"]
+
+
+def test_programar_partido_fuera_de_dias_operativos_torneo_falla():
+    torneo_id = crear_torneo_base(
+        max_equipos=4,
+        formato="eliminacion_directa",
+        dias_operativos=1,  # solo lunes
+    )
+    inscribir_equipos(torneo_id, 4)
+
+    fixture_resp = client.post(f"/api/torneos/{torneo_id}/fixture")
+    assert fixture_resp.status_code == 200
+    partido_id = fixture_resp.json()[0]["id"]
+
+    fecha_martes = proxima_fecha_weekday(1)  # martes
+    programar_resp = client.put(
+        f"/api/torneos/partidos/{partido_id}",
+        json={"cancha_id": 1, "fecha": fecha_martes, "horario": "10:30"},
+    )
+
+    assert programar_resp.status_code == 400
+    assert "dias operativos" in programar_resp.json()["detail"].lower()
 
 
 def test_obtener_bracket_torneo():

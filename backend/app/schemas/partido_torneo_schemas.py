@@ -140,8 +140,10 @@ class PartidoBracketResponse(BaseModel):
     equipo_visitante: Optional[EquipoResponse] = None
     goles_local: Optional[int] = None
     goles_visitante: Optional[int] = None
-    estado: str
-    fecha: Optional[str] = None 
+    estado: EstadoPartidoTorneo
+    fecha: Optional[date] = None
+    horario: Optional[time] = None
+    cancha_id: Optional[int] = None
 
     partido_padre_local_id: Optional[int] = None
     partido_padre_visitante_id: Optional[int] = None

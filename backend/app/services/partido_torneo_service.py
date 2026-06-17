@@ -4,7 +4,7 @@ from datetime import datetime, date, time
 from collections import defaultdict
 
 from ..models.tabla_posicion import TablaPosiciones
-from ..models.cancha_model import Cancha
+from ..models.cancha_model import Cancha, DIAS_SEMANA_MAP
 from ..models.torneo_model import Torneo, FormatoTorneo
 from ..models.partido_torneo import EstadoPartidoTorneo, PartidoTorneo, FaseTorneo
 from ..models.partido_torneo import PartidoTorneo
@@ -31,6 +31,13 @@ def obtener_partidos_torneo(db: Session, torneo_id: int) -> list[PartidoTorneo]:
 def _validar_reglas_torneo(cancha: Cancha, torneo: Torneo, fecha: date, horario: time):
     if cancha.zona != torneo.zona:
         raise HTTPException(status_code=400, detail=f"La cancha debe estar en la zona {torneo.zona}")
+
+    bit_dia = DIAS_SEMANA_MAP[fecha.weekday()]
+    if not (torneo.dias_operativos & bit_dia):
+        raise HTTPException(
+            status_code=400,
+            detail="La fecha seleccionada no esta dentro de los dias operativos del torneo",
+        )
 
     try:
         inicio_franja, fin_franja = torneo.franja_horaria.split("-")

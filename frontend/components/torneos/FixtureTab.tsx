@@ -168,6 +168,7 @@ function FixturePorFechas({
   hoy,
   onProgramar,
   onResultado,
+  partidos,
 }: {
   torneoId: number
   isOrganizer: boolean
@@ -175,6 +176,7 @@ function FixturePorFechas({
   hoy: string
   onProgramar: (p: PartidoTorneoData) => void
   onResultado: (p: PartidoTorneoData) => void
+  partidos: PartidoTorneoData[]
 }) {
   const [fechas, setFechas] = useState<FechaFixtureData[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -184,7 +186,7 @@ function FixturePorFechas({
       .then((r) => setFechas(r.fechas))
       .catch(() => setFechas([]))
       .finally(() => setIsLoading(false))
-  }, [torneoId])
+  }, [torneoId, partidos])
 
   if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="animate-spin" /></div>
 
@@ -281,12 +283,14 @@ function BracketView({
   hoy,
   onProgramar,
   onResultado,
+  partidos,
 }: {
   torneoId: number
   isOrganizer: boolean
   hoy: string
   onProgramar: (p: PartidoTorneoData) => void
   onResultado: (p: PartidoTorneoData) => void
+  partidos: PartidoTorneoData[]
 }) {
   const [rondas, setRondas] = useState<RondaBracketData[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -296,7 +300,7 @@ function BracketView({
       .then((r) => setRondas(r.rondas))
       .catch(() => setRondas([]))
       .finally(() => setIsLoading(false))
-  }, [torneoId])
+  }, [torneoId, partidos])
 
   if (isLoading) return <div className="py-8 flex justify-center"><Loader2 className="animate-spin" /></div>
   if (rondas.length === 0) return null
@@ -490,6 +494,7 @@ export function FixtureTab({ torneo, isOrganizer }: Props) {
               hoy={hoy}
               onProgramar={abrirProgramar}
               onResultado={abrirResultado}
+              partidos={partidos}
             />
           ) : (
             // Fallback: agrupa por fase (partidos sin numero_fecha)
@@ -523,6 +528,7 @@ export function FixtureTab({ torneo, isOrganizer }: Props) {
             hoy={hoy}
             onProgramar={abrirProgramar}
             onResultado={abrirResultado}
+            partidos={partidos}
           />
         </section>
       )}
