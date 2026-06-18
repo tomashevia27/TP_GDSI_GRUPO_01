@@ -65,6 +65,40 @@ function FootballIcon({ className }: { className?: string }) {
   )
 }
 
+function HeroSection({ nombre, subtitle }: { nombre?: string, subtitle: string }) {
+  return (
+    <div className="relative h-[280px] sm:h-[360px] overflow-hidden">
+      <Image
+        src="/football-bg.jpg"
+        alt="Inicio"
+        fill
+        className="object-cover"
+        priority
+      />
+      <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+
+      <div className="absolute top-10 left-10 opacity-20 animate-float">
+        <FootballIcon className="w-12 h-12 text-card" />
+      </div>
+      <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
+        <FootballIcon className="w-8 h-8 text-card" />
+      </div>
+      <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
+        <FootballIcon className="w-16 h-16 text-card" />
+      </div>
+
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+        <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
+          ¡Hola{nombre ? `, ${nombre.split(' ')[0]}` : ''}!
+        </h1>
+        <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
+          {subtitle}
+        </p>
+      </div>
+    </div>
+  )
+}
+
 // Zonas disponibles en el sistema
 const ZONAS = [
   "Caballito",
@@ -297,36 +331,10 @@ export default function HomePage() {
   if (role === "admin") {
     return (
       <div className="min-h-screen bg-background pb-12">
-        {/* Hero Section */}
-        <div className="relative h-[280px] sm:h-[360px] overflow-hidden">
-          <Image
-            src="/football-bg.jpg"
-            alt="Inicio"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
-
-          <div className="absolute top-10 left-10 opacity-20 animate-float">
-            <FootballIcon className="w-12 h-12 text-card" />
-          </div>
-          <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
-            <FootballIcon className="w-8 h-8 text-card" />
-          </div>
-          <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
-            <FootballIcon className="w-16 h-16 text-card" />
-          </div>
-
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-            <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
-              ¡Hola{userProfile?.nombre ? `, ${userProfile.nombre.split(' ')[0]}` : ''}!
-            </h1>
-            <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
-              Bienvenido al panel de administración de tu complejo
-            </p>
-          </div>
-        </div>
+        <HeroSection 
+          nombre={userProfile?.nombre} 
+          subtitle="Bienvenido al panel de administración de tu complejo" 
+        />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-12 relative z-10">
           
@@ -663,36 +671,10 @@ export default function HomePage() {
   // ─── JUGADOR VIEW: DASHBOARD ───────────────────────────
   return (
     <div className="min-h-screen bg-background pb-12">
-      {/* Hero Section */}
-      <div className="relative h-[280px] sm:h-[360px] overflow-hidden">
-        <Image
-          src="/football-bg.jpg"
-          alt="Inicio"
-          fill
-          className="object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
-
-        <div className="absolute top-10 left-10 opacity-20 animate-float">
-          <FootballIcon className="w-12 h-12 text-card" />
-        </div>
-        <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
-          <FootballIcon className="w-8 h-8 text-card" />
-        </div>
-        <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
-          <FootballIcon className="w-16 h-16 text-card" />
-        </div>
-
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-          <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
-            ¡Hola{userProfile?.nombre ? `, ${userProfile.nombre.split(' ')[0]}` : ''}!
-          </h1>
-          <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
-            ¿Qué tenés ganas de jugar hoy?
-          </p>
-        </div>
-      </div>
+      <HeroSection 
+        nombre={userProfile?.nombre} 
+        subtitle="¿Qué tenés ganas de jugar hoy?" 
+      />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-12 relative z-10">
 
@@ -774,8 +756,8 @@ export default function HomePage() {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
-                {partidos.slice(0, 4).map(partido => (
+              <div className="space-y-4 overflow-y-auto max-h-[380px] pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary/40">
+                {partidos.map(partido => (
                   <Link key={partido.id} href={`/partidos/${partido.id}`} className="block group">
                     <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
                       <div className="w-14 h-14 bg-secondary rounded-xl flex flex-col items-center justify-center flex-shrink-0">
@@ -836,8 +818,8 @@ export default function HomePage() {
                 <p className="text-muted-foreground">No hay torneos disponibles.</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {torneos.slice(0, 3).map(torneo => (
+              <div className="space-y-4 overflow-y-auto max-h-[380px] pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-primary/20 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-primary/40">
+                {torneos.map(torneo => (
                   <Link key={torneo.id} href={`/torneos/${torneo.id}`} className="block group">
                     <div className="flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors border border-transparent hover:border-border">
                       <div className="w-14 h-14 bg-gradient-to-br from-primary/10 to-secondary rounded-xl flex items-center justify-center flex-shrink-0">
@@ -850,7 +832,7 @@ export default function HomePage() {
                           </h4>
                         </div>
                         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {torneo.fecha_inicio.split('-')[2]}/{torneo.fecha_inicio.split('-')[1]}</span>
+                          <span className="flex items-center gap-1"><Calendar className="w-3.5 h-3.5" /> {torneo.fecha_inicio.substring(8, 10)}/{torneo.fecha_inicio.substring(5, 7)}</span>
                           <span className="flex items-center gap-1 truncate"><MapPin className="w-3.5 h-3.5" /> {torneo.lugar.split(' - ')[0]}</span>
                         </div>
                       </div>
