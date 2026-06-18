@@ -3,9 +3,9 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
-from .core.exceptions import DomainRuleError, DomainPermissionError
+from .core.exceptions import DomainRuleError, DomainPermissionError, DomainNotFoundError
 
-from .routers import auth, canchas, users, partidos, notificaciones, reservas
+from .routers import auth, canchas, users, partidos, notificaciones, reservas, torneos, estadisticas
 from .core.db import engine, Base
 
 # Crear tablas
@@ -40,10 +40,33 @@ async def domain_permission_exception_handler(request: Request, exc: DomainPermi
         content={"detail": str(exc)},
     )
 
+@app.exception_handler(DomainNotFoundError)
+async def domain_not_found_exception_handler(request: Request, exc: DomainNotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": str(exc)},
+    )
+
+
 # Incluir routers
+
+from fastapi.exceptions import RequestValidationError
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    import json
+    body = await request.body()
+    print("VALIDATION ERROR:", exc.errors())
+    print("REQUEST BODY:", body)
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(canchas.router)
 app.include_router(partidos.router)
 app.include_router(notificaciones.router)
 app.include_router(reservas.router)
+app.include_router(torneos.router)
+app.include_router(estadisticas.router)

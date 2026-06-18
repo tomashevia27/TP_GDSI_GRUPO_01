@@ -89,7 +89,7 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md mx-4 animate-scale-in">
         <div className="bg-white rounded-2xl shadow-2xl shadow-black/10 border border-gray-100 p-8">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-3 mb-6">
+          <Link href="/" className="flex items-center justify-center gap-3 mb-6 hover:opacity-80 transition-opacity">
             <div className="w-14 h-14 rounded-xl overflow-hidden shadow-lg shadow-primary/25 animate-pulse-glow">
               <Image
                 src="/logo-partidoya.jpg"
@@ -100,7 +100,7 @@ export default function LoginPage() {
               />
             </div>
             <span className="text-3xl font-bold text-gray-900">PartidoYa</span>
-          </div>
+          </Link>
 
           {/* Header */}
           <div className="text-center mb-6">

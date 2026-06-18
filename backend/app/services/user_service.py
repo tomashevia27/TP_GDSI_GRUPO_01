@@ -33,3 +33,9 @@ def editar_mi_perfil(db: Session, usuario: Usuario, datos: UsuarioEdicion) -> Us
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
     return _usuario_a_respuesta(usuario)
+
+def obtener_usuarios_activos(db: Session, ids: list[int]) -> list[Usuario]:
+    usuarios = usuario_repository.obtener_usuarios_por_ids(db, ids)
+    if len(usuarios) != len(ids):
+        raise HTTPException(status_code=404, detail="Uno o más usuarios del listado no existen.")
+    return usuarios

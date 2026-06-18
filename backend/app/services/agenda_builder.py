@@ -64,16 +64,19 @@ class AgendaBuilder:
 
                 # Si hay solapamiento de horarios
                 if slot_inicio < p_fin and slot_fin > p_inicio:
-                    slot["estado"] = "bloqueado" if p.estado == "bloqueado" else "ocupado"
+                    # PartidoTorneo tiene estado "pendiente" o "finalizado", nunca "bloqueado"
+                    slot["estado"] = "bloqueado" if getattr(p, "estado", None) == "bloqueado" else "ocupado"
                     
                     if incluir_detalle:
                         slot["partido_id"] = p.id
-                        slot["cliente_nombre"] = p.cliente_nombre
-                        slot["cliente_apellido"] = p.cliente_apellido
-                        slot["cliente_telefono"] = p.cliente_telefono
-                        slot["organizador_nombre"] = p.organizador.nombre if p.organizador else None
-                        slot["organizador_apellido"] = p.organizador.apellido if p.organizador else None
-                        slot["es_reserva_manual"] = p.reserva_manual if p.reserva_manual is not None else False
+                        # Campos que solo existen en Partido casual:
+                        slot["cliente_nombre"] = getattr(p, "cliente_nombre", None) or "Torneo"
+                        slot["cliente_apellido"] = getattr(p, "cliente_apellido", None)
+                        slot["cliente_telefono"] = getattr(p, "cliente_telefono", None)
+                        organizador = getattr(p, "organizador", None)
+                        slot["organizador_nombre"] = organizador.nombre if organizador else None
+                        slot["organizador_apellido"] = organizador.apellido if organizador else None
+                        slot["es_reserva_manual"] = getattr(p, "reserva_manual", False) or False
                     break
                     
         return self

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import {
   MapPin,
   Calendar,
@@ -28,6 +29,18 @@ import {
 } from "@/hooks/use-api"
 
 
+
+
+// Football SVG Component
+function FootballIcon({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+            <circle cx="12" cy="12" r="10" fill="currentColor" opacity="0.9" />
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor" />
+            <polygon points="12,7 14.5,11 12,15 9.5,11" fill="white" opacity="0.3" />
+        </svg>
+    )
+}
 
 export default function PartidosDisponiblesPage() {
 
@@ -165,29 +178,55 @@ export default function PartidosDisponiblesPage() {
   const fechasOrdenadas = Object.keys(partidosPorFecha).sort()
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
-            Partidos Disponibles
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {isUsingUserZone && userZona
-              ? `Mostrando partidos cerca de ${userZona}`
-              : "Encontrá un partido abierto y sumate"}
-          </p>
-        </div>
-        <Button className="font-semibold" asChild>
-          <Link href="/partidos/nuevo">
-            <Plus className="mr-2 h-4 w-4" />
-            Crear Partido
-          </Link>
-        </Button>
+
+    <div className="min-h-screen bg-background pb-12">
+      {/* Hero Section */}
+      <div className="relative h-[320px] sm:h-[400px] overflow-hidden">
+          <Image
+              src="/football-bg.jpg"
+              alt="Campo de futbol"
+              fill
+              className="object-cover"
+              priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-foreground/80 via-foreground/60 to-background" />
+
+          {/* Floating football decorations */}
+          <div className="absolute top-10 left-10 opacity-20 animate-float">
+              <FootballIcon className="w-12 h-12 text-card" />
+          </div>
+          <div className="absolute top-20 right-20 opacity-15 animate-float-reverse">
+              <FootballIcon className="w-8 h-8 text-card" />
+          </div>
+          <div className="absolute bottom-32 right-10 opacity-10 animate-float-slow">
+              <FootballIcon className="w-16 h-16 text-card" />
+          </div>
+
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
+              <h1 className="text-3xl sm:text-5xl font-bold text-card mb-4 drop-shadow-lg animate-slide-up text-balance">
+                  Partidos Disponibles
+              </h1>
+              <p className="text-card/90 text-lg sm:text-xl max-w-2xl drop-shadow animate-slide-up animation-delay-100">
+                  {isUsingUserZone && userZona
+                    ? `Mostrando partidos cerca de ${userZona}`
+                    : "Encontrá un partido abierto y sumate a jugar"}
+              </p>
+              
+              <div className="mt-8 animate-slide-up animation-delay-200">
+                <Button size="lg" className="font-semibold px-8" asChild>
+                  <Link href="/partidos/nuevo">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Crear Nuevo Partido
+                  </Link>
+                </Button>
+              </div>
+          </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className="bg-card rounded-2xl border border-border p-4 mb-6">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 -mt-8 relative z-10">
+        {/* Filter Bar */}
+
+      <div className="bg-card rounded-2xl border border-border p-4 mb-8 shadow-xl">
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -492,5 +531,7 @@ export default function PartidosDisponiblesPage() {
         </div>
       )}
     </div>
-  )
+  
+      </div>
+)
 }
