@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Swal from "sweetalert2"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle } from "lucide-react"
 
 interface Props {
   partido: PartidoTorneoData | null
@@ -29,6 +29,7 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
   const [golesLocal, setGolesLocal] = useState<number | "">("")
   const [golesVisitante, setGolesVisitante] = useState<number | "">("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
   // Clave compuesta "equipoId_usuarioId" para distinguir stats por equipo
   const [stats, setStats] = useState<Record<string, PlayerStats>>({})
 
@@ -38,6 +39,7 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
       setGolesLocal("")
       setGolesVisitante("")
       setStats({})
+      setErrorMsg("")
     }
   }, [isOpen, partido])
 
@@ -56,11 +58,12 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMsg("")
     if (!partido || golesLocal === "" || golesVisitante === "") return
     if (!partido.equipo_local || !partido.equipo_visitante) return
 
     if (Number(golesLocal) < 0 || Number(golesVisitante) < 0) {
-      Swal.fire("Error", "Los goles no pueden ser negativos", "error")
+      setErrorMsg("Los goles no pueden ser negativos.")
       return
     }
 
@@ -76,12 +79,16 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
       .reduce((acc, s) => acc + s.goles, 0);
 
     if (golesLocalAsignados !== Number(golesLocal)) {
-      Swal.fire("Atención", `Los goles asignados a los jugadores locales (${golesLocalAsignados}) no coinciden con el resultado final local (${golesLocal}).`, "warning")
+      setErrorMsg(
+        `Los goles asignados a los jugadores locales (${golesLocalAsignados}) no coinciden con el resultado final local (${golesLocal}). Revisá las estadísticas individuales.`
+      )
       return
     }
 
     if (golesVisitanteAsignados !== Number(golesVisitante)) {
-      Swal.fire("Atención", `Los goles asignados a los jugadores visitantes (${golesVisitanteAsignados}) no coinciden con el resultado final visitante (${golesVisitante}).`, "warning")
+      setErrorMsg(
+        `Los goles asignados a los jugadores visitantes (${golesVisitanteAsignados}) no coinciden con el resultado final visitante (${golesVisitante}). Revisá las estadísticas individuales.`
+      )
       return
     }
 
@@ -104,7 +111,7 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
       onSuccess()
       onClose()
     } catch (err: any) {
-      Swal.fire("Error", err.message || "No se pudo guardar el resultado", "error")
+      setErrorMsg(err.message || "No se pudo guardar el resultado. Intentá nuevamente.")
     } finally {
       setIsSubmitting(false)
     }
@@ -154,6 +161,14 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden mt-2">
+          {/* Banner de error inline */}
+          {errorMsg && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 mb-4 text-sm">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           {/* Resultado Global */}
           <div className="flex justify-between items-center gap-4 bg-muted/30 p-4 rounded-xl border mb-6">
             <div className="flex flex-col items-center space-y-2 flex-1">
@@ -163,7 +178,7 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
                 min="0" 
                 required 
                 value={golesLocal}
-                onChange={(e) => setGolesLocal(e.target.value !== "" ? Number(e.target.value) : "")}
+                onChange={(e) => { setGolesLocal(e.target.value !== "" ? Number(e.target.value) : ""); setErrorMsg("") }}
                 className="text-center text-4xl h-16 w-24 font-bold"
               />
             </div>
@@ -175,7 +190,7 @@ export function CargarResultadoModal({ partido, isOpen, onClose, onSuccess }: Pr
                 min="0" 
                 required 
                 value={golesVisitante}
-                onChange={(e) => setGolesVisitante(e.target.value !== "" ? Number(e.target.value) : "")}
+                onChange={(e) => { setGolesVisitante(e.target.value !== "" ? Number(e.target.value) : ""); setErrorMsg("") }}
                 className="text-center text-4xl h-16 w-24 font-bold"
               />
             </div>

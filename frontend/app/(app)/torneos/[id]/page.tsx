@@ -3,15 +3,21 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle } from "lucide-react"
+import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple } from "@/hooks/use-api"
+import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple, getFixtureTorneo } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FixtureTab } from "@/components/torneos/FixtureTab"
 import { EstadisticasTab } from "@/components/torneos/EstadisticasTab"
 import { TablaTab } from "@/components/torneos/TablaTab"
 import Swal from "sweetalert2"
+
+const DIAS_LABELS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+function decodeDias(bitmask: number): string[] {
+  return DIAS_LABELS.filter((_, i) => (bitmask >> i) & 1)
+}
 
 
 export default function TorneoDetallePage() {
@@ -22,6 +28,7 @@ export default function TorneoDetallePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
     const [isCancelling, setIsCancelling] = useState(false)
+    const [partidosCount, setPartidosCount] = useState<{ jugados: number; total: number } | null>(null)
 
     useEffect(() => {
         async function fetchTorneo() {
@@ -36,6 +43,20 @@ export default function TorneoDetallePage() {
         }
         fetchTorneo()
     }, [id])
+
+    useEffect(() => {
+        if (!torneo) return
+        async function fetchPartidos() {
+            try {
+                const data = await getFixtureTorneo(torneo!.id)
+                const jugados = data.filter((p: any) => p.estado === 'finalizado').length
+                setPartidosCount({ jugados, total: data.length })
+            } catch {
+                // silently fail
+            }
+        }
+        fetchPartidos()
+    }, [torneo])
 
     if (isLoading) {
         return (
@@ -193,6 +214,32 @@ export default function TorneoDetallePage() {
                                     <MapPin className="w-5 h-5 text-primary" />
                                     <span>{torneo.lugar}</span>
                                 </div>
+                                {torneo.franja_horaria && (
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-5 h-5 text-primary" />
+                                        <span>{torneo.franja_horaria.replace('-', ' – ')} hs</span>
+                                    </div>
+                                )}
+                                {torneo.dias_operativos != null && (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {decodeDias(torneo.dias_operativos).map(d => (
+                                            <span key={d} className="text-xs font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                                                {d}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                {partidosCount !== null && partidosCount.total > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <Trophy className="w-4 h-4 text-primary" />
+                                        <span className="text-sm">
+                                            <span className="font-semibold text-foreground">{partidosCount.jugados}</span>
+                                            <span className="mx-1">/</span>
+                                            <span className="font-semibold text-foreground">{partidosCount.total}</span>
+                                            <span className="ml-1">partidos jugados</span>
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 

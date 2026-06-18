@@ -149,10 +149,12 @@ export default function EditarTorneoPage() {
         if (!formData.nombre.trim()) return "El nombre del torneo es obligatorio."
         if (!formData.fecha_inicio) return "La fecha de inicio es obligatoria."
         if (!formData.fecha_fin) return "La fecha de fin es obligatoria."
-        const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+        const ahora = new Date()
+        const en24hs = new Date(ahora.getTime() + 24 * 60 * 60 * 1000)
+        en24hs.setSeconds(0, 0)
         const inicio = new Date(formData.fecha_inicio + "T00:00:00")
         const fin    = new Date(formData.fecha_fin    + "T00:00:00")
-        if (inicio < hoy)  return "La fecha de inicio no puede estar en el pasado."
+        if (inicio < en24hs)  return "La nueva fecha de inicio debe ser con al menos 24 horas de anticipación desde ahora. No pods reprogramar un torneo para más de 24hs en el pasado o presente inmediato."
         if (fin <= inicio) return "La fecha de fin debe ser posterior a la fecha de inicio."
         if (!formData.zona.trim()) return "La zona es obligatoria."
         if (formData.dias_operativos === 0) return "Debe seleccionar al menos un día operativo."
@@ -272,6 +274,9 @@ export default function EditarTorneoPage() {
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                         required />
                                 </div>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
+                                    ⚠️ La nueva fecha debe ser al menos con <strong>24 horas de anticipación</strong> desde el momento actual.
+                                </p>
                             </div>
                             <div>
                                 <label className={labelClass}>Fecha de Fin *</label>

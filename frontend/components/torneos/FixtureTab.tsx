@@ -313,6 +313,12 @@ function BracketView({
     dieciseisavos: "Dieciseisavos de Final",
   }
 
+  // De más partidos (primera ronda) a menos (final)
+  const rondasOrdenadas = [...rondas].reverse()
+  const maxMatches = Math.max(...rondasOrdenadas.map(r => r.partidos.length), 1)
+  const CARD_SLOT = 110  // px por slot — totalHeight = espacio disponible para justify-around
+  const totalHeight = maxMatches * CARD_SLOT
+
   return (
     <div className="mt-10">
       <div className="flex items-center gap-3 mb-6">
@@ -320,86 +326,118 @@ function BracketView({
         <h2 className="font-bold text-base">Llave del Torneo</h2>
       </div>
 
-      {/* Bracket horizontal: columnas por ronda */}
-      <div className="overflow-x-auto pb-4">
-        <div
-          className="flex gap-6 min-w-max"
-          style={{ alignItems: "flex-start" }}
-        >
-          {/* Las rondas vienen ordenadas de la más grande a la final */}
-          {[...rondas].reverse().map((ronda, ri) => (
-            <div key={ronda.nombre} className="flex flex-col gap-4 min-w-[200px]">
-              {/* Título de ronda */}
-              <div className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground text-center pb-1 border-b">
-                {RONDA_LABEL[ronda.nombre.toLowerCase()] || ronda.nombre}
-              </div>
+      <div className="overflow-x-auto pb-6">
+        <div className="flex min-w-max items-stretch">
+          {rondasOrdenadas.map((ronda, ri) => {
+            const rondaLabel = RONDA_LABEL[ronda.nombre.toLowerCase()] || ronda.nombre
+            const isFinal = ri === rondasOrdenadas.length - 1
 
-              {/* Partidos de esta ronda, centrados verticalmente entre sus padres */}
-              <div
-                className="flex flex-col gap-3"
-                style={{
-                  // Dar espacio proporcional al número de partidos para alinear con la ronda anterior
-                  paddingTop: ri === 0 ? 0 : `${(Math.pow(2, ri) - 1) * 36}px`,
-                  gap: `${Math.pow(2, ri + 1) * 36}px`,
-                }}
-              >
-                {ronda.partidos.map((p) => {
-                  const esFinalizado = p.estado === "finalizado"
-                  const localNombre = equipoNombre(p.equipo_local)
-                  const visitanteNombre = equipoNombre(p.equipo_visitante)
+            return (
+              <div key={ronda.nombre} className="flex items-stretch">
+                {/* Columna de ronda */}
+                <div className="flex flex-col" style={{ width: 220 }}>
+                  {/* Título de ronda */}
+                  <div className={`
+                    text-center text-[11px] font-bold uppercase tracking-widest mb-3 py-1.5 px-2 rounded-lg mx-1
+                    ${isFinal ? "bg-primary text-primary-foreground shadow-sm" : "bg-muted/60 text-muted-foreground"}
+                  `}>
+                    {rondaLabel}
+                  </div>
 
-                  return (
-                    <div
-                      key={p.id}
-                      className="border rounded-lg bg-card shadow-sm overflow-hidden"
-                    >
-                      {/* Equipo local */}
-                      <div
-                        className={`flex items-center justify-between px-3 py-2 border-b ${esFinalizado && (p.goles_local ?? 0) > (p.goles_visitante ?? 0)
-                            ? "bg-primary/10 font-bold"
-                            : ""
-                          }`}
-                      >
-                        <span className="text-xs truncate flex-1" title={localNombre}>
-                          {localNombre}
-                        </span>
-                        <span className="text-xs font-bold text-primary ml-2 w-4 text-right">
-                          {esFinalizado ? p.goles_local : ""}
-                        </span>
-                      </div>
-                      {/* Equipo visitante */}
-                      <div
-                        className={`flex items-center justify-between px-3 py-2 ${esFinalizado && (p.goles_visitante ?? 0) > (p.goles_local ?? 0)
-                            ? "bg-primary/10 font-bold"
-                            : ""
-                          }`}
-                      >
-                        <span className="text-xs truncate flex-1" title={visitanteNombre}>
-                          {visitanteNombre}
-                        </span>
-                        <span className="text-xs font-bold text-primary ml-2 w-4 text-right">
-                          {esFinalizado ? p.goles_visitante : ""}
-                        </span>
-                      </div>
+                  {/* Partidos — justify-around centra cada uno entre sus "hijos" */}
+                  <div className="flex flex-col justify-around flex-1" style={{ minHeight: totalHeight }}>
+                    {ronda.partidos.map((p) => {
+                      const esFinalizado = p.estado === "finalizado"
+                      const localNombre = equipoNombre(p.equipo_local)
+                      const visitanteNombre = equipoNombre(p.equipo_visitante)
+                      const localGana = esFinalizado && (p.goles_local ?? 0) > (p.goles_visitante ?? 0)
+                      const visitanteGana = esFinalizado && (p.goles_visitante ?? 0) > (p.goles_local ?? 0)
+                      const esTBD = localNombre === "TBD" || visitanteNombre === "TBD"
 
-                      {/* Fecha si está programado */}
-                      {p.fecha && (
-                        <div className="px-3 py-1 bg-muted/30 text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-2.5 w-2.5" />
-                          {new Date(p.fecha + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                      return (
+                        <div
+                          key={p.id}
+                          className={`
+                            border rounded-xl bg-card overflow-hidden mx-1 transition-all
+                            ${esFinalizado ? "shadow-md border-green-200 dark:border-green-900/40" : "shadow-sm hover:shadow-md"}
+                            ${isFinal ? "ring-2 ring-primary/20" : ""}
+                          `}
+                        >
+                          {/* Fila equipo local */}
+                          <div className={`flex items-center justify-between px-3 py-2.5 border-b transition-colors ${localGana ? "bg-primary/10 dark:bg-primary/15" : ""}`}>
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              {localGana && <span className="text-amber-500 text-[10px] shrink-0">🏆</span>}
+                              <span
+                                className={`text-xs truncate ${localGana ? "font-bold text-primary" : esTBD ? "text-muted-foreground/50 italic" : "font-medium text-foreground"}`}
+                                title={localNombre}
+                              >
+                                {localNombre}
+                              </span>
+                            </div>
+                            {esFinalizado && (
+                              <span className={`text-sm font-bold ml-2 min-w-[20px] text-right shrink-0 ${localGana ? "text-primary" : "text-muted-foreground"}`}>
+                                {p.goles_local}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Fila equipo visitante */}
+                          <div className={`flex items-center justify-between px-3 py-2.5 transition-colors ${visitanteGana ? "bg-primary/10 dark:bg-primary/15" : ""}`}>
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              {visitanteGana && <span className="text-amber-500 text-[10px] shrink-0">🏆</span>}
+                              <span
+                                className={`text-xs truncate ${visitanteGana ? "font-bold text-primary" : esTBD ? "text-muted-foreground/50 italic" : "font-medium text-foreground"}`}
+                                title={visitanteNombre}
+                              >
+                                {visitanteNombre}
+                              </span>
+                            </div>
+                            {esFinalizado && (
+                              <span className={`text-sm font-bold ml-2 min-w-[20px] text-right shrink-0 ${visitanteGana ? "text-primary" : "text-muted-foreground"}`}>
+                                {p.goles_visitante}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Footer: fecha / estado */}
+                          <div className="px-3 py-1.5 bg-muted/25 border-t flex items-center gap-1.5">
+                            {esFinalizado ? (
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-green-600 dark:text-green-400">
+                                ✓ Finalizado
+                              </span>
+                            ) : p.fecha ? (
+                              <>
+                                <Clock className="h-2.5 w-2.5 text-muted-foreground shrink-0" />
+                                <span className="text-[10px] text-muted-foreground">
+                                  {new Date(p.fecha + "T00:00:00").toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                                  {p.horario && ` · ${p.horario.slice(0, 5)}`}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground/50 uppercase tracking-wider">Sin programar</span>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Conector visual entre rondas */}
+                {!isFinal && (
+                  <div className="flex items-center justify-center" style={{ width: 16 }}>
+                    <div className="w-full h-px bg-border/70" />
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </div>
   )
 }
+
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 

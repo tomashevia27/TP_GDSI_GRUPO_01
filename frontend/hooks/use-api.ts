@@ -1053,6 +1053,7 @@ export interface PartidoBracketData {
   goles_visitante?: number
   estado: string
   fecha?: string
+  horario?: string
   partido_padre_local_id?: number
   partido_padre_visitante_id?: number
 }

@@ -3,11 +3,10 @@
 import { useState, useEffect } from "react"
 import { PartidoTorneoData, TorneoData, programarPartido, getCanchas, CanchaData } from "@/hooks/use-api"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
 import Swal from "sweetalert2"
-import { Loader2, MapPin, Clock, Calendar } from "lucide-react"
+import { Loader2, MapPin, Clock, Calendar, AlertCircle } from "lucide-react"
 
 interface Props {
   partido: PartidoTorneoData | null
@@ -17,6 +16,17 @@ interface Props {
   onSuccess: () => void
 }
 
+/** Genera slots de horario cada 60 minutos dentro de la franja dada (excluye el límite superior) */
+function generateTimeSlots(min: string, max: string): string[] {
+  const slots: string[] = []
+  const [minH] = min.split(":").map(Number)
+  const [maxH] = max.split(":").map(Number)
+  for (let h = minH; h < maxH; h++) {
+    slots.push(`${String(h).padStart(2, "0")}:00`)
+  }
+  return slots
+}
+
 export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSuccess }: Props) {
   const [canchas, setCanchas] = useState<CanchaData[]>([])
   const [canchaId, setCanchaId] = useState<number | "">("")
@@ -24,8 +34,9 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
   const [horario, setHorario] = useState("")
   const [isLoadingCanchas, setIsLoadingCanchas] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMsg, setErrorMsg] = useState("")
 
-  // Calcular min/max fecha a partir de la franja horaria del torneo
+  // Calcular franja horaria del torneo
   const [horaMin, horaMax] = (() => {
     try {
       const [inicio, fin] = (torneo.franja_horaria || "08:00-22:00").split("-")
@@ -35,11 +46,14 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
     }
   })()
 
+  const timeSlots = generateTimeSlots(horaMin, horaMax)
+
   useEffect(() => {
     if (isOpen) {
       setCanchaId("")
       setFecha("")
       setHorario("")
+      setErrorMsg("")
       loadCanchas()
     }
   }, [isOpen, partido])
@@ -48,11 +62,9 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
     setIsLoadingCanchas(true)
     try {
       const all = await getCanchas()
-      // Filtrar por zona del torneo
       const filtradas = all.filter((c) => c.zona === torneo.zona)
       setCanchas(filtradas)
     } catch {
-      // Si falla auth, mostrar igual sin filtrar
       setCanchas([])
     } finally {
       setIsLoadingCanchas(false)
@@ -61,6 +73,7 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setErrorMsg("")
     if (!partido || canchaId === "" || !fecha || !horario) return
 
     setIsSubmitting(true)
@@ -80,7 +93,7 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
       onSuccess()
       onClose()
     } catch (err: any) {
-      Swal.fire("Error", err.message || "No se pudo programar el partido", "error")
+      setErrorMsg(err.message || "No se pudo programar el partido. Intentá nuevamente.")
     } finally {
       setIsSubmitting(false)
     }
@@ -94,7 +107,7 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -108,6 +121,14 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-5 mt-2">
+          {/* Banner de error inline */}
+          {errorMsg && (
+            <div className="flex items-start gap-2 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 text-sm">
+              <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
           {/* Selector de cancha */}
           <div className="space-y-2">
             <Label className="flex items-center gap-1.5">
@@ -126,7 +147,7 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
               <select
                 required
                 value={canchaId}
-                onChange={(e) => setCanchaId(e.target.value === "" ? "" : Number(e.target.value))}
+                onChange={(e) => { setCanchaId(e.target.value === "" ? "" : Number(e.target.value)); setErrorMsg("") }}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
                 <option value="">Seleccioná una cancha</option>
@@ -145,34 +166,55 @@ export function ProgramarPartidoModal({ partido, torneo, isOpen, onClose, onSucc
               <Calendar className="h-4 w-4 text-muted-foreground" />
               Fecha
             </Label>
-            <Input
+            <input
               id="fecha-partido"
               type="date"
               required
               min={fechaMin}
               value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              onChange={(e) => { setFecha(e.target.value); setErrorMsg("") }}
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
 
-          {/* Horario */}
+          {/* Horario – chips de selección */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-1.5" htmlFor="horario-partido">
+            <Label className="flex items-center gap-1.5">
               <Clock className="h-4 w-4 text-muted-foreground" />
               Horario{" "}
               <span className="text-muted-foreground text-xs ml-1">
                 (franja del torneo: {horaMin} – {horaMax})
               </span>
             </Label>
-            <Input
-              id="horario-partido"
-              type="time"
-              required
-              min={horaMin}
-              max={horaMax}
-              value={horario}
-              onChange={(e) => setHorario(e.target.value)}
-            />
+
+            {timeSlots.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Sin horarios disponibles en esta franja.</p>
+            ) : (
+              <div className="grid grid-cols-4 gap-2">
+                {timeSlots.map((slot) => (
+                  <button
+                    key={slot}
+                    type="button"
+                    onClick={() => { setHorario(slot); setErrorMsg("") }}
+                    className={`
+                      py-2.5 px-1 rounded-lg border text-sm font-semibold transition-all select-none
+                      ${horario === slot
+                        ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                        : "bg-background border-border text-foreground hover:bg-primary/10 hover:border-primary/50 hover:text-primary"
+                      }
+                    `}
+                  >
+                    {slot.slice(0, 2)}hs
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {horario && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Horario seleccionado: <span className="font-semibold text-foreground">{horario}</span>
+              </p>
+            )}
           </div>
 
           <DialogFooter className="pt-2">

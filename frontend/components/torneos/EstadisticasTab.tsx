@@ -21,7 +21,9 @@ export function EstadisticasTab({ torneo }: Props) {
           getVallasInvictas(torneo.id, 50).catch(() => []),
         ])
         setGoleadores(g)
-        setVallas(v)
+        // Ordenar de menor a mayor goles recibidos
+        const vallasSorted = [...v].sort((a, b) => (a.partidos_invicto ?? 0) - (b.partidos_invicto ?? 0))
+        setVallas(vallasSorted)
       } finally {
         setIsLoading(false)
       }
@@ -99,16 +101,16 @@ export function EstadisticasTab({ torneo }: Props) {
         )}
       </div>
 
-      {/* Tabla de Vallas Invictas */}
+      {/* Tabla de Valla Menos Vencida */}
       <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
         <div className="bg-muted/30 px-5 py-4 border-b flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          <h3 className="font-bold text-base">Vallas Invictas</h3>
+          <h3 className="font-bold text-base">Valla Menos Vencida</h3>
         </div>
 
         {vallas.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground text-sm">
-            Las estadísticas de vallas invictas estarán disponibles próximamente.
+            Las estadísticas de valla menos vencida estarán disponibles una vez que haya partidos finalizados.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -117,7 +119,7 @@ export function EstadisticasTab({ torneo }: Props) {
                 <tr>
                   <th className="px-4 py-3 w-12 text-center">Pos</th>
                   <th className="px-4 py-3">Equipo</th>
-                  <th className="px-4 py-3 text-center">🧤 Partidos invicto</th>
+                  <th className="px-4 py-3 text-center">🧤 Goles Recibidos</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
