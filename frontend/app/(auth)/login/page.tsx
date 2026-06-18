@@ -52,12 +52,31 @@ export default function LoginPage() {
       router.push("/home")
 
     } catch (error) {
-      Swal.fire({
-        title: "Error de acceso",
-        text: error instanceof Error ? error.message : "No se pudo conectar con el servidor.",
-        icon: "error",
-        confirmButtonColor: "#FF6B4A",
-      })
+      const errorMsg = error instanceof Error ? error.message : "No se pudo conectar con el servidor."
+      
+      if (errorMsg === "La cuenta no está activa aún") {
+        Swal.fire({
+          title: "Cuenta inactiva",
+          text: "Tu cuenta no está activa. ¿Querés ingresar el código de verificación o pedir que te lo reenvíen?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#FF6B4A",
+          cancelButtonColor: "#6b7280",
+          confirmButtonText: "Ir a verificar",
+          cancelButtonText: "Cancelar"
+        }).then((result) => {
+          if (result.isConfirmed) {
+            router.push(`/confirm?email=${encodeURIComponent(email)}`)
+          }
+        })
+      } else {
+        Swal.fire({
+          title: "Error de acceso",
+          text: errorMsg,
+          icon: "error",
+          confirmButtonColor: "#FF6B4A",
+        })
+      }
     } finally {
       setIsLoading(false)
     }
