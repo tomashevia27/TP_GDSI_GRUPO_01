@@ -89,14 +89,25 @@ def crear_torneo_base(max_equipos: int = 2, estado: EstadoTorneo = EstadoTorneo.
     torneo = Torneo(
         nombre="Torneo de Testeo",
         fecha_inicio=datetime.now() + timedelta(days=5),
+<<<<<<< HEAD
+=======
         formato="fase_grupos",
-        cancha_id=1,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
+        formato="eliminacion_directa",
         max_equipos=max_equipos,
         costo_inscripcion=100.0,
         estado=estado,
+<<<<<<< HEAD
         organizador_id=1,
-        min_integrantes_por_equipo=min_integrantes
+        min_integrantes_por_equipo=min_integrantes,
+        zona="CABA",
+        dias_operativos=31,
+        franja_horaria="10:00-20:00"
+=======
+        organizador_id=1
+>>>>>>> us-editar-cancha-back
     )
     db.add(torneo)
     db.commit()

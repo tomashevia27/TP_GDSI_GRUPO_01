@@ -91,6 +91,21 @@ class TorneoCreate(TorneoBase):
         return self
 
 
+class TorneoUpdate(BaseModel):
+    nombre: Optional[str] = Field(None, min_length=3, max_length=100)
+    fecha_inicio: Optional[datetime] = None
+    fecha_fin: Optional[datetime] = None
+    formato: Optional[FormatoTorneo] = None
+    zona: Optional[str] = Field(None, min_length=2, max_length=100)
+    dias_operativos: Optional[int] = None
+    franja_horaria: Optional[str] = None
+    max_equipos: Optional[int] = Field(None, ge=2)
+    min_integrantes_por_equipo: Optional[int] = None
+    costo_inscripcion: Optional[float] = Field(None, ge=0)
+    descripcion: Optional[str] = None
+    reglas: Optional[str] = None
+    ida_y_vuelta: Optional[bool] = None
+    fase_final: Optional[str] = None
 class TorneoResponse(TorneoBase):
     id: int
     zona: str

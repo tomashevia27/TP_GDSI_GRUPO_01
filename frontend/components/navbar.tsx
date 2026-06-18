@@ -69,6 +69,19 @@ export function Navbar({ onLogout }: NavbarProps) {
                 Agenda
               </Link>
             )}
+            {role === "admin" && (
+              <Link
+                href="/estadisticas"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-foreground",
+                  pathname?.startsWith("/estadisticas")
+                    ? "text-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                Estadísticas
+              </Link>
+            )}
             <Link
               href="/canchas"
               className={cn(

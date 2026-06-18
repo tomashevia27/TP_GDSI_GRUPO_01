@@ -81,29 +81,45 @@ def test_obtener_mis_torneos_vacio():
 def test_obtener_mis_torneos_como_organizador_y_jugador():
     """Prueba que categorice correctamente y asigne los roles dinámicos."""
     db = TestingSessionLocal()
-    
+
     torneo_org = Torneo(
         nombre="Torneo del Organizador",
         fecha_inicio=datetime.now() + timedelta(days=5),
+<<<<<<< HEAD
+=======
         formato=FormatoTorneo.eliminacion_directa,
-        cancha_id=1,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
+        formato=FormatoTorneo.eliminacion_directa,
+        zona="CABA",
+        dias_operativos=127,
+        franja_horaria="10:00-12:00",
         max_equipos=4,
+        min_integrantes_por_equipo=5,
         costo_inscripcion=1000.0,
         estado=EstadoTorneo.abierto,
-        organizador_id=1  # Nuestro usuario logueado
+        organizador_id=1
     )
     
     torneo_jug = Torneo(
         nombre="Torneo del Jugador",
         fecha_inicio=datetime.now() - timedelta(days=2),
+        fecha_fin=datetime.now() + timedelta(days=5),
         formato=FormatoTorneo.todos_contra_todos,
-        cancha_id=1,
+<<<<<<< HEAD
+        zona="CABA",
+        dias_operativos=127,
+        franja_horaria="10:00-12:00",
+=======
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
         fecha_fin=datetime.now() + timedelta(days=20),
+>>>>>>> us-editar-cancha-back
         max_equipos=6,
+        min_integrantes_por_equipo=5,
         costo_inscripcion=1500.0,
         estado=EstadoTorneo.en_curso,
-        organizador_id=99  # Organizado por otro usuario ficticio
+        organizador_id=999
     )
     
     equipo = Equipo(nombre="Los Rusticos FC")
@@ -140,10 +156,18 @@ def test_obtener_mis_torneos_finalizado():
     torneo_fin = Torneo(
         nombre="Antiguo Torneo Comercial",
         fecha_inicio=datetime.now() - timedelta(days=30),
+        fecha_fin=datetime.now() - timedelta(days=10),
         formato=FormatoTorneo.eliminacion_directa,
-        cancha_id=1,
+<<<<<<< HEAD
+        zona="CABA",
+        dias_operativos=127,
+        franja_horaria="10:00-12:00",
+=======
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
         fecha_fin=datetime.now() + timedelta(days=20),
+>>>>>>> us-editar-cancha-back
         max_equipos=8,
+        min_integrantes_por_equipo=5,
         costo_inscripcion=0.0,
         estado=EstadoTorneo.finalizado,
         organizador_id=1

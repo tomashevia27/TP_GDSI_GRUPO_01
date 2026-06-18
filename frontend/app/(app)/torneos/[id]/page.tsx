@@ -3,18 +3,22 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle } from "lucide-react"
+import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getTorneo, cancelarTorneo, TorneoData } from "@/hooks/use-api"
+import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple, getFixtureTorneo } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { FixtureTab } from "@/components/torneos/FixtureTab"
+import { EstadisticasTab } from "@/components/torneos/EstadisticasTab"
+import { TablaTab } from "@/components/torneos/TablaTab"
 import Swal from "sweetalert2"
 
-// Interfaz para el tipado de los jugadores parseados
-interface JugadorObjeto {
-    nombre: string;
-    email?: string;
-    dni?: string;
+const DIAS_LABELS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+function decodeDias(bitmask: number): string[] {
+  return DIAS_LABELS.filter((_, i) => (bitmask >> i) & 1)
 }
+
 
 export default function TorneoDetallePage() {
     const { id } = useParams()
@@ -24,6 +28,7 @@ export default function TorneoDetallePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
     const [isCancelling, setIsCancelling] = useState(false)
+    const [partidosCount, setPartidosCount] = useState<{ jugados: number; total: number } | null>(null)
 
     useEffect(() => {
         async function fetchTorneo() {
@@ -38,6 +43,20 @@ export default function TorneoDetallePage() {
         }
         fetchTorneo()
     }, [id])
+
+    useEffect(() => {
+        if (!torneo) return
+        async function fetchPartidos() {
+            try {
+                const data = await getFixtureTorneo(torneo!.id)
+                const jugados = data.filter((p: any) => p.estado === 'finalizado').length
+                setPartidosCount({ jugados, total: data.length })
+            } catch {
+                // silently fail
+            }
+        }
+        fetchPartidos()
+    }, [torneo])
 
     if (isLoading) {
         return (
@@ -103,11 +122,26 @@ export default function TorneoDetallePage() {
         }
     }
 
-    const renderizarJugadores = (jugadoresRaw: string) => {
+    const renderizarJugadores = (jugadoresRaw: string | JugadorSimple[]) => {
+        // Si ya es un array de objetos (viene del backend con jugadores cargados)
+        if (Array.isArray(jugadoresRaw)) {
+            if (jugadoresRaw.length === 0) return null
+            return (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {jugadoresRaw.map((j, i) => (
+                        <span
+                            key={i}
+                            className="inline-block bg-muted text-muted-foreground text-[11px] font-medium px-2 py-0.5 rounded-md border border-border/60"
+                        >
+                            {j.nombre} {j.apellido}
+                        </span>
+                    ))}
+                </div>
+            )
+        }
+        // Si viene como string JSON
         try {
-            // parseador formato JSON array
-            const lista: JugadorObjeto[] = JSON.parse(jugadoresRaw)
-
+            const lista: { nombre: string; email?: string; dni?: string }[] = JSON.parse(jugadoresRaw)
             if (Array.isArray(lista)) {
                 return (
                     <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -125,7 +159,6 @@ export default function TorneoDetallePage() {
             }
         } catch (e) {
         }
-
         return <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{jugadoresRaw}</p>
     }
 
@@ -159,7 +192,7 @@ export default function TorneoDetallePage() {
                                 ) : (
                                     <span className={`text-xs uppercase font-bold tracking-wider px-2.5 py-1 rounded-md
                                         ${torneo.estado === 'En curso' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
-                                          'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
+                                            'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400'
                                         }
                                     `}>
                                         {torneo.estado}
@@ -181,6 +214,32 @@ export default function TorneoDetallePage() {
                                     <MapPin className="w-5 h-5 text-primary" />
                                     <span>{torneo.lugar}</span>
                                 </div>
+                                {torneo.franja_horaria && (
+                                    <div className="flex items-center gap-2">
+                                        <Clock className="w-5 h-5 text-primary" />
+                                        <span>{torneo.franja_horaria.replace('-', ' – ')} hs</span>
+                                    </div>
+                                )}
+                                {torneo.dias_operativos != null && (
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        {decodeDias(torneo.dias_operativos).map(d => (
+                                            <span key={d} className="text-xs font-semibold px-2 py-0.5 rounded-md bg-primary/10 text-primary border border-primary/20">
+                                                {d}
+                                            </span>
+                                        ))}
+                                    </div>
+                                )}
+                                {partidosCount !== null && partidosCount.total > 0 && (
+                                    <div className="flex items-center gap-2">
+                                        <Trophy className="w-4 h-4 text-primary" />
+                                        <span className="text-sm">
+                                            <span className="font-semibold text-foreground">{partidosCount.jugados}</span>
+                                            <span className="mx-1">/</span>
+                                            <span className="font-semibold text-foreground">{partidosCount.total}</span>
+                                            <span className="ml-1">partidos jugados</span>
+                                        </span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -219,11 +278,16 @@ export default function TorneoDetallePage() {
 
             {/* Contenido */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <Tabs defaultValue="informacion" className="w-full">
+                    <TabsList className="grid w-full grid-cols-5 mb-8">
+                        <TabsTrigger value="informacion">Información</TabsTrigger>
+                        <TabsTrigger value="equipos">Equipos</TabsTrigger>
+                        <TabsTrigger value="fixture">Fixture</TabsTrigger>
+                        <TabsTrigger value="tabla">Tabla</TabsTrigger>
+                        <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
+                    </TabsList>
 
-                    {/* Columna principal (Detalles) */}
-                    <div className="md:col-span-2 space-y-8">
-
+                    <TabsContent value="informacion" className="space-y-8">
                         {/* Descripción */}
                         <section className="space-y-4">
                             <h3 className="text-xl font-bold text-foreground flex items-center gap-2 border-b border-border pb-2">
@@ -247,10 +311,50 @@ export default function TorneoDetallePage() {
                                 </p>
                             </div>
                         </section>
-                    </div>
 
-                    {/* Columna lateral (Equipos Inscriptos) */}
-                    <div className="md:col-span-1 space-y-6">
+                        {/* Acciones de Organizador */}
+                        {userId && torneo.organizador_id === Number(userId) && torneo.estado !== "Cancelado" && (
+                            <div className="bg-card rounded-xl border border-border shadow-sm p-5 mt-6 flex flex-col gap-5">
+                                <div>
+                                    <h3 className="font-bold text-foreground mb-2 flex items-center gap-2">
+                                        <Shield className="w-5 h-5 text-primary" />
+                                        Administración
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Opciones de gestión del torneo.
+                                    </p>
+                                </div>
+
+                                {estaAbierto && (
+                                    <Link href={`/torneos/${torneo.id}/editar`} className="block w-full">
+                                        <Button variant="outline" className="w-full">
+                                            Editar Configuración
+                                        </Button>
+                                    </Link>
+                                )}
+
+                                <div className="pt-4 border-t border-border">
+                                    <h4 className="font-bold text-destructive mb-1.5 flex items-center gap-1.5 text-sm">
+                                        <XCircle className="w-4 h-4" />
+                                        Zona de peligro
+                                    </h4>
+                                    <p className="text-[13px] text-muted-foreground mb-3 leading-relaxed">
+                                        Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
+                                    </p>
+                                    <Button
+                                        variant="destructive"
+                                        className="w-full"
+                                        onClick={handleCancelar}
+                                        disabled={isCancelling}
+                                    >
+                                        {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </TabsContent>
+
+                    <TabsContent value="equipos" className="space-y-6">
                         <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-border bg-muted/30">
                                 <h3 className="font-bold text-foreground flex items-center gap-2">
@@ -283,31 +387,21 @@ export default function TorneoDetallePage() {
                                 )}
                             </div>
                         </div>
+                    </TabsContent>
 
-                        {/* Acciones de Organizador */}
-                        {userId && torneo.organizador_id === Number(userId) && torneo.estado !== "Cancelado" && (
-                            <div className="bg-destructive/5 rounded-xl border border-destructive/20 p-5 mt-6">
-                                <h3 className="font-bold text-destructive mb-2 flex items-center gap-2">
-                                    <XCircle className="w-5 h-5" />
-                                    Dar de baja
-                                </h3>
-                                <p className="text-sm text-muted-foreground mb-4">
-                                    Al cancelar el torneo, se cerrarán las inscripciones y se notificará a los equipos.
-                                </p>
-                                <Button
-                                    variant="destructive"
-                                    className="w-full"
-                                    onClick={handleCancelar}
-                                    disabled={isCancelling}
-                                >
-                                    {isCancelling ? "Cancelando..." : "Cancelar Torneo"}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
+                    <TabsContent value="fixture">
+                        <FixtureTab torneo={torneo} isOrganizer={userId ? torneo.organizador_id === Number(userId) : false} />
+                    </TabsContent>
 
-                </div>
-            </div>
-        </div>
+                    <TabsContent value="tabla">
+                        <TablaTab torneo={torneo} />
+                    </TabsContent>
+
+            <TabsContent value="estadisticas">
+                <EstadisticasTab torneo={torneo} />
+            </TabsContent>
+        </Tabs>
+            </div >
+        </div >
     )
 }

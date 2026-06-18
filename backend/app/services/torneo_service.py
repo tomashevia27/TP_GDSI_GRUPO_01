@@ -1,16 +1,17 @@
-from fastapi import HTTPException, status
-
+from ..core.exceptions import DomainRuleError, DomainPermissionError, DomainNotFoundError
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 
 from ..models.usuario_model import Usuario
 
 from ..models.torneo_model import Torneo, EstadoTorneo
-from ..schemas.torneo_schemas import TorneoCreate
+from ..schemas.torneo_schemas import TorneoCreate, TorneoUpdate
 from ..repositories import torneo_repository
 from ..models.equipo_model import Equipo
 from ..schemas.equipo_schemas import InscripcionEquipoCreate 
 from .torneo_notificador import notificar_torneo_cancelado
+from ..services.fixture.fixture_service import FixtureService
+from ..models.partido_torneo import PartidoTorneo
 
 from typing import List, Dict
 
@@ -40,79 +41,95 @@ def crear_torneo(db: Session, datos: TorneoCreate, organizador_id: int) -> Torne
     )
 
     return torneo_repository.crear_torneo(db, nuevo_torneo)
+    
+
+def editar_torneo(db: Session, torneo_id: int, datos: TorneoUpdate, organizador_id: int) -> Torneo:
+    torneo = torneo_repository.obtener_por_id(db, torneo_id)
+    if not torneo:
+        raise DomainNotFoundError("El torneo especificado no existe.")
+
+    if torneo.organizador_id != organizador_id:
+        raise DomainPermissionError("No tienes permisos para editar este torneo")
+
+    if torneo.estado != EstadoTorneo.abierto:
+        raise DomainRuleError("Solo se puede editar un torneo si se encuentra Abierto para inscripción")
+
+    # Extraer datos actuales y superponer los nuevos
+    datos_actualizacion = datos.model_dump(exclude_unset=True)
+    
+    # Validar consistencia usando el esquema de creación (simulando estado final)
+    datos_completos = {
+        "nombre": torneo.nombre,
+        "fecha_inicio": torneo.fecha_inicio,
+        "fecha_fin": torneo.fecha_fin,
+        "formato": torneo.formato,
+        "zona": torneo.zona,
+        "dias_operativos": torneo.dias_operativos,
+        "franja_horaria": torneo.franja_horaria,
+        "max_equipos": torneo.max_equipos,
+        "min_integrantes_por_equipo": torneo.min_integrantes_por_equipo,
+        "costo_inscripcion": torneo.costo_inscripcion,
+        "descripcion": torneo.descripcion,
+        "reglas": torneo.reglas,
+        "ida_y_vuelta": torneo.ida_y_vuelta,
+        "fase_final": torneo.fase_final,
+    }
+    datos_completos.update(datos_actualizacion)
+    
+    from pydantic import ValidationError
+    try:
+        # Validamos usando TorneoCreate que tiene todos los @model_validator
+        TorneoCreate(**datos_completos)
+    except ValidationError as e:
+        # Extraemos el primer mensaje de error para lanzarlo como HTTP 400
+        error_msg = e.errors()[0]["msg"]
+        # Remover prefijos de error si los hay, como "Value error, "
+        if error_msg.startswith("Value error, "):
+            error_msg = error_msg.replace("Value error, ", "")
+        raise DomainRuleError(error_msg)
+
+    return torneo_repository.actualizar_torneo(db, torneo, datos_actualizacion)
 
 
 def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate, creador_accion_id: int) -> Equipo:
     
     torneo = torneo_repository.obtener_por_id(db, torneo_id)
     if not torneo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="El torneo especificado no existe."
-        )
+        raise DomainNotFoundError("El torneo especificado no existe.")
 
     if torneo.estado != EstadoTorneo.abierto:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No se aceptan inscripciones. El torneo no está abierto."
-        )
+        raise DomainRuleError("No se aceptan inscripciones. El torneo no está abierto.")
 
     if len(torneo.equipos_inscriptos) >= torneo.max_equipos:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El torneo ya no tiene cupos de inscripción disponibles."
-        )
+        raise DomainRuleError("El torneo ya no tiene cupos de inscripción disponibles.")
 
     if not datos.jugadores_emails or len(datos.jugadores_emails) == 0:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El listado de los jugadores es obligatorio."
-        )
+        raise DomainRuleError("El listado de los jugadores es obligatorio.")
 
+    from sqlalchemy import func
     emails_busqueda = [email.lower() for email in datos.jugadores_emails]
-    jugadores = db.query(Usuario).filter(Usuario.email.in_(emails_busqueda)).all()
+    jugadores = db.query(Usuario).filter(func.lower(Usuario.email).in_(emails_busqueda)).all()
 
     if len(jugadores) != len(set(emails_busqueda)):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Uno o más emails del listado no pertenecen a usuarios registrados."
-        )
+        raise DomainRuleError("Uno o más emails del listado no pertenecen a usuarios registrados.")
 
     if creador_accion_id not in [jugador.id for jugador in jugadores]:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Debes formar parte del equipo para poder inscribirlo."
-        )
+        raise DomainRuleError("Debes formar parte del equipo para poder inscribirlo.")
 
     # Validar rango de jugadores: mínimo = titulares, máximo = titulares * 2 (suplentes)
     min_requerido = torneo.min_integrantes_por_equipo
     max_permitido = torneo.min_integrantes_por_equipo * 2
 
     if len(jugadores) < min_requerido:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El equipo debe tener al menos {min_requerido} jugadores (titulares) para inscribirse en este torneo."
-        )
+        raise DomainRuleError(f"El equipo debe tener al menos {min_requerido} jugadores (titulares) para inscribirse en este torneo.")
 
     if len(jugadores) > max_permitido:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"El equipo no puede tener más de {max_permitido} jugadores (titulares + suplentes) para este torneo."
-        )
+        raise DomainRuleError(f"El equipo no puede tener más de {max_permitido} jugadores (titulares + suplentes) para este torneo.")
 
-    # Validar que ningún jugador esté ya en un equipo inscripto en este torneo
-    ids_ya_inscriptos = {
-        j.id
-        for eq in torneo.equipos_inscriptos
-        for j in eq.jugadores
-    }
-    conflictos = [j for j in jugadores if j.id in ids_ya_inscriptos]
+    conflictos = torneo_repository.verificar_jugadores_inscriptos(db, torneo.id, [j.id for j in jugadores])
     if conflictos:
         emails_conflicto = ", ".join(j.email for j in conflictos)
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Uno o más jugadores ya están inscriptos en otro equipo de este torneo: {emails_conflicto}"
-        )
+        raise DomainRuleError(f"Uno o más jugadores ya están inscriptos en otro equipo de este torneo: {emails_conflicto}")
 
     nuevo_equipo = Equipo(
         nombre=datos.nombre,
@@ -185,20 +202,17 @@ def cancelar_torneo(db: Session, torneo_id: int, usuario_accion_id: int):
     torneo = torneo_repository.obtener_por_id(db, torneo_id)
     
     if not torneo:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Torneo no encontrado")
+        raise DomainNotFoundError("Torneo no encontrado")
         
     if torneo.organizador_id != usuario_accion_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="No tienes permisos para cancelar este torneo"
-        )
+        raise DomainPermissionError("No tienes permisos para cancelar este torneo")
         
     if torneo.estado == EstadoTorneo.cancelado:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="El torneo ya está cancelado")
+        raise DomainRuleError("El torneo ya está cancelado")
     if torneo.estado == EstadoTorneo.en_curso:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede cancelar un torneo que está en curso")
+        raise DomainRuleError("No se puede cancelar un torneo que está en curso")
     if torneo.estado == EstadoTorneo.finalizado:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="No se puede cancelar un torneo finalizado")
+        raise DomainRuleError("No se puede cancelar un torneo finalizado")
 
     notificar_torneo_cancelado(db, torneo)
 
@@ -206,3 +220,47 @@ def cancelar_torneo(db: Session, torneo_id: int, usuario_accion_id: int):
     db.commit()
     db.refresh(torneo)    
     return torneo
+
+def generar_fixture(
+    db: Session,
+    torneo_id: int,
+    usuario_accion_id: int,
+):
+    torneo = torneo_repository.obtener_por_id(db, torneo_id)
+
+    if not torneo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Torneo no encontrado"
+        )
+
+    if torneo.organizador_id != usuario_accion_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo el organizador puede generar el fixture"
+        )
+
+    if torneo.estado != EstadoTorneo.abierto:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El fixture solo puede generarse para torneos abiertos"
+        )
+
+    if torneo.partidos:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El fixture ya fue generado"
+        )
+
+    partidos = FixtureService.generar(torneo)
+
+    db.add_all(partidos)
+    torneo.estado = EstadoTorneo.en_curso
+
+    db.commit()
+    
+    for partido in partidos:
+        db.refresh(partido)
+    db.refresh(torneo)
+
+    return partidos

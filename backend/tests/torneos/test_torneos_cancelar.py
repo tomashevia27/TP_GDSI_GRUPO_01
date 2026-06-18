@@ -72,17 +72,26 @@ def limpiar_db():
 def test_cancelar_torneo_exitoso_y_notifica():
     """Verifica la baja exitosa, cambio de estado y generación de alertas masivas."""
     db = TestingSessionLocal()
-    
+    usuario = db.query(Usuario).filter_by(email="organizador@test.com").first()
+
     torneo = Torneo(
         nombre="Copa de Campeones",
         fecha_inicio=datetime.now() + timedelta(days=7),
+<<<<<<< HEAD
+=======
         formato=FormatoTorneo.eliminacion_directa,
-        cancha_id=1,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
+        formato=FormatoTorneo.eliminacion_directa,
+        zona="CABA",
+        dias_operativos=127,
+        franja_horaria="10:00-12:00",
         max_equipos=4,
+        min_integrantes_por_equipo=5,
         costo_inscripcion=1500.0,
         estado=EstadoTorneo.abierto,
-        organizador_id=1
+        organizador_id=usuario.id
     )
     
     jugador_rival = Usuario(
@@ -122,13 +131,21 @@ def test_cancelar_torneo_sin_permisos():
     torneo = Torneo(
         nombre="Liga Privada Pro",
         fecha_inicio=datetime.now() + timedelta(days=3),
+<<<<<<< HEAD
+=======
         formato=FormatoTorneo.eliminacion_directa,
-        cancha_id=1,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
+        formato=FormatoTorneo.eliminacion_directa,
+        zona="CABA",
+        dias_operativos=127,
+        franja_horaria="10:00-12:00",
         max_equipos=8,
+        min_integrantes_por_equipo=5,
         costo_inscripcion=2000.0,
         estado=EstadoTorneo.abierto,
-        organizador_id=99  
+        organizador_id=999
     )
     db.add(torneo)
     db.commit()
@@ -148,12 +165,20 @@ def test_cancelar_torneo_ya_finalizado():
     torneo = Torneo(
         nombre="Torneo Relámpago Pasado",
         fecha_inicio=datetime.now() - timedelta(days=15),
+<<<<<<< HEAD
+=======
         formato=FormatoTorneo.eliminacion_directa,
-        cancha_id=1,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
+        formato=FormatoTorneo.eliminacion_directa,
+        zona="CABA",
+        dias_operativos=127,
+        franja_horaria="10:00-12:00",
         max_equipos=4,
+        min_integrantes_por_equipo=5,
         costo_inscripcion=0.0,
-        estado=EstadoTorneo.finalizado,  
+        estado=EstadoTorneo.finalizado,
         organizador_id=1
     )
     db.add(torneo)
@@ -174,11 +199,17 @@ def test_cancelar_torneo_en_curso():
     torneo = Torneo(
         nombre="Torneo En Marcha",
         fecha_inicio=datetime.now() - timedelta(days=2),
+<<<<<<< HEAD
+=======
         formato=FormatoTorneo.eliminacion_directa,
-        cancha_id=1,
+        zona="CABA", dias_operativos=31, franja_horaria="10:00-14:00", min_integrantes_por_equipo=5,
+>>>>>>> us-editar-cancha-back
         fecha_fin=datetime.now() + timedelta(days=20),
         max_equipos=8,
         costo_inscripcion=500.0,
+        formato="eliminacion_directa",
+        zona="CABA",               
+        franja_horaria="10:00-12:00",
         estado=EstadoTorneo.en_curso,
         organizador_id=1
     )

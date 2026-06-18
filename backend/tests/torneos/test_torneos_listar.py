@@ -68,21 +68,29 @@ def test_listar_torneos_abiertos():
     datos1 = {
         "nombre": "Abierto",
         "fecha_inicio": fecha,
-        "formato": "fase_grupos",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
-        "max_equipos": 4,
+        "formato": "fase_grupos",
+        "fase_final": "semis",
+        "zona": "CABA",
+        "dias_operativos": 127,
+        "franja_horaria": "10:00-12:00",
+        "max_equipos": 6,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 100.0,
         "descripcion": "Desc",
         "reglas": "Reglas"
     }
+
     datos2 = {
         "nombre": "Cerrado",
         "fecha_inicio": (datetime.now() + timedelta(days=21)).isoformat(),
-        "formato": "eliminacion_directa",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=30)).isoformat(),
+        "formato": "eliminacion_directa",
+        "zona": "CABA",
+        "dias_operativos": 127,
+        "franja_horaria": "10:00-12:00",
         "max_equipos": 8,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 200.0
     }
 
@@ -118,10 +126,13 @@ def test_obtener_detalle_torneo():
     datos = {
         "nombre": "DetalleTorneo",
         "fecha_inicio": fecha,
-        "formato": "todos_contra_todos",
-        "cancha_id": 1,
         "fecha_fin": (datetime.now() + timedelta(days=20)).isoformat(),
+        "formato": "todos_contra_todos",
+        "zona": "CABA",
+        "dias_operativos": 127,
+        "franja_horaria": "10:00-12:00",
         "max_equipos": 6,
+        "min_integrantes_por_equipo": 5,
         "costo_inscripcion": 150.0,
         "descripcion": "Desc",
         "reglas": "Reglas detalladas"

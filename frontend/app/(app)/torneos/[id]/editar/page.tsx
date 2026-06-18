@@ -1,37 +1,39 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import {
     Trophy, Calendar, MapPin, Users, DollarSign,
     AlignLeft, Info, AlertCircle, ArrowLeft,
-    RefreshCw, Layers
+    RefreshCw, Layers, Loader2
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { crearTorneo } from "@/hooks/use-api"
+import { editarTorneo, getTorneo } from "@/hooks/use-api"
 import Link from "next/link"
 import Swal from "sweetalert2"
 
 // ─── Constantes de opciones por formato ───────────────────────────────────────
 const ED_OPCIONES = [2, 4, 8, 16, 32, 64]
 const FG_POR_FASE: Record<string, number[]> = {
-    semis: [6, 8, 10],
+    semis:   [6, 8, 10],
     cuartos: [12, 16, 20],
     octavos: [24, 32, 40],
 }
 const DIAS = [
-    { abbr: "Lun", full: "Lunes", bit: 0 },
-    { abbr: "Mar", full: "Martes", bit: 1 },
+    { abbr: "Lun", full: "Lunes",     bit: 0 },
+    { abbr: "Mar", full: "Martes",    bit: 1 },
     { abbr: "Mié", full: "Miércoles", bit: 2 },
-    { abbr: "Jue", full: "Jueves", bit: 3 },
-    { abbr: "Vie", full: "Viernes", bit: 4 },
-    { abbr: "Sáb", full: "Sábado", bit: 5 },
-    { abbr: "Dom", full: "Domingo", bit: 6 },
+    { abbr: "Jue", full: "Jueves",    bit: 3 },
+    { abbr: "Vie", full: "Viernes",   bit: 4 },
+    { abbr: "Sáb", full: "Sábado",   bit: 5 },
+    { abbr: "Dom", full: "Domingo",   bit: 6 },
 ]
 
-export default function CrearTorneoPage() {
+export default function EditarTorneoPage() {
+    const { id } = useParams()
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
+    const [isFetching, setIsFetching] = useState(true)
     const [errorMsg, setErrorMsg] = useState("")
 
     const [formData, setFormData] = useState({
@@ -59,14 +61,60 @@ export default function CrearTorneoPage() {
         reglas: "",
     })
 
+    useEffect(() => {
+        async function fetchTorneo() {
+            try {
+                const data = await getTorneo(Number(id))
+                
+                // Extraer YYYY-MM-DD
+                const fi = new Date(data.fecha_inicio).toISOString().split('T')[0]
+                const ff = new Date(data.fecha_fin).toISOString().split('T')[0]
+                
+                const [apertura, cierre] = data.franja_horaria.split('-')
+                const [ah, am] = apertura.split(':')
+                const [ch, cm] = cierre.split(':')
+                const REVERSE_FORMATO_MAP: Record<string, string> = {
+                    "Eliminación directa": "eliminacion_directa",
+                    "Fase de grupos": "fase_grupos",
+                    "Todos contra todos": "todos_contra_todos"
+                }
+
+                setFormData({
+                    nombre: data.nombre,
+                    fecha_inicio: fi,
+                    fecha_fin: ff,
+                    formato: REVERSE_FORMATO_MAP[data.formato] || data.formato,
+                    zona: data.zona,
+                    dias_operativos: data.dias_operativos,
+                    apertura_h: ah,
+                    apertura_m: am,
+                    cierre_h: ch,
+                    cierre_m: cm,
+                    max_equipos: data.max_equipos,
+                    min_integrantes_por_equipo: data.min_integrantes_por_equipo,
+                    ida_y_vuelta: data.ida_y_vuelta,
+                    fase_final: data.fase_final || "cuartos",
+                    costo_inscripcion: data.costo_inscripcion,
+                    descripcion: data.descripcion || "",
+                    reglas: data.reglas || "",
+                })
+            } catch (err: any) {
+                setErrorMsg(err.message || "Error al cargar los datos del torneo")
+            } finally {
+                setIsFetching(false)
+            }
+        }
+        fetchTorneo()
+    }, [id])
+
     const handleFormatoChange = (nuevoFormato: string) => {
         setErrorMsg("")
         setFormData(prev => ({
             ...prev,
             formato: nuevoFormato,
             max_equipos: nuevoFormato === "eliminacion_directa" ? 8
-                : nuevoFormato === "fase_grupos" ? 16
-                    : 8,
+                       : nuevoFormato === "fase_grupos"         ? 16
+                       : 8,
             fase_final: "cuartos",
         }))
     }
@@ -101,10 +149,12 @@ export default function CrearTorneoPage() {
         if (!formData.nombre.trim()) return "El nombre del torneo es obligatorio."
         if (!formData.fecha_inicio) return "La fecha de inicio es obligatoria."
         if (!formData.fecha_fin) return "La fecha de fin es obligatoria."
-        const hoy = new Date(); hoy.setHours(0, 0, 0, 0)
+        const ahora = new Date()
+        const en24hs = new Date(ahora.getTime() + 24 * 60 * 60 * 1000)
+        en24hs.setSeconds(0, 0)
         const inicio = new Date(formData.fecha_inicio + "T00:00:00")
-        const fin = new Date(formData.fecha_fin + "T00:00:00")
-        if (inicio < hoy) return "La fecha de inicio no puede estar en el pasado."
+        const fin    = new Date(formData.fecha_fin    + "T00:00:00")
+        if (inicio < en24hs)  return "La nueva fecha de inicio debe ser con al menos 24 horas de anticipación desde ahora. No pods reprogramar un torneo para más de 24hs en el pasado o presente inmediato."
         if (fin <= inicio) return "La fecha de fin debe ser posterior a la fecha de inicio."
         if (!formData.zona.trim()) return "La zona es obligatoria."
         if (formData.dias_operativos === 0) return "Debe seleccionar al menos un día operativo."
@@ -128,32 +178,32 @@ export default function CrearTorneoPage() {
         const franja_horaria = `${ah}:${formData.apertura_m}-${ch}:${formData.cierre_m}`
 
         try {
-            await crearTorneo({
-                nombre: formData.nombre,
-                fecha_inicio: new Date(formData.fecha_inicio + "T12:00:00").toISOString(),
-                fecha_fin: new Date(formData.fecha_fin + "T12:00:00").toISOString(),
-                formato: formData.formato,
-                zona: formData.zona,
+            await editarTorneo(Number(id), {
+                nombre:         formData.nombre,
+                fecha_inicio:   new Date(formData.fecha_inicio + "T12:00:00").toISOString(),
+                fecha_fin:      new Date(formData.fecha_fin    + "T12:00:00").toISOString(),
+                formato:        formData.formato,
+                zona:           formData.zona,
                 dias_operativos: formData.dias_operativos,
                 franja_horaria,
-                max_equipos: Number(formData.max_equipos),
+                max_equipos:    Number(formData.max_equipos),
                 min_integrantes_por_equipo: Number(formData.min_integrantes_por_equipo),
                 costo_inscripcion: Number(formData.costo_inscripcion),
-                ida_y_vuelta: formData.formato === "todos_contra_todos" ? formData.ida_y_vuelta : false,
-                fase_final: formData.formato === "fase_grupos" ? formData.fase_final : null,
-                descripcion: formData.descripcion,
-                reglas: formData.reglas,
+                ida_y_vuelta:   formData.formato === "todos_contra_todos" ? formData.ida_y_vuelta : false,
+                fase_final:     formData.formato === "fase_grupos" ? formData.fase_final : null,
+                descripcion:    formData.descripcion,
+                reglas:         formData.reglas,
             })
             await Swal.fire({
-                title: "¡Torneo creado!",
-                text: "Ya está disponible para inscripciones.",
+                title: "¡Torneo editado!",
+                text: "Los cambios se han guardado correctamente.",
                 icon: "success",
                 timer: 2000,
                 showConfirmButton: false,
             })
-            router.push("/torneos")
+            router.push(`/torneos/${id}`)
         } catch (error: any) {
-            setErrorMsg(error.message || "Error al crear el torneo.")
+            setErrorMsg(error.message || "Error al editar el torneo.")
             setIsLoading(false)
         }
     }
@@ -161,20 +211,29 @@ export default function CrearTorneoPage() {
     const inputClass = "w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
     const labelClass = "block text-sm font-medium mb-1.5 text-foreground"
 
+    if (isFetching) {
+        return (
+            <div className="min-h-screen bg-background flex flex-col items-center justify-center text-muted-foreground">
+                <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                <p>Cargando datos del torneo...</p>
+            </div>
+        )
+    }
+
     return (
         <div className="min-h-screen bg-background pb-12">
             {/* Header */}
             <div className="bg-primary/5 border-b border-border py-8">
                 <div className="max-w-3xl mx-auto px-4 sm:px-6">
-                    <Link href="/torneos" className="inline-flex items-center text-sm text-primary hover:underline mb-6 font-medium">
-                        <ArrowLeft className="w-4 h-4 mr-1" /> Volver a Torneos
+                    <Link href={`/torneos/${id}`} className="inline-flex items-center text-sm text-primary hover:underline mb-6 font-medium">
+                        <ArrowLeft className="w-4 h-4 mr-1" /> Volver al Torneo
                     </Link>
                     <h1 className="text-3xl font-bold text-foreground flex items-center gap-3">
                         <Trophy className="h-8 w-8 text-primary" />
-                        Crear Nuevo Torneo
+                        Editar Torneo
                     </h1>
                     <p className="text-muted-foreground mt-2">
-                        Completá los datos para publicar tu torneo y empezar a recibir inscripciones.
+                        Modificá los datos del torneo. Los cambios se reflejarán instantáneamente.
                     </p>
                 </div>
             </div>
@@ -215,6 +274,9 @@ export default function CrearTorneoPage() {
                                         className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border bg-background focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none"
                                         required />
                                 </div>
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1.5 flex items-center gap-1">
+                                    ⚠️ La nueva fecha debe ser al menos con <strong>24 horas de anticipación</strong> desde el momento actual.
+                                </p>
                             </div>
                             <div>
                                 <label className={labelClass}>Fecha de Fin *</label>
@@ -256,18 +318,13 @@ export default function CrearTorneoPage() {
                         {/* Días operativos — idéntico a canchas/nueva */}
                         <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <label className={labelClass + " mb-0"}>¿Qué días se juegan los partidos? *</label>
-                                    <p className="text-xs text-muted-foreground mt-1 mb-2">
-                                        Seleccioná los días de la semana habilitados para armar el fixture.
-                                    </p>
-                                </div>
+                                <label className={labelClass + " mb-0"}>Días operativos *</label>
                                 <div className="flex gap-2 flex-wrap justify-end">
                                     {[
-                                        { label: "Lun – Vie", value: 31 },
-                                        { label: "Fin de semana", value: 96 },
+                                        { label: "Lun – Vie",      value: 31  },
+                                        { label: "Fin de semana",  value: 96  },
                                         { label: "Todos los días", value: 127 },
-                                        { label: "Limpiar", value: 0 },
+                                        { label: "Limpiar",        value: 0   },
                                     ].map(({ label, value }) => (
                                         <button
                                             key={label}
@@ -288,10 +345,11 @@ export default function CrearTorneoPage() {
                                             key={d.bit}
                                             type="button"
                                             onClick={() => toggleDia(d.bit)}
-                                            className={`w-[72px] h-[72px] rounded-xl border flex flex-col items-center justify-center gap-[2px] transition-all select-none ${active
-                                                ? "bg-primary/10 border-primary border-[1.5px]"
-                                                : "bg-background border-border hover:bg-secondary hover:border-primary/50"
-                                                }`}
+                                            className={`w-[72px] h-[72px] rounded-xl border flex flex-col items-center justify-center gap-[2px] transition-all select-none ${
+                                                active
+                                                    ? "bg-primary/10 border-primary border-[1.5px]"
+                                                    : "bg-background border-border hover:bg-secondary hover:border-primary/50"
+                                            }`}
                                         >
                                             <span className={`text-[13px] font-medium ${active ? "text-primary" : "text-muted-foreground"}`}>{d.abbr}</span>
                                             <span className={`text-[11px] ${active ? "text-primary/80" : "text-muted-foreground"}`}>{d.full}</span>
@@ -302,15 +360,10 @@ export default function CrearTorneoPage() {
                         </div>
 
                         {/* Franja horaria — idéntico a canchas/nueva */}
-                        <div className="pt-2">
-                            <label className={labelClass + " mb-0"}>Franja Horaria de los Partidos *</label>
-                            <p className="text-xs text-muted-foreground mt-1 mb-3">
-                                ¿En qué horario se juegan los partidos en esos días?
-                            </p>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-muted-foreground">Hora de inicio (24hs)</label>
-                                    <div className="flex items-center space-x-2">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className={labelClass}>Apertura (24hs) *</label>
+                                <div className="flex items-center space-x-2">
                                     <input
                                         name="apertura_h" type="number" min="0" max="23"
                                         placeholder="HH" value={formData.apertura_h}
@@ -329,7 +382,7 @@ export default function CrearTorneoPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-xs font-semibold text-muted-foreground">Hora de finalización (24hs)</label>
+                                <label className={labelClass}>Cierre (24hs) *</label>
                                 <div className="flex items-center space-x-2">
                                     <input
                                         name="cierre_h" type="number" min="0" max="23"
@@ -348,7 +401,6 @@ export default function CrearTorneoPage() {
                                     </select>
                                 </div>
                             </div>
-                        </div>
                         </div>
                     </section>
 
@@ -397,12 +449,13 @@ export default function CrearTorneoPage() {
                                                 key={fase}
                                                 type="button"
                                                 onClick={() => handleFaseFinalChange(fase)}
-                                                className={`py-3 px-2 rounded-xl border text-sm font-medium transition-all ${formData.fase_final === fase
-                                                    ? "bg-primary/10 border-primary border-[1.5px] text-primary"
-                                                    : "bg-background border-border text-muted-foreground hover:bg-secondary hover:border-primary/50"
-                                                    }`}
+                                                className={`py-3 px-2 rounded-xl border text-sm font-medium transition-all ${
+                                                    formData.fase_final === fase
+                                                        ? "bg-primary/10 border-primary border-[1.5px] text-primary"
+                                                        : "bg-background border-border text-muted-foreground hover:bg-secondary hover:border-primary/50"
+                                                }`}
                                             >
-                                                {fase === "semis" && "Semifinales"}
+                                                {fase === "semis"   && "Semifinales"}
                                                 {fase === "cuartos" && "Cuartos de final"}
                                                 {fase === "octavos" && "Octavos de final"}
                                             </button>
@@ -504,11 +557,11 @@ export default function CrearTorneoPage() {
 
                     {/* Acciones */}
                     <div className="pt-4 border-t border-border flex justify-end gap-3">
-                        <Link href="/torneos">
+                        <Link href={`/torneos/${id}`}>
                             <Button type="button" variant="outline" disabled={isLoading}>Cancelar</Button>
                         </Link>
                         <Button type="submit" disabled={isLoading} className="min-w-[150px]">
-                            {isLoading ? "Creando..." : "Publicar Torneo"}
+                            {isLoading ? "Guardando..." : "Guardar Cambios"}
                         </Button>
                     </div>
                 </form>

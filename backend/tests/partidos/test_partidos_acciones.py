@@ -490,6 +490,14 @@ def test_bajarse_partido_exito_libera_cupo():
 
 
 def test_bajarse_partido_fuera_de_plazo():
+    # Abrir la cancha las 24hs en el test para evitar fallos si el test se corre de noche
+    db = TestingSessionLocal()
+    cancha = db.query(Cancha).filter(Cancha.id == 1).first()
+    cancha.hora_apertura = "00:00"
+    cancha.hora_cierre = "24:00"
+    db.commit()
+    db.close()
+
     # Usamos TZ_LOCAL para que concuerde con el backend
     now_local = datetime.now(timezone(timedelta(hours=-3)))
     fecha = (now_local + timedelta(hours=1)).date().isoformat()
