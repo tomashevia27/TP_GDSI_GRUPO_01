@@ -74,6 +74,21 @@ export default function ConfirmPage() {
         <CardContent className="pt-6">
           <form onSubmit={handleConfirm} className="space-y-4">
             <div className="space-y-2">
+              <Label htmlFor="email" className="font-medium text-sm">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="bg-input border-0 h-12"
+              />
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="code" className="font-medium text-sm">
                 Código de confirmación
               </Label>
