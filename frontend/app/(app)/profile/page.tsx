@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { MapPin, Trophy, Pencil, Zap, Clock, DollarSign, Calendar, Star, Users, ChevronRight, Edit3, TrendingUp } from "lucide-react"
+import { MapPin, Trophy, Pencil, Zap, Clock, DollarSign, Calendar, Star, Users, ChevronRight, Edit3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useAuthContext } from "@/components/auth-provider"
 import { getUserProfile, getMisPartidos, getMisCanchas, getMisTorneos, API_URL, type UserProfile, type PartidoData, type TorneoData } from "@/hooks/use-api"
@@ -135,12 +135,6 @@ export default function ProfilePage() {
               <MapPin className="w-4 h-4" />
               {profile?.zona}, Argentina
             </div>
-            {profile?.rol === "jugador" && (
-              <div className="flex items-center gap-1 px-2.5 py-0.5 bg-green-500/10 text-green-500 rounded-full font-medium text-xs border border-green-500/20">
-                <TrendingUp className="w-3.5 h-3.5" />
-                Partidos a favor: {profile?.partidos_a_favor || 0}
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -105,13 +105,13 @@ class Partido(Base):
         if hora_actual >= partido_inicio:
             raise DomainRuleError("El partido ya comenzó o está en curso")
 
-        debe_otorgar_partido_a_favor = (partido_inicio - hora_actual) >= timedelta(hours=2)
+        cancelacion_anticipada = (partido_inicio - hora_actual) >= timedelta(hours=24)
 
         self.cupos_disponibles += 1
         self.jugadores = [j for j in self.jugadores if j.id != usuario.id]
 
-        # Devuelve True si corresponde otorgar un "partido a favor" por baja anticipada.
-        return debe_otorgar_partido_a_favor
+        # Devuelve True si la cancelación es con 24+ horas de anticipación (corresponde reembolso).
+        return cancelacion_anticipada
 
     def cancelar_por_organizador(self, usuario_id):
         if self.organizador_id != usuario_id:

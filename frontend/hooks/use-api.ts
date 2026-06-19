@@ -22,12 +22,6 @@ export interface UserData {
 
 export interface UserProfile extends UserData {
   id: number
-  partidos_a_favor?: number
-}
-
-export interface PartidosAFavorData {
-  cantidad: number
-  tiene: boolean
 }
 
 function getAccessToken(): string {
@@ -134,20 +128,6 @@ export async function getUserProfile(): Promise<UserProfile> {
   return data
 }
 
-export async function getPartidosAFavor(): Promise<PartidosAFavorData> {
-  const response = await fetch(`${API_URL}/partidos/partidos-a-favor`, {
-    headers: {
-      Authorization: `Bearer ${getAccessToken()}`,
-    },
-  })
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || "Error al cargar los partidos a favor")
-  }
-
-  return data
-}
 
 export async function confirmEmail(email: string, code: string): Promise<{ mensaje: string }> {
   const response = await fetch(`${API_URL}/confirmar-email`, {
@@ -278,8 +258,6 @@ export interface PartidoCreateData {
   tipo: string;
   descripcion?: string;
   cupos_disponibles?: number;
-  use_partido_a_favor?: boolean;
-  partidos_a_favor_a_usar?: number;
 }
 
 export interface PartidoData {
@@ -386,10 +364,9 @@ export async function cancelarPartido(partidoId: string | number): Promise<Parti
 }
 
 export async function inscribirseAPartido(
-  partidoId: string | number,
-  usePartidoAFavor: boolean = false
+  partidoId: string | number
 ): Promise<PartidoData> {
-  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse?use_partido_a_favor=${usePartidoAFavor ? "true" : "false"}`, {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${getAccessToken()}`,
