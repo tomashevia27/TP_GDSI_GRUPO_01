@@ -984,7 +984,23 @@ export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
     },
   })
   const data = await response.json()
-  if (!response.ok) throw new Error(data.detail || "Error al cancelar el torneo")
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cancelar el torneo")
+  }
+  return data
+}
+
+export async function bajarseDeTorneo(torneoId: number): Promise<TorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/inscripciones`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al darse de baja del torneo")
+  }
   return data
 }
 

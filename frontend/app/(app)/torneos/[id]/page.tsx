@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple, getFixtureTorneo } from "@/hooks/use-api"
+import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple, getFixtureTorneo, bajarseDeTorneo } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FixtureTab } from "@/components/torneos/FixtureTab"
@@ -28,6 +28,7 @@ export default function TorneoDetallePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
     const [isCancelling, setIsCancelling] = useState(false)
+    const [isLeaving, setIsLeaving] = useState(false)
     const [partidosCount, setPartidosCount] = useState<{ jugados: number; total: number } | null>(null)
 
     useEffect(() => {
@@ -122,6 +123,38 @@ export default function TorneoDetallePage() {
         }
     }
 
+    const handleLeave = async () => {
+        const result = await Swal.fire({
+            title: "¿Darse de baja?",
+            text: "Estás por dar de baja a tu equipo de este torneo.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#EF4444",
+            cancelButtonColor: "#6B7280",
+            confirmButtonText: "Sí, dar de baja",
+            cancelButtonText: "Cancelar"
+        })
+
+        if (result.isConfirmed) {
+            setIsLeaving(true)
+            try {
+                await bajarseDeTorneo(torneo.id)
+                await Swal.fire({
+                    title: "Inscripción cancelada",
+                    text: "Inscripción cancelada con éxito. En las próximas horas la seña será reembolsada.",
+                    icon: "success",
+                    confirmButtonColor: "#FF6B4A"
+                })
+                const data = await getTorneo(Number(id))
+                setTorneo(data)
+            } catch (err: any) {
+                Swal.fire("Error", err.message || "No se pudo dar de baja al equipo", "error")
+            } finally {
+                setIsLeaving(false)
+            }
+        }
+    }
+
     const renderizarJugadores = (jugadoresRaw: string | JugadorSimple[]) => {
         // Si ya es un array de objetos (viene del backend con jugadores cargados)
         if (Array.isArray(jugadoresRaw)) {
@@ -165,6 +198,19 @@ export default function TorneoDetallePage() {
     const cuposRestantes = torneo.max_equipos - torneo.equipos_inscriptos
     const estaAbierto = torneo.estado === "Abierto para inscripción"
     const hayCupos = cuposRestantes > 0
+
+    const isUserEnrolled = torneo.equipos?.some(equipo => {
+        if (Array.isArray(equipo.jugadores)) {
+            return equipo.jugadores.some((j: any) => j.id === Number(userId))
+        }
+        try {
+            const parsed = JSON.parse(equipo.jugadores)
+            if (Array.isArray(parsed)) {
+                return parsed.some((j: any) => j.id === Number(userId))
+            }
+        } catch (e) { }
+        return false
+    }) || false
 
     return (
         <div className="min-h-screen bg-background pb-12">
@@ -258,7 +304,23 @@ export default function TorneoDetallePage() {
 
                             {role !== "admin" && (
                                 <>
-                                    {estaAbierto && hayCupos ? (
+                                    {isUserEnrolled ? (
+                                        estaAbierto && torneo.estado !== "En curso" ? (
+                                            <Button 
+                                                variant="destructive" 
+                                                className="w-full" 
+                                                size="lg" 
+                                                onClick={handleLeave} 
+                                                disabled={isLeaving}
+                                            >
+                                                {isLeaving ? "Saliendo..." : "Darse de baja"}
+                                            </Button>
+                                        ) : (
+                                            <Button className="w-full" size="lg" disabled variant="secondary">
+                                                Inscripto
+                                            </Button>
+                                        )
+                                    ) : estaAbierto && hayCupos ? (
                                         <Link href={`/torneos/${torneo.id}/inscribirse`} className="block w-full">
                                             <Button className="w-full" size="lg">
                                                 Anotar a mi equipo

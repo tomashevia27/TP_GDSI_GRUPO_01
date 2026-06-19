@@ -3,7 +3,7 @@ from typing import Optional, List
 from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from .usuario_schemas import UsuarioRespuesta
-from .equipo_schemas import EquipoResponse
+from .equipo_schemas import EquipoResponse, EquipoDetalleResponse
 from ..models.torneo_model import FormatoTorneo, EstadoTorneo
 
 # Valores válidos de max_equipos por formato
@@ -124,7 +124,7 @@ class TorneoResponse(TorneoBase):
 
 class TorneoDetalleResponse(TorneoResponse):
     organizador: UsuarioRespuesta
-    equipos_inscriptos: List[EquipoResponse] = []
+    equipos_inscriptos: List[EquipoDetalleResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
