@@ -1054,6 +1054,8 @@ export interface PartidoBracketData {
   estado: string
   fecha?: string
   horario?: string
+  fase?: string
+  grupo?: string
   partido_padre_local_id?: number
   partido_padre_visitante_id?: number
 }
@@ -1146,6 +1148,7 @@ export interface TablaPosicionData {
   gf: number
   gc: number
   dg: number
+  grupo?: string
 }
 
 export async function generarFixture(torneoId: number): Promise<PartidoTorneoData[]> {
@@ -1222,7 +1225,7 @@ export async function getTablaPosiciones(torneoId: number): Promise<TablaPosicio
 export interface VallaInvictaData {
   equipo_id: number
   equipo_nombre: string
-  partidos_invicto: number
+  goles_recibidos: number
 }
 
 export async function getVallasInvictas(torneoId: number, limit: number = 10): Promise<VallaInvictaData[]> {

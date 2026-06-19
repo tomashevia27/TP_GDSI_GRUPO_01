@@ -22,7 +22,7 @@ export function EstadisticasTab({ torneo }: Props) {
         ])
         setGoleadores(g)
         // Ordenar de menor a mayor goles recibidos
-        const vallasSorted = [...v].sort((a, b) => (a.partidos_invicto ?? 0) - (b.partidos_invicto ?? 0))
+        const vallasSorted = [...v].sort((a, b) => (a.goles_recibidos ?? 0) - (b.goles_recibidos ?? 0))
         setVallas(vallasSorted)
       } finally {
         setIsLoading(false)
@@ -127,7 +127,7 @@ export function EstadisticasTab({ torneo }: Props) {
                   <tr key={v.equipo_id} className="hover:bg-muted/40 transition-colors">
                     <td className="px-4 py-3 text-center text-muted-foreground font-medium text-xs">{i + 1}</td>
                     <td className="px-4 py-3 font-semibold text-foreground">{v.equipo_nombre}</td>
-                    <td className="px-4 py-3 text-center font-bold text-primary">{v.partidos_invicto}</td>
+                    <td className="px-4 py-3 text-center font-bold text-primary">{v.goles_recibidos}</td>
                   </tr>
                 ))}
               </tbody>

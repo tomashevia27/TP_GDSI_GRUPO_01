@@ -73,11 +73,6 @@ function PartidoCard({
       {/* Header: estado + fecha/hora */}
       <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          {(p as any).grupo && (
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-              Grupo {(p as any).grupo}
-            </span>
-          )}
           {esFinalizado ? (
             <span className="text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
               Finalizado
@@ -203,18 +198,63 @@ function FixturePorFechas({
             </h3>
             <div className="h-px flex-1 bg-border" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {fecha.partidos.map((p) => (
-              <PartidoCard
-                key={p.id}
-                partido={p}
-                isOrganizer={isOrganizer}
-                hoy={hoy}
-                onProgramar={onProgramar}
-                onResultado={onResultado}
-              />
-            ))}
-          </div>
+          
+          {(() => {
+            const porGrupo: Record<string, typeof fecha.partidos> = {}
+            let tieneGrupos = false
+            fecha.partidos.forEach(p => {
+              const g = p.grupo || ""
+              if (g) tieneGrupos = true
+              if (!porGrupo[g]) porGrupo[g] = []
+              porGrupo[g].push(p)
+            })
+
+            if (!tieneGrupos) {
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {fecha.partidos.map((p) => (
+                    <PartidoCard
+                      key={p.id}
+                      partido={p}
+                      isOrganizer={isOrganizer}
+                      hoy={hoy}
+                      onProgramar={onProgramar}
+                      onResultado={onResultado}
+                    />
+                  ))}
+                </div>
+              )
+            }
+
+            const grupos = Object.keys(porGrupo).sort()
+            return (
+              <div className="space-y-6">
+                {grupos.map(g => (
+                  <div key={g}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-px flex-1 bg-border/50" />
+                      <h4 className="font-bold text-xs uppercase tracking-widest text-muted-foreground px-2">
+                        {g ? `Grupo ${g}` : "Sin Grupo"}
+                      </h4>
+                      <div className="h-px flex-1 bg-border/50" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {porGrupo[g].map((p) => (
+                        <PartidoCard
+                          key={p.id}
+                          partido={p}
+                          isOrganizer={isOrganizer}
+                          hoy={hoy}
+                          onProgramar={onProgramar}
+                          onResultado={onResultado}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
         </div>
       ))}
     </div>
