@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "bac
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-DATABASE_URL = "postgresql+psycopg2://teamup_user:oLnFneAtzOS1KrW0EBCl9KBs6BYQIcjh@dpg-d8bqhul8nd3s738tbc20-a.virginia-postgres.render.com/teamup_db_yilz?sslmode=require"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+psycopg2://admin:admin123@localhost:5432/bdd_db")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
