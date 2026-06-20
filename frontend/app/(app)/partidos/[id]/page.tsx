@@ -4,9 +4,7 @@ import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, MapPin, Calendar, Clock, Users, Tag, Info, CheckCircle2, Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL, getPartidosAFavor } from "@/hooks/use-api"
+import { getPartido, type PartidoData, getUserProfile, UserProfile, cancelarPartido, inscribirseAPartido, bajarseDePartido, API_URL } from "@/hooks/use-api"
 import Swal from "sweetalert2"
 import { CountdownTimer } from "@/components/CountdownTimer"
 
@@ -31,8 +29,6 @@ export default function PartidoDetallePage() {
   const [isJoining, setIsJoining] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<UserProfile | null>(null)
-  const [usarPartidoAFavor, setUsarPartidoAFavor] = useState(false)
-  const [tienePartidosAFavor, setTienePartidosAFavor] = useState(false)
 
   useEffect(() => {
     async function loadData() {
@@ -50,13 +46,6 @@ export default function PartidoDetallePage() {
         try {
           const user = await getUserProfile()
           setCurrentUser(user)
-
-          try {
-            const creditos = await getPartidosAFavor()
-            setTienePartidosAFavor(creditos.tiene)
-          } catch (e) {
-            console.warn("Error al cargar partidos a favor:", e)
-          }
         } catch (e) {
           // No user logged in or error
         }
@@ -114,31 +103,66 @@ export default function PartidoDetallePage() {
     const date = new Date(`${partido.fecha}T${partido.horario}`)
     const now = new Date()
     const hoursDifference = (date.getTime() - now.getTime()) / (1000 * 60 * 60)
-    const penalidad = hoursDifference < 2
+    const cancelacionAnticipada = hoursDifference >= 24
 
-    const result = await Swal.fire({
-      title: "¿Cancelar partido?",
-      text: penalidad ? "Al cancelar con menos de 2 horas de anticipación perderás la seña abonada por los cupos y no se te acreditarán los partidos a favor." : "Al cancelar con más de 2 horas de anticipación, se te acreditarán partidos a favor correspondientes a tus cupos pagos.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#EF4444",
-      cancelButtonColor: "#6B7280",
-      confirmButtonText: "Sí, cancelar",
-      cancelButtonText: "No, mantener"
-    })
+    if (cancelacionAnticipada) {
+      const result = await Swal.fire({
+        title: "¿Cancelar partido?",
+        text: "Estás por cancelar este partido.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Sí, cancelar",
+        cancelButtonText: "No, mantener"
+      })
 
-    if (result.isConfirmed) {
-      setIsCancelling(true)
-      try {
-        await cancelarPartido(partido.id)
-        Swal.fire("Cancelado", "El partido ha sido cancelado exitosamente.", "success")
-        // Reload data
-        const updated = await getPartido(partidoId)
-        setPartido(updated)
-      } catch (error: any) {
-        Swal.fire("Error", error.message || "No se pudo cancelar el partido", "error")
-      } finally {
-        setIsCancelling(false)
+      if (result.isConfirmed) {
+        setIsCancelling(true)
+        try {
+          await cancelarPartido(partido.id)
+          await Swal.fire({
+            title: "Reserva cancelada",
+            text: "Reserva cancelada con éxito. En las próximas horas la seña será reembolsada.",
+            icon: "success",
+            confirmButtonColor: "#FF6B4A"
+          })
+          const updated = await getPartido(partidoId)
+          setPartido(updated)
+        } catch (error: any) {
+          Swal.fire("Error", error.message || "No se pudo cancelar el partido", "error")
+        } finally {
+          setIsCancelling(false)
+        }
+      }
+    } else {
+      const result = await Swal.fire({
+        title: "¿Cancelar partido?",
+        text: "Si cancelás este partido, no se reembolsará el dinero. ¿Estás seguro?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Sí, cancelar",
+        cancelButtonText: "No, mantener"
+      })
+
+      if (result.isConfirmed) {
+        setIsCancelling(true)
+        try {
+          await cancelarPartido(partido.id)
+          await Swal.fire({
+            title: "Baja confirmada",
+            icon: "info",
+            confirmButtonColor: "#FF6B4A"
+          })
+          const updated = await getPartido(partidoId)
+          setPartido(updated)
+        } catch (error: any) {
+          Swal.fire("Error", error.message || "No se pudo cancelar el partido", "error")
+        } finally {
+          setIsCancelling(false)
+        }
       }
     }
   }
@@ -158,24 +182,19 @@ export default function PartidoDetallePage() {
     if (result.isConfirmed) {
       setIsJoining(true)
       try {
-        const usarCredito = usarPartidoAFavor
-        await inscribirseAPartido(partido.id, usarCredito)
+        await inscribirseAPartido(partido.id)
 
         await Swal.fire({
-          title: usarCredito ? "¡Inscripción confirmada!" : "¡Reserva iniciada!",
-          text: usarCredito
-            ? "Se descontó un partido a favor de tu cuenta."
-            : "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
+          title: "¡Reserva iniciada!",
+          text: "Serás redirigido a la pasarela de pago para abonar la seña de la cancha.",
           icon: "success",
           confirmButtonColor: "#FF6B4A",
-          confirmButtonText: usarCredito ? "Continuar" : "Proceder al pago"
+          confirmButtonText: "Proceder al pago"
         })
 
         await Swal.fire({
-          title: usarCredito ? "¡Inscripción lista!" : "¡Pago exitoso!",
-          text: usarCredito
-            ? "Tu lugar fue reservado correctamente usando tu crédito."
-            : "Tu lugar fue reservado correctamente.",
+          title: "¡Pago exitoso!",
+          text: "Tu lugar fue reservado correctamente.",
           icon: "success",
           timer: 2000,
           showConfirmButton: false
@@ -195,30 +214,66 @@ export default function PartidoDetallePage() {
     const date = new Date(`${partido.fecha}T${partido.horario}`)
     const now = new Date()
     const hoursDifference = (date.getTime() - now.getTime()) / (1000 * 60 * 60)
-    const penalidad = hoursDifference < 2
+    const cancelacionAnticipada = hoursDifference >= 24
 
-    const result = await Swal.fire({
-      title: "¿Darse de baja?",
-      text: penalidad ? "Al darte de baja con menos de 2 horas de anticipación perderás la seña abonada y no se te acreditará el partido a favor." : "Al darte de baja con más de 2 horas de anticipación, se te acreditará un partido a favor en tu cuenta.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#EF4444",
-      cancelButtonColor: "#6B7280",
-      confirmButtonText: "Sí, darme de baja",
-      cancelButtonText: "Cancelar"
-    })
+    if (cancelacionAnticipada) {
+      const result = await Swal.fire({
+        title: "¿Darse de baja?",
+        text: "Estás por darte de baja de este partido.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Sí, darme de baja",
+        cancelButtonText: "Cancelar"
+      })
 
-    if (result.isConfirmed) {
-      setIsLeaving(true)
-      try {
-        await bajarseDePartido(partido.id)
-        Swal.fire("Baja confirmada", "Te has dado de baja del partido correctamente.", "success")
-        const updated = await getPartido(partidoId)
-        setPartido(updated)
-      } catch (error: any) {
-        Swal.fire("Error", error.message || "No se pudo completar la baja", "error")
-      } finally {
-        setIsLeaving(false)
+      if (result.isConfirmed) {
+        setIsLeaving(true)
+        try {
+          await bajarseDePartido(partido.id)
+          await Swal.fire({
+            title: "Inscripción cancelada",
+            text: "Inscripción cancelada con éxito. En las próximas horas la seña será reembolsada.",
+            icon: "success",
+            confirmButtonColor: "#FF6B4A"
+          })
+          const updated = await getPartido(partidoId)
+          setPartido(updated)
+        } catch (error: any) {
+          Swal.fire("Error", error.message || "No se pudo completar la baja", "error")
+        } finally {
+          setIsLeaving(false)
+        }
+      }
+    } else {
+      const result = await Swal.fire({
+        title: "¿Darse de baja?",
+        text: "Si te das de baja de este partido, no se reembolsará el dinero. ¿Estás seguro?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#EF4444",
+        cancelButtonColor: "#6B7280",
+        confirmButtonText: "Sí, darme de baja",
+        cancelButtonText: "Cancelar"
+      })
+
+      if (result.isConfirmed) {
+        setIsLeaving(true)
+        try {
+          await bajarseDePartido(partido.id)
+          await Swal.fire({
+            title: "Baja confirmada",
+            icon: "info",
+            confirmButtonColor: "#FF6B4A"
+          })
+          const updated = await getPartido(partidoId)
+          setPartido(updated)
+        } catch (error: any) {
+          Swal.fire("Error", error.message || "No se pudo completar la baja", "error")
+        } finally {
+          setIsLeaving(false)
+        }
       }
     }
   }
@@ -303,27 +358,7 @@ export default function PartidoDetallePage() {
         </div>
       </div>
 
-      {canJoin && (
-        <div className="flex items-start gap-3 rounded-xl border border-border bg-secondary/30 p-4 mb-6">
-          <Checkbox
-            id="usar-partido-a-favor-inscripcion"
-            checked={usarPartidoAFavor}
-            disabled={!tienePartidosAFavor || isJoining}
-            onCheckedChange={(checked) => setUsarPartidoAFavor(checked === true)}
-            className="mt-0.5"
-          />
-          <div className="space-y-1 leading-tight">
-            <Label htmlFor="usar-partido-a-favor-inscripcion" className="font-medium text-sm cursor-pointer">
-              Usar partido a favor al inscribirme
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {tienePartidosAFavor
-                ? `Se descontará un crédito de tu cuenta para esta inscripción (Tenés ${currentUser?.partidos_a_favor || 0} disponibles).`
-                : "No tenés partidos a favor disponibles."}
-            </p>
-          </div>
-        </div>
-      )}
+
 
       {/* Description */}
       {partido.descripcion && (

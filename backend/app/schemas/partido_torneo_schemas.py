@@ -111,6 +111,7 @@ class TablaPosicionResponse(BaseModel):
     gf: int
     gc: int
     dg: int
+    grupo: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -118,7 +119,7 @@ class TablaPosicionResponse(BaseModel):
 class VallaInvictaResponse(BaseModel):
     equipo_id: int
     equipo_nombre: str
-    partidos_invicto: int
+    goles_recibidos: int
 
 
 class PlayerStatPerMatchResponse(BaseModel):
@@ -144,6 +145,8 @@ class PartidoBracketResponse(BaseModel):
     fecha: Optional[date] = None
     horario: Optional[time] = None
     cancha_id: Optional[int] = None
+    fase: FaseTorneo
+    grupo: Optional[str] = None
 
     partido_padre_local_id: Optional[int] = None
     partido_padre_visitante_id: Optional[int] = None

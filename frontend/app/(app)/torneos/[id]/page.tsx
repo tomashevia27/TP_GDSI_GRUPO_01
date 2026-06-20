@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Trophy, Calendar, Users, MapPin, AlignLeft, ArrowLeft, Loader2, Info, Shield, XCircle, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple, getFixtureTorneo } from "@/hooks/use-api"
+import { getTorneo, cancelarTorneo, TorneoData, JugadorSimple, getFixtureTorneo, bajarseDeTorneo, API_URL } from "@/hooks/use-api"
 import { useAuthContext } from "@/components/auth-provider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { FixtureTab } from "@/components/torneos/FixtureTab"
@@ -28,7 +28,11 @@ export default function TorneoDetallePage() {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState("")
     const [isCancelling, setIsCancelling] = useState(false)
+    const [isLeaving, setIsLeaving] = useState(false)
     const [partidosCount, setPartidosCount] = useState<{ jugados: number; total: number } | null>(null)
+    const [campeon, setCampeon] = useState<any>(null)
+    const [goleador, setGoleador] = useState<any>(null)
+    const [vallaMenosVencida, setVallaMenosVencida] = useState<any>(null)
 
     useEffect(() => {
         async function fetchTorneo() {
@@ -55,8 +59,39 @@ export default function TorneoDetallePage() {
                 // silently fail
             }
         }
+        
+        async function fetchChampionData() {
+            if (torneo!.estado === "Finalizado") {
+                try {
+                    const [tabla, stats] = await Promise.all([
+                        fetch(`${API_URL}/api/torneos/${torneo!.id}/tabla-posiciones`).then(res => res.json()),
+                        fetch(`${API_URL}/api/torneos/${torneo!.id}/estadisticas`).then(res => res.json())
+                    ])
+                    
+                    if (tabla && tabla.length > 0) {
+                        setCampeon(tabla[0])
+                    }
+                    if (stats && stats.jugadores && stats.jugadores.length > 0) {
+                        const goleadores = [...stats.jugadores].sort((a, b) => b.goles - a.goles)
+                        if (goleadores[0].goles > 0) {
+                            setGoleador(goleadores[0])
+                        }
+                    }
+                    
+                    const vallas = await fetch(`${API_URL}/api/torneos/${torneo!.id}/top/vallas-invictas?limit=1`).then(res => res.ok ? res.json() : [])
+                    if (vallas && vallas.length > 0) {
+                        setVallaMenosVencida(vallas[0])
+                    }
+                } catch (e) {
+                    // silently fail
+                }
+            }
+        }
+
         fetchPartidos()
+        fetchChampionData()
     }, [torneo])
+
 
     if (isLoading) {
         return (
@@ -122,6 +157,38 @@ export default function TorneoDetallePage() {
         }
     }
 
+    const handleLeave = async () => {
+        const result = await Swal.fire({
+            title: "¿Darse de baja?",
+            text: "Estás por dar de baja a tu equipo de este torneo.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#EF4444",
+            cancelButtonColor: "#6B7280",
+            confirmButtonText: "Sí, dar de baja",
+            cancelButtonText: "Cancelar"
+        })
+
+        if (result.isConfirmed) {
+            setIsLeaving(true)
+            try {
+                await bajarseDeTorneo(torneo.id)
+                await Swal.fire({
+                    title: "Inscripción cancelada",
+                    text: "Inscripción cancelada con éxito. En las próximas horas la seña será reembolsada.",
+                    icon: "success",
+                    confirmButtonColor: "#FF6B4A"
+                })
+                const data = await getTorneo(Number(id))
+                setTorneo(data)
+            } catch (err: any) {
+                Swal.fire("Error", err.message || "No se pudo dar de baja al equipo", "error")
+            } finally {
+                setIsLeaving(false)
+            }
+        }
+    }
+
     const renderizarJugadores = (jugadoresRaw: string | JugadorSimple[]) => {
         // Si ya es un array de objetos (viene del backend con jugadores cargados)
         if (Array.isArray(jugadoresRaw)) {
@@ -166,8 +233,84 @@ export default function TorneoDetallePage() {
     const estaAbierto = torneo.estado === "Abierto para inscripción"
     const hayCupos = cuposRestantes > 0
 
+    const isUserEnrolled = torneo.equipos?.some(equipo => {
+        if (Array.isArray(equipo.jugadores)) {
+            return equipo.jugadores.some((j: any) => j.id === Number(userId))
+        }
+        try {
+            const parsed = JSON.parse(equipo.jugadores)
+            if (Array.isArray(parsed)) {
+                return parsed.some((j: any) => j.id === Number(userId))
+            }
+        } catch (e) { }
+        return false
+    }) || false
+
     return (
         <div className="min-h-screen bg-background pb-12">
+            {torneo.estado === "Finalizado" && campeon && (
+                <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-primary/80 border-b border-primary-foreground/10 shadow-2xl">
+                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-10 mix-blend-overlay pointer-events-none"></div>
+                    <div className="absolute inset-0 flex justify-center pointer-events-none overflow-hidden">
+                        {Array.from({ length: 50 }).map((_, i) => (
+                            <div 
+                                key={i} 
+                                className="animate-confetti absolute w-1.5 h-4 sm:w-2 sm:h-6 rounded-full"
+                                style={{
+                                    left: `${Math.random() * 100}%`,
+                                    top: `-${Math.random() * 20 + 10}px`,
+                                    backgroundColor: ['#ffffff', '#f8fafc', '#e2e8f0', '#fbbf24'][Math.floor(Math.random() * 4)],
+                                    animationDelay: `${Math.random() * 5}s`,
+                                    animationDuration: `${Math.random() * 3 + 2}s`
+                                }}
+                            />
+                        ))}
+                    </div>
+                    
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-12 sm:py-16 relative z-10 text-center">
+                        <div className="inline-flex items-center justify-center p-5 bg-primary-foreground/20 backdrop-blur-md rounded-full mb-6 animate-trophy-glow shadow-[0_0_40px_rgba(255,255,255,0.2)] ring-4 ring-primary-foreground/30">
+                            <Trophy className="w-12 h-12 sm:w-16 sm:h-16 text-primary-foreground drop-shadow-md" />
+                        </div>
+                        
+                        <h2 className="text-sm sm:text-lg font-bold text-primary-foreground/90 mb-3 tracking-[0.3em] uppercase">
+                            ¡Tenemos Campeón!
+                        </h2>
+                        
+                        <h1 className="text-5xl sm:text-7xl font-black text-primary-foreground mb-10 drop-shadow-xl animate-scale-in">
+                            {campeon.equipo_nombre}
+                        </h1>
+
+                        <div className="flex flex-wrap justify-center gap-4 sm:gap-6">
+                            {goleador && (
+                                <div className="bg-primary-foreground/10 backdrop-blur-md border border-primary-foreground/20 rounded-2xl p-4 flex items-center gap-4 text-left shadow-xl hover:bg-primary-foreground/15 hover:border-primary-foreground/30 transition-all animate-scale-in animation-delay-200">
+                                    <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center shrink-0">
+                                        <span className="text-2xl drop-shadow-md">⚽</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-primary-foreground/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-0.5">Goleador del Torneo</div>
+                                        <div className="text-primary-foreground font-bold text-base sm:text-lg leading-tight truncate">{goleador.usuario_nombre} {goleador.usuario_apellido}</div>
+                                        <div className="text-primary-foreground/90 text-xs sm:text-sm font-medium mt-0.5">{goleador.goles} goles</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {vallaMenosVencida && (
+                                <div className="bg-primary-foreground/10 backdrop-blur-md border border-primary-foreground/20 rounded-2xl p-4 flex items-center gap-4 text-left shadow-xl hover:bg-primary-foreground/15 hover:border-primary-foreground/30 transition-all animate-scale-in animation-delay-400">
+                                    <div className="w-12 h-12 rounded-full bg-primary-foreground/20 flex items-center justify-center shrink-0">
+                                        <span className="text-2xl drop-shadow-md">🧤</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="text-primary-foreground/70 text-[10px] sm:text-xs font-bold uppercase tracking-widest mb-0.5">Valla Menos Vencida</div>
+                                        <div className="text-primary-foreground font-bold text-base sm:text-lg leading-tight truncate">{vallaMenosVencida.equipo_nombre}</div>
+                                        <div className="text-primary-foreground/90 text-xs sm:text-sm font-medium mt-0.5">{vallaMenosVencida.goles_recibidos} en contra</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header Hero */}
             <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-b border-border py-12">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -258,7 +401,23 @@ export default function TorneoDetallePage() {
 
                             {role !== "admin" && (
                                 <>
-                                    {estaAbierto && hayCupos ? (
+                                    {isUserEnrolled ? (
+                                        estaAbierto && torneo.estado !== "En curso" ? (
+                                            <Button 
+                                                variant="destructive" 
+                                                className="w-full" 
+                                                size="lg" 
+                                                onClick={handleLeave} 
+                                                disabled={isLeaving}
+                                            >
+                                                {isLeaving ? "Saliendo..." : "Darse de baja"}
+                                            </Button>
+                                        ) : (
+                                            <Button className="w-full" size="lg" disabled variant="secondary">
+                                                Inscripto
+                                            </Button>
+                                        )
+                                    ) : estaAbierto && hayCupos ? (
                                         <Link href={`/torneos/${torneo.id}/inscribirse`} className="block w-full">
                                             <Button className="w-full" size="lg">
                                                 Anotar a mi equipo

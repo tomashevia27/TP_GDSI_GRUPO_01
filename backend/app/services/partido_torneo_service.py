@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from ..models.tabla_posicion import TablaPosiciones
 from ..models.cancha_model import Cancha, DIAS_SEMANA_MAP
-from ..models.torneo_model import Torneo, FormatoTorneo
+from ..models.torneo_model import Torneo, FormatoTorneo, EstadoTorneo
 from ..models.partido_torneo import EstadoPartidoTorneo, PartidoTorneo, FaseTorneo
 from ..models.partido_torneo import PartidoTorneo
 from ..models.estadistica_jugador_partido_torneo import EstadisticaJugadorPartidoTorneo
@@ -206,6 +206,10 @@ def cargar_resultado_partido(db: Session, partido_id: int, data: CargarResultado
     if partido.torneo.formato == FormatoTorneo.fase_grupos and partido.fase == FaseTorneo.grupos:
         _verificar_fin_fase_grupos(db, partido)
 
+    # Finalizar el torneo si se jugó la final
+    if partido.fase == FaseTorneo.final:
+        partido.torneo.estado = EstadoTorneo.finalizado
+
     db.commit()
     db.refresh(partido)
     return partido
@@ -368,8 +372,16 @@ def tabla_posiciones_torneo(db: Session, torneo_id: int) -> list[TablaPosicionRe
                 gf=pos.gf,
                 gc=pos.gc,
                 dg=pos.dg,
+                grupo=pos.grupo,
             ))
         else:
+            # Buscar el grupo en algún partido de este equipo (si el fixture ya se generó)
+            partido = db.query(PartidoTorneo).filter(
+                PartidoTorneo.torneo_id == torneo_id,
+                (PartidoTorneo.equipo_local_id == equipo.id) | (PartidoTorneo.equipo_visitante_id == equipo.id)
+            ).first()
+            grupo_equipo = partido.grupo if partido else None
+
             # Equipo inscripto pero sin partidos jugados aún
             tabla.append(TablaPosicionResponse(
                 equipo_id=equipo.id,
@@ -382,9 +394,10 @@ def tabla_posiciones_torneo(db: Session, torneo_id: int) -> list[TablaPosicionRe
                 gf=0,
                 gc=0,
                 dg=0,
+                grupo=grupo_equipo,
             ))
 
-    tabla.sort(key=lambda x: (x.pts, x.dg, x.gf, -x.gc), reverse=True)
+    tabla.sort(key=lambda x: (x.grupo or "", -x.pts, -x.dg, -x.gf, x.gc))
     return tabla
 
 
@@ -426,6 +439,10 @@ def estadisticas_jugador_por_torneo(db: Session, torneo_id: int, usuario_id: int
 
 
 def actualizar_tabla_posiciones(db: Session, partido: PartidoTorneo):
+    # Solo actualizar tabla si es un partido de liga o grupos
+    if partido.fase not in (FaseTorneo.liga, FaseTorneo.grupos):
+        return
+
     equipos_data = [
         {"id": partido.equipo_local_id, "gf": partido.goles_local, "gc": partido.goles_visitante},
         {"id": partido.equipo_visitante_id, "gf": partido.goles_visitante, "gc": partido.goles_local}
@@ -521,23 +538,22 @@ def top_equipos_vallas_invictas(db: Session, torneo_id: int, limit: int = 10) ->
         PartidoTorneo.estado == EstadoPartidoTorneo.finalizado,
     ).all()
 
-    # invictos por equipo_id
-    invictos: dict[int, int] = {}
+    # Goles recibidos por equipo_id
+    goles_recibidos: dict[int, int] = {}
     for p in partidos:
-        if p.goles_visitante == 0 and p.equipo_local_id:
-            invictos[p.equipo_local_id] = invictos.get(p.equipo_local_id, 0) + 1
-        if p.goles_local == 0 and p.equipo_visitante_id:
-            invictos[p.equipo_visitante_id] = invictos.get(p.equipo_visitante_id, 0) + 1
+        if p.equipo_local_id:
+            goles_recibidos[p.equipo_local_id] = goles_recibidos.get(p.equipo_local_id, 0) + (p.goles_visitante or 0)
+        if p.equipo_visitante_id:
+            goles_recibidos[p.equipo_visitante_id] = goles_recibidos.get(p.equipo_visitante_id, 0) + (p.goles_local or 0)
 
-    # todos los equipos aunque tengan 0
+    # todos los equipos, inicializados en 0 si no jugaron
     resultado = [
         VallaInvictaResponse(
             equipo_id=equipo.id,
             equipo_nombre=equipo.nombre,
-            partidos_invicto=invictos.get(equipo.id, 0),
+            goles_recibidos=goles_recibidos.get(equipo.id, 0),
         )
         for equipo in torneo.equipos_inscriptos
     ]
-
-    resultado.sort(key=lambda x: x.partidos_invicto, reverse=True)
+    resultado.sort(key=lambda x: x.goles_recibidos)
     return resultado[:limit]

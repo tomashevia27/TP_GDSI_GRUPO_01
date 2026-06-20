@@ -6,23 +6,12 @@ from datetime import date
 from ..core.dependencies import get_db
 from ..models.usuario_model import Usuario
 from ..schemas.partido_schemas import PartidoCreate, PartidoUpdate, PartidoRespuesta, MisPartidosRespuesta, FiltrosDisponibles
-from ..schemas.partido_schemas import PartidosAFavorRespuesta
 from ..services import partido_service
 from ..core.dependencies import get_current_user
 
 router = APIRouter(prefix="/partidos", tags=["Partidos"])
 
 
-@router.get("/partidos-a-favor", response_model=PartidosAFavorRespuesta)
-def obtener_partidos_a_favor(
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-):
-    """Devuelve la cantidad de partidos a favor del usuario y si tiene al menos uno."""
-    return {
-        "cantidad": int(current_user.partidos_a_favor or 0),
-        "tiene": bool((current_user.partidos_a_favor or 0) > 0)
-    }
 
 @router.get("/mis-partidos", response_model=MisPartidosRespuesta)
 def obtener_mis_partidos(
@@ -54,12 +43,11 @@ def obtener_filtros_disponibles(
 @router.post("/{partido_id}/inscribirse", response_model=PartidoRespuesta)
 def inscribirse_a_partido(
     partido_id: int,
-    use_partido_a_favor: bool = False,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
     """Inscribe al jugador actual en un partido abierto con cupo."""
-    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id, use_partido_a_favor)
+    return partido_service.inscribirse_a_partido(db, partido_id, current_user.id)
 
 
 @router.delete("/{partido_id}/bajarse", response_model=PartidoRespuesta)
@@ -81,16 +69,6 @@ def crear_partido(
     return partido_service.crear_partido(db, current_user.id, datos)
 
 
-@router.get("/partidos-a-favor", response_model=PartidosAFavorRespuesta)
-def obtener_partidos_a_favor(
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
-):
-    """Devuelve la cantidad de partidos a favor del usuario y si tiene al menos uno."""
-    return {
-        "cantidad": int(current_user.partidos_a_favor or 0),
-        "tiene": bool((current_user.partidos_a_favor or 0) > 0)
-    }
 
 
 @router.get("/{partido_id}", response_model=PartidoRespuesta)

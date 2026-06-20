@@ -92,6 +92,17 @@ def inscribir_equipo_a_torneo(
     """
     return torneo_service.inscribir_equipo(db, torneo_id, inscripcion_in, current_user.id)
 
+@router.delete("/{torneo_id}/inscripciones", response_model=TorneoResponse)
+def bajar_equipo_de_torneo(
+    torneo_id: int,
+    current_user: Usuario = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Da de baja al equipo del usuario del torneo.
+    """
+    return torneo_service.bajar_equipo(db, torneo_id, current_user.id)
+
 @router.post("/{torneo_id}/cancelar", response_model=TorneoResponse)
 def cancelar_torneo(
     torneo_id: int,

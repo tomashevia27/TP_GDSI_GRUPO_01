@@ -197,6 +197,26 @@
     50% { transform: skewX(2deg); }
   }
 
+  @keyframes confetti-fall {
+    0% { transform: translateY(-100%) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+
+  @keyframes trophy-glow {
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.5)); transform: scale(1); }
+    50% { filter: drop-shadow(0 0 25px rgba(251, 191, 36, 0.9)); transform: scale(1.05); }
+  }
+
+  @keyframes scale-in {
+    0% { opacity: 0; transform: scale(0.9); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
   /* Clases de animación */
   .animate-float { animation: float 6s ease-in-out infinite; }
   .animate-float-reverse { animation: float-reverse 7s ease-in-out infinite; }
@@ -206,6 +226,14 @@
   .animate-bounce-ball { animation: bounce-ball 1s ease-in-out infinite; }
   .animate-spin-slow { animation: spin-slow 20s linear infinite; }
   .animate-grass-sway { animation: grass-sway 3s ease-in-out infinite; }
+  .animate-confetti { animation: confetti-fall linear forwards; }
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.8) 50%, transparent 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  .animate-trophy-glow { animation: trophy-glow 3s ease-in-out infinite; }
+  .animate-scale-in { animation: scale-in 0.4s ease-out forwards; }
 
   /* Delays */
   .animation-delay-100 { animation-delay: 100ms; }

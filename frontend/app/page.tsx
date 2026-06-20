@@ -16,7 +16,9 @@ import {
   CheckCircle2,
   Trophy,
   Zap,
-  Shield
+  Shield,
+  BarChart3,
+  Bell
 } from "lucide-react"
 import { useAuthContext } from "@/components/auth-provider"
 
@@ -338,7 +340,7 @@ export default function RootPage() {
               </p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
               {[
                 {
                   step: "01",
@@ -357,11 +359,17 @@ export default function RootPage() {
                   icon: Users,
                   title: "Recibí reservas",
                   description: "Los jugadores reservan online y vos administras todo desde tu panel."
+                },
+                {
+                  step: "04",
+                  icon: BarChart3,
+                  title: "Analizá métricas",
+                  description: "Visualizá mapas de calor de ocupación para optimizar tus ingresos."
                 }
               ].map((item, index) => (
                 <div key={item.step} className="relative group">
-                  {index < 2 && (
-                    <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-accent/30 to-transparent z-0" />
+                  {index < 3 && (
+                    <div className="hidden lg:block absolute top-16 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-accent/30 to-transparent z-0" />
                   )}
 
                   <div className="relative p-8 rounded-3xl bg-card shadow-lg shadow-accent/5 border border-border hover:border-accent/50 hover:shadow-xl hover:shadow-accent/10 transition-all duration-500 h-full group-hover:-translate-y-2">
@@ -412,22 +420,28 @@ export default function RootPage() {
                     color: "primary"
                   },
                   {
+                    icon: Trophy,
+                    title: "Torneos y Competiciones",
+                    description: "Armá llaves de eliminación, fase de grupos y celebrá con el campeón.",
+                    color: "accent"
+                  },
+                  {
                     icon: MapPin,
                     title: "Directorio de canchas",
                     description: "Encontrá complejos deportivos, filtrá por superficie e iluminación.",
-                    color: "accent"
-                  },
-                  {
-                    icon: Trophy,
-                    title: "Historial y estadísticas",
-                    description: "Revisá tus partidos jugados y organizados desde tu perfil.",
                     color: "primary"
                   },
                   {
-                    icon: Calendar,
-                    title: "Panel para dueños",
-                    description: "Administrá tu predio, agregá tus canchas y definí precios por turno fácilmente.",
+                    icon: BarChart3,
+                    title: "Métricas de rendimiento",
+                    description: "Revisá tus estadísticas como jugador y mapas de calor si sos dueño.",
                     color: "accent"
+                  },
+                  {
+                    icon: Calendar,
+                    title: "Panel integral de administración",
+                    description: "Gestioná tu predio, agregá tus canchas y definí precios por turno fácilmente.",
+                    color: "primary"
                   }
                 ].map((feature) => (
                   <div key={feature.title} className="flex gap-5 p-4 rounded-2xl hover:bg-secondary/50 transition-all duration-300 group cursor-default">
@@ -443,47 +457,89 @@ export default function RootPage() {
               </div>
             </div>
 
-            {/* Mock phone/app preview */}
-            <div className="relative">
-              <div className="h-full bg-gradient-to-br from-primary/5 to-accent/5 rounded-[2.5rem] p-6 shadow-2xl shadow-primary/10 border border-primary/10 relative overflow-hidden">
-                {/* Phone frame glow */}
-                <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/30 rounded-full blur-[60px]" />
-                <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-accent/30 rounded-full blur-[60px]" />
-
-                <div className="bg-background rounded-3xl h-full p-4 overflow-hidden border border-border shadow-inner flex flex-col relative">
-                  {/* App Header */}
-                  <div className="flex items-center justify-between mb-6 pt-2 px-2">
-                    <div className="flex items-center gap-2">
-                      <FootballIcon className="w-6 h-6 text-primary" />
-                      <span className="font-bold text-lg text-foreground">Canchas Disponibles</span>
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <MapPin className="w-4 h-4 text-primary" />
+            {/* Right Column: Stacked UI Mockups */}
+            {/* Right Column: Stacked UI Mockups */}
+            <div className="relative flex flex-col gap-6 lg:gap-8 h-full justify-between">
+              
+              {/* Mockup 1: Torneos */}
+              <div className="flex-1 bg-gradient-to-br from-accent/5 to-transparent rounded-[2rem] p-4 sm:p-6 shadow-2xl shadow-accent/5 border border-accent/10 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-500 flex flex-col">
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-accent/20 rounded-full blur-[50px] group-hover:bg-accent/30 transition-all duration-500" />
+                <div className="flex-1 bg-background/80 backdrop-blur-xl rounded-2xl p-5 sm:p-6 border border-border shadow-inner relative z-10 flex flex-col justify-center">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                        <Trophy className="w-5 h-5 text-accent" />
+                      </div>
+                      <span className="font-bold text-lg text-foreground">Torneos Destacados</span>
                     </div>
                   </div>
+                  <div className="space-y-4">
+                    <div className="p-5 bg-gradient-to-br from-accent/10 to-accent/5 rounded-xl border border-accent/20">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-lg font-bold text-foreground">Copa de Verano</span>
+                        <span className="text-xs font-black uppercase bg-accent text-accent-foreground px-2.5 py-1 rounded-full shadow-sm">Abierto</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-4">
+                        <MapPin className="w-4 h-4" /> Palermo • Fútbol 5
+                      </p>
+                      <div className="flex items-center justify-between pt-4 border-t border-accent/10">
+                        <div className="flex -space-x-2">
+                          <div className="w-8 h-8 rounded-full bg-primary border-2 border-background flex items-center justify-center"><span className="text-[10px] text-white font-bold">A</span></div>
+                          <div className="w-8 h-8 rounded-full bg-accent border-2 border-background flex items-center justify-center"><span className="text-[10px] text-white font-bold">B</span></div>
+                          <div className="w-8 h-8 rounded-full bg-slate-800 border-2 border-background flex items-center justify-center"><span className="text-[10px] text-white font-bold">+8</span></div>
+                        </div>
+                        <span className="text-sm font-bold text-accent">¡Últimos 2 cupos!</span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-5 bg-card/50 rounded-xl border border-border">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-lg font-bold text-foreground">Torneo Relámpago</span>
+                        <span className="text-xs font-black uppercase bg-secondary text-secondary-foreground px-2.5 py-1 rounded-full shadow-sm">En Curso</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground flex items-center gap-1.5 mb-4">
+                        <MapPin className="w-4 h-4" /> Caballito • Fútbol 7
+                      </p>
+                      <div className="flex items-center justify-between pt-4 border-t border-border/50">
+                        <span className="text-sm font-medium text-foreground">Semifinales</span>
+                        <span className="text-sm font-bold text-muted-foreground">16 Equipos</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                  {/* Mock match cards */}
-                  <div className="space-y-4 px-2">
+              {/* Mockup 2: Canchas */}
+              <div className="flex-1 bg-gradient-to-br from-primary/5 to-transparent rounded-[2rem] p-4 sm:p-6 shadow-2xl shadow-primary/5 border border-primary/10 relative overflow-hidden group hover:-translate-y-1 transition-transform duration-500 flex flex-col">
+                <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-primary/20 rounded-full blur-[50px] group-hover:bg-primary/30 transition-all duration-500" />
+                <div className="flex-1 bg-background/80 backdrop-blur-xl rounded-2xl p-5 sm:p-6 border border-border shadow-inner relative z-10 flex flex-col justify-center">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <MapPin className="w-5 h-5 text-primary" />
+                      </div>
+                      <span className="font-bold text-lg text-foreground">Turnos Libres Hoy</span>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
                     {[
-                      { name: "La Redonda Fútbol", time: "18:00 - 23:00", place: "Palermo", price: "$15.000", spots: 3 },
-                      { name: "Complejo El Gol", time: "10:00 - 22:00", place: "Belgrano", price: "$12.000", spots: 5 },
-                      { name: "Sport Center", time: "09:00 - 00:00", place: "Caballito", price: "$18.000", spots: 2 },
+                      { name: "La Redonda Fútbol", time: "18:00 - 19:00", place: "Palermo", price: "$15.000", spots: 3 },
+                      { name: "Sport Center", time: "20:00 - 21:00", place: "Caballito", price: "$18.000", spots: 2 },
+                      { name: "Complejo El Gol", time: "22:00 - 23:00", place: "Belgrano", price: "$12.000", spots: 5 },
                     ].map((cancha, i) => (
-                      <div key={i} className="p-4 bg-card rounded-2xl border border-border shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-300 cursor-pointer group">
+                      <div key={i} className="p-4 bg-card rounded-xl border border-border hover:border-primary/30 hover:shadow-md transition-all">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">{cancha.name}</span>
-                          <div className="flex items-center gap-1 px-2 py-0.5 bg-primary/10 rounded-full">
-                            <Users className="w-3 h-3 text-primary" />
-                            <span className="text-xs font-semibold text-primary">{cancha.spots}</span>
+                          <span className="text-base font-bold text-foreground">{cancha.name}</span>
+                          <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-full">
+                            <Users className="w-3.5 h-3.5 text-primary" />
+                            <span className="text-xs font-bold text-primary">{cancha.spots} libres</span>
                           </div>
                         </div>
-                        <p className="text-sm text-muted-foreground flex items-center gap-1 mb-3">
-                          <MapPin className="w-3.5 h-3.5" />
-                          {cancha.place}
-                        </p>
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                          <span className="text-sm font-medium text-foreground">{cancha.time}</span>
-                          <span className="text-sm font-black text-primary">{cancha.price}</span>
+                        <div className="flex items-center justify-between mt-3">
+                          <span className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                            <Clock className="w-4 h-4" /> {cancha.time}
+                          </span>
+                          <span className="text-base font-black text-primary">{cancha.price}</span>
                         </div>
                       </div>
                     ))}
@@ -492,12 +548,12 @@ export default function RootPage() {
               </div>
 
               {/* Floating elements */}
-              <div className="absolute -top-4 -right-4 w-20 h-20 animate-float hidden lg:block">
+              <div className="absolute -top-4 -right-4 w-20 h-20 animate-float hidden lg:block z-20">
                 <div className="w-full h-full bg-accent/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-accent/20">
                   <Trophy className="w-8 h-8 text-accent" />
                 </div>
               </div>
-              <div className="absolute -bottom-4 -left-4 w-16 h-16 animate-float-reverse hidden lg:block">
+              <div className="absolute top-[48%] -left-6 w-16 h-16 animate-float-reverse hidden lg:block z-20">
                 <div className="w-full h-full bg-primary/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-primary/20">
                   <Star className="w-6 h-6 text-primary" />
                 </div>

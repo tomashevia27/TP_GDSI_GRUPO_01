@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { TorneoData, getTopJugadores, TopJugadorData, getVallasInvictas, VallaInvictaData } from "@/hooks/use-api"
-import { Loader2, Goal, ShieldCheck } from "lucide-react"
+import { Loader2, Goal, ShieldCheck, Trophy, Medal } from "lucide-react"
 
 interface Props {
   torneo: TorneoData
@@ -22,7 +22,7 @@ export function EstadisticasTab({ torneo }: Props) {
         ])
         setGoleadores(g)
         // Ordenar de menor a mayor goles recibidos
-        const vallasSorted = [...v].sort((a, b) => (a.partidos_invicto ?? 0) - (b.partidos_invicto ?? 0))
+        const vallasSorted = [...v].sort((a, b) => (a.goles_recibidos ?? 0) - (b.goles_recibidos ?? 0))
         setVallas(vallasSorted)
       } finally {
         setIsLoading(false)
@@ -39,6 +39,8 @@ export function EstadisticasTab({ torneo }: Props) {
     )
   }
 
+
+
   return (
     <div className="space-y-8">
       {/* Tabla de Goleadores */}
@@ -53,50 +55,63 @@ export function EstadisticasTab({ torneo }: Props) {
             No hay goles registrados aún. Las estadísticas se actualizan tras cada partido.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/50 text-[11px] uppercase font-semibold text-muted-foreground border-b tracking-wider">
-                <tr>
-                  <th className="px-4 py-3 w-12 text-center">Pos</th>
-                  <th className="px-4 py-3">Jugador</th>
-                  <th className="px-4 py-3">Equipo</th>
-                  <th className="px-4 py-3 text-center">⚽ Goles</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {goleadores.map((jugador, i) => (
-                  <tr
-                    key={`${jugador.usuario_id}-${jugador.equipo_id}`}
-                    className={`transition-colors ${
-                      i === 0 ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/40"
-                    }`}
-                  >
-                    <td className="px-4 py-3 text-center">
-                      {i === 0 ? (
-                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                          1
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground font-medium text-xs">{i + 1}</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className={`font-semibold ${i === 0 ? "text-primary" : "text-foreground"}`}>
-                        {jugador.usuario_nombre} {jugador.usuario_apellido}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-                        {jugador.equipo_nombre}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="font-bold text-lg text-primary">{jugador.valor}</span>
-                    </td>
+          <div className="pb-4">
+            {goleadores.length > 0 && torneo.estado === "Finalizado" && (
+              <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between mx-4 mt-4 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl shrink-0">🥇</div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-primary font-bold uppercase tracking-widest">Máximo Goleador</p>
+                    <p className="text-lg sm:text-xl font-black text-foreground truncate">{goleadores[0].usuario_nombre} {goleadores[0].usuario_apellido}</p>
+                    <p className="text-sm text-muted-foreground truncate">{goleadores[0].equipo_nombre}</p>
+                  </div>
+                </div>
+                <div className="text-center shrink-0 ml-4">
+                  <p className="text-3xl sm:text-4xl font-black text-primary">{goleadores[0].valor}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Goles</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted/50 text-[11px] uppercase font-semibold text-muted-foreground border-y tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 w-12 text-center">Pos</th>
+                    <th className="px-4 py-3">Jugador</th>
+                    <th className="px-4 py-3">Equipo</th>
+                    <th className="px-4 py-3 text-center">⚽ Goles</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {goleadores.map((jugador, i) => {
+                    return (
+                      <tr
+                        key={`${jugador.usuario_id}-${jugador.equipo_id}`}
+                        className="hover:bg-muted/40 transition-colors"
+                      >
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-muted-foreground font-medium text-xs">{i + 1}</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-foreground">
+                            {jugador.usuario_nombre} {jugador.usuario_apellido}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full border border-border/50">
+                            {jugador.equipo_nombre}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="font-bold text-base text-foreground">{jugador.valor}</span>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -113,25 +128,45 @@ export function EstadisticasTab({ torneo }: Props) {
             Las estadísticas de valla menos vencida estarán disponibles una vez que haya partidos finalizados.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="bg-muted/50 text-[11px] uppercase font-semibold text-muted-foreground border-b tracking-wider">
-                <tr>
-                  <th className="px-4 py-3 w-12 text-center">Pos</th>
-                  <th className="px-4 py-3">Equipo</th>
-                  <th className="px-4 py-3 text-center">🧤 Goles Recibidos</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {vallas.map((v, i) => (
-                  <tr key={v.equipo_id} className="hover:bg-muted/40 transition-colors">
-                    <td className="px-4 py-3 text-center text-muted-foreground font-medium text-xs">{i + 1}</td>
-                    <td className="px-4 py-3 font-semibold text-foreground">{v.equipo_nombre}</td>
-                    <td className="px-4 py-3 text-center font-bold text-primary">{v.partidos_invicto}</td>
+          <div className="pb-4">
+            {vallas.length > 0 && torneo.estado === "Finalizado" && (
+              <div className="mb-6 p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-between mx-4 mt-4 shadow-sm">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-2xl shrink-0">🧤</div>
+                  <div className="min-w-0">
+                    <p className="text-xs text-primary font-bold uppercase tracking-widest">Valla Menos Vencida</p>
+                    <p className="text-lg sm:text-xl font-black text-foreground truncate">{vallas[0].equipo_nombre}</p>
+                  </div>
+                </div>
+                <div className="text-center shrink-0 ml-4">
+                  <p className="text-3xl sm:text-4xl font-black text-primary">{vallas[0].goles_recibidos}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">En Contra</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="bg-muted/50 text-[11px] uppercase font-semibold text-muted-foreground border-y tracking-wider">
+                  <tr>
+                    <th className="px-4 py-3 w-12 text-center">Pos</th>
+                    <th className="px-4 py-3">Equipo</th>
+                    <th className="px-4 py-3 text-center">🧤 Goles Recibidos</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {vallas.map((v, i) => {
+                    return (
+                      <tr key={v.equipo_id} className="hover:bg-muted/40 transition-colors">
+                        <td className="px-4 py-3 text-center text-muted-foreground font-medium text-xs">{i + 1}</td>
+                        <td className="px-4 py-3 font-semibold text-foreground">{v.equipo_nombre}</td>
+                        <td className="px-4 py-3 text-center font-bold text-foreground">{v.goles_recibidos}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

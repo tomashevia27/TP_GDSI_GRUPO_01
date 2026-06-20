@@ -1,0 +1,1006 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PartidoYa - Defensa Final</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#FDF8F4',
+                        foreground: '#1A1614',
+                        primary: '#FF6B4A',
+                        accent: '#2DD4A3',
+                        muted: '#F5EFEA',
+                        border: '#E8DED6',
+                        card: '#FFFFFF'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: theme('colors.background');
+            color: theme('colors.foreground');
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        .slide {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            flex-direction: column;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: theme('colors.background');
+        }
+
+        .slide.active {
+            display: flex;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid theme('colors.border');
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.05);
+        }
+
+        .progress-bar-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: theme('colors.muted');
+            z-index: 50;
+            cursor: pointer;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: theme('colors.primary');
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+            z-index: 50;
+            opacity: 0.2;
+            transition: opacity 0.3s;
+        }
+
+        .controls:hover {
+            opacity: 1;
+        }
+
+        .control-btn {
+            background: theme('colors.card');
+            border: 1px solid theme('colors.border');
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: theme('colors.foreground');
+            box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            background: theme('colors.muted');
+            transform: translateY(-2px);
+        }
+
+        .animate-pulse-glow { 
+            animation: pulseGlow 2s infinite; 
+        }
+        
+        @keyframes pulseGlow { 
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 107, 74, 0.4); transform: scale(1); }
+            50% { box-shadow: 0 0 0 20px rgba(255, 107, 74, 0); transform: scale(1.05); }
+        }
+        
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 4rem 8rem;
+            max-width: 1600px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .slide-header {
+            margin-bottom: 2.5rem;
+        }
+
+        .block-indicator {
+            position: fixed;
+            top: 2rem;
+            left: 2rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: theme('colors.primary');
+            z-index: 40;
+            background: theme('colors.card');
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            border: 1px solid theme('colors.border');
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .bg-pattern {
+            background-image: radial-gradient(theme('colors.primary') 1px, transparent 1px);
+            background-size: 32px 32px;
+            opacity: 0.04;
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+        }
+
+        ul.custom-list {
+            list-style: none;
+            padding: 0;
+        }
+        ul.custom-list li {
+            position: relative;
+            padding-left: 2rem;
+            margin-bottom: 1.25rem;
+            font-size: 1.25rem;
+            line-height: 1.6;
+        }
+        ul.custom-list li::before {
+            content: '•';
+            color: theme('colors.primary');
+            position: absolute;
+            left: 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .bg-primary-slide {
+            background-color: theme('colors.primary');
+            color: white;
+        }
+        
+        .bg-primary-slide .bg-pattern {
+            background-image: radial-gradient(white 1px, transparent 1px);
+            opacity: 0.1;
+        }
+
+        .slide-number {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: theme('colors.foreground');
+            opacity: 0.5;
+            z-index: 50;
+        }
+
+        .bg-primary-slide .slide-number, .bg-primary-slide .block-indicator {
+            color: white;
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .bg-primary-slide .controls .control-btn {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
+            color: white;
+        }
+        
+        .bg-primary-slide .controls .control-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        kbd {
+            background-color: theme('colors.muted');
+            border: 1px solid theme('colors.border');
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 0.8em;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="progress-bar-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar" style="width: 0%"></div>
+    </div>
+
+    <div class="controls">
+        <button class="control-btn" id="btn-prev" title="Anterior (Flecha Izq)"><i data-lucide="chevron-left"></i></button>
+        <button class="control-btn" id="btn-fullscreen" title="Pantalla Completa (F)"><i data-lucide="maximize"></i></button>
+        <button class="control-btn" id="btn-next" title="Siguiente (Flecha Der)"><i data-lucide="chevron-right"></i></button>
+    </div>
+
+    <div class="slide-number"><span id="current-slide">1</span> / <span id="total-slides">23</span></div>
+    
+    <div class="block-indicator" id="block-indicator" style="display:none;">
+        <i data-lucide="box" class="w-4 h-4"></i> <span id="block-name">Bloque 1</span>
+    </div>
+
+    <!-- ==============================================
+         BLOQUE 1: PRODUCTO
+         ============================================== -->
+
+    <!-- Slide 1: Portada -->
+    <div class="slide active" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <div class="w-24 h-24 bg-primary text-white rounded-2xl flex items-center justify-center mb-8 shadow-xl rotate-3">
+                <i data-lucide="goal" class="w-12 h-12"></i>
+            </div>
+            <h1 class="text-7xl font-extrabold text-foreground tracking-tight mb-4">Partido<span class="text-primary">Ya</span></h1>
+            <p class="text-2xl text-foreground/70 font-medium mb-16 max-w-2xl">La plataforma definitiva para conectar jugadores, torneos y canchas de fútbol amateur.</p>
+            
+            <div class="grid grid-cols-3 gap-x-12 gap-y-4 text-left glass-card p-8">
+                <p class="font-medium text-lg"><i data-lucide="user" class="inline w-4 h-4 mr-2 text-primary"></i>Integrante 1</p>
+                <p class="font-medium text-lg"><i data-lucide="user" class="inline w-4 h-4 mr-2 text-primary"></i>Integrante 2</p>
+                <p class="font-medium text-lg"><i data-lucide="user" class="inline w-4 h-4 mr-2 text-primary"></i>Integrante 3</p>
+                <p class="font-medium text-lg"><i data-lucide="user" class="inline w-4 h-4 mr-2 text-primary"></i>Integrante 4</p>
+                <p class="font-medium text-lg"><i data-lucide="user" class="inline w-4 h-4 mr-2 text-primary"></i>Integrante 5</p>
+                <p class="font-medium text-lg"><i data-lucide="user" class="inline w-4 h-4 mr-2 text-primary"></i>Integrante 6</p>
+            </div>
+            <p class="mt-8 text-sm text-foreground/50">Defensa Final - Gestión del Desarrollo de Sistemas Informáticos</p>
+        </div>
+    </div>
+
+    <!-- Slide 2: Visión del Producto -->
+    <div class="slide" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Visión del Producto</h2>
+            </div>
+            <div class="glass-card p-12 text-2xl leading-relaxed">
+                <p>Para <span class="font-semibold">personas que juegan al fútbol, organizadores de torneos amateur y dueños de canchas</span>, que necesitan organizar, coordinar y gestionar partidos y reservas de forma simple.</p>
+                <p class="mt-6"><span class="font-bold text-primary">PartidoYa</span> es un mercado que conecta gente para jugar e instalaciones deportivas.</p>
+                <p class="mt-6">Facilita la <span class="text-accent font-bold">organización</span> entre jugadores y dueños de canchas, a diferencia de coordinar todo por WhatsApp, papel o buscar individualmente en redes sociales.</p>
+                <p class="mt-6">Nuestro producto <span class="text-accent font-bold">automatiza</span> las reservas, la organización de torneos y facilita la <span class="text-accent font-bold">comunicación</span> entre las partes.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 3: Diferencial Competitivo -->
+    <div class="slide" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Diferencial Competitivo</h2>
+                <p class="text-xl text-foreground/60 mt-2">Por qué PartidoYa destaca en el ecosistema actual</p>
+            </div>
+            <div class="grid grid-cols-3 gap-8 mt-4">
+                <div class="glass-card p-8 flex flex-col items-center text-center hover:-translate-y-2 transition-transform">
+                    <div class="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center mb-6">
+                        <i data-lucide="network" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Efecto Red</h3>
+                    <p class="text-lg text-foreground/70">Un ecosistema que conecta orgánicamente a 3 tipos de usuario: jugadores, dueños de canchas y organizadores.</p>
+                </div>
+                <div class="glass-card p-8 flex flex-col items-center text-center hover:-translate-y-2 transition-transform">
+                    <div class="w-16 h-16 rounded-full bg-accent/10 text-accent flex items-center justify-center mb-6">
+                        <i data-lucide="bot" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Automatización</h3>
+                    <p class="text-lg text-foreground/70">Eliminación de la coordinación manual por WhatsApp o papel. Reservas y confirmaciones en tiempo real.</p>
+                </div>
+                <div class="glass-card p-8 flex flex-col items-center text-center hover:-translate-y-2 transition-transform">
+                    <div class="w-16 h-16 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center mb-6">
+                        <i data-lucide="trophy" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Gestión Integral</h3>
+                    <p class="text-lg text-foreground/70">No solo conectamos jugadores, ofrecemos herramientas completas para organizar torneos de inicio a fin.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: Demo en vivo -->
+    <div class="slide" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <div class="animate-pulse-glow w-32 h-32 bg-primary rounded-full flex items-center justify-center text-white mb-8 cursor-pointer">
+                <i data-lucide="play" class="w-16 h-16 ml-2"></i>
+            </div>
+            <h2 class="text-6xl font-bold text-foreground">Demo en vivo</h2>
+            <p class="text-2xl text-foreground/60 mt-6">Conocé PartidoYa en acción</p>
+        </div>
+    </div>
+
+    <!-- Slide 5: Modelo de Monetización -->
+    <div class="slide" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Modelo de Monetización</h2>
+                <p class="text-xl text-foreground/60 mt-2">Nuestros flujos de ingreso proyectados</p>
+            </div>
+            <div class="grid grid-cols-3 gap-8 mt-4">
+                <div class="glass-card p-8 border-t-4 border-t-primary">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold">Comisión Reservas</h3>
+                        <i data-lucide="calendar-check" class="w-8 h-8 text-primary"></i>
+                    </div>
+                    <p class="text-lg mb-4">Ingreso transaccional.</p>
+                    <ul class="custom-list">
+                        <li class="text-base">Cobro de comisión sobre las señas de las reservas de canchas.</li>
+                        <li class="text-base">Garantiza asistencia y compromiso.</li>
+                    </ul>
+                </div>
+                <div class="glass-card p-8 border-t-4 border-t-accent">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold">Comisión Torneos</h3>
+                        <i data-lucide="medal" class="w-8 h-8 text-accent"></i>
+                    </div>
+                    <p class="text-lg mb-4">Ingreso por volumen.</p>
+                    <ul class="custom-list">
+                        <li class="text-base">Comisión sobre la cuota de inscripción a los torneos gestionados en la app.</li>
+                        <li class="text-base">Escalable según cantidad de equipos.</li>
+                    </ul>
+                </div>
+                <div class="glass-card p-8 border-t-4 border-t-foreground bg-foreground text-white">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold">Plan Premium <span class="text-xs bg-white/20 px-2 py-1 rounded ml-2 align-middle">FUTURO</span></h3>
+                        <i data-lucide="sparkles" class="w-8 h-8 text-white"></i>
+                    </div>
+                    <p class="text-lg mb-4 text-white/80">Ingreso recurrente (SaaS).</p>
+                    <ul class="custom-list" style="--tw-text-opacity: 1; color: white;">
+                        <style>.glass-card.bg-foreground ul.custom-list li::before { color: white; }</style>
+                        <li class="text-base">Suscripción para dueños de canchas.</li>
+                        <li class="text-base">Métricas avanzadas y herramientas de gestión exclusivas.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 6: Gestión de Pagos -->
+    <div class="slide" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Gestión de Pagos</h2>
+                <p class="text-xl text-foreground/60 mt-2">Cómo manejamos las transacciones y las señas</p>
+            </div>
+            
+            <div class="flex flex-col gap-8 mt-4">
+                <div class="glass-card p-8 flex items-center gap-8 relative overflow-hidden">
+                    <div class="absolute left-0 top-0 bottom-0 w-2 bg-muted"></div>
+                    <div class="bg-muted w-16 h-16 rounded-full flex items-center justify-center shrink-0">
+                        <span class="text-2xl font-bold text-foreground">1</span>
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-bold mb-2">MVP Actual: Simulación</h3>
+                        <p class="text-xl text-foreground/70">En la versión actual, el flujo de pago de la seña para reservar una cancha está modelado de punta a punta, pero con transacciones simuladas para validar el proceso de negocio y cambio de estados.</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center">
+                    <i data-lucide="arrow-down" class="w-8 h-8 text-primary"></i>
+                </div>
+                
+                <div class="glass-card p-8 flex items-center gap-8 relative overflow-hidden border-primary/30">
+                    <div class="absolute left-0 top-0 bottom-0 w-2 bg-primary"></div>
+                    <div class="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center shrink-0">
+                        <span class="text-2xl font-bold text-primary">2</span>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-2xl font-bold mb-2">Evolutivo: Integración Real</h3>
+                        <p class="text-xl text-foreground/70">El sistema está preparado arquitectónicamente para integrar la API de <span class="font-semibold">MercadoPago</span> en los próximos sprints, permitiendo cobros reales, retenciones y dispersión de fondos.</p>
+                    </div>
+                    <div class="shrink-0 opacity-80">
+                        <i data-lucide="credit-card" class="w-16 h-16 text-primary"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 7: Transición a Gestión -->
+    <div class="slide bg-primary-slide" data-block="1 - Producto">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <i data-lucide="briefcase" class="w-20 h-20 mb-8 opacity-80"></i>
+            <h2 class="text-6xl font-bold mb-6">De la idea a la realidad</h2>
+            <p class="text-3xl font-light opacity-90">Gestión del Proyecto y Metodología</p>
+        </div>
+    </div>
+
+    <!-- ==============================================
+         BLOQUE 2: GESTIÓN DEL PROYECTO
+         ============================================== -->
+
+    <!-- Slide 8: Cómo nos organizamos -->
+    <div class="slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Cómo nos organizamos</h2>
+                <p class="text-xl text-foreground/60 mt-2">Marco de trabajo y roles</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-12 mt-4 items-center">
+                <div>
+                    <div class="glass-card p-8 mb-8">
+                        <h3 class="text-2xl font-bold mb-4 flex items-center gap-3">
+                            <i data-lucide="refresh-cw" class="text-primary"></i> Metodología Scrum
+                        </h3>
+                        <ul class="custom-list">
+                            <li><span class="font-semibold">7 Sprints</span> en total</li>
+                            <li>Duración de <span class="font-semibold text-primary">1 semana</span> por sprint</li>
+                            <li>Dailies, Plannings y Retrospectivas como ritos clave</li>
+                        </ul>
+                    </div>
+                    <div class="glass-card p-8">
+                        <p class="text-lg italic text-foreground/80">"La iteración corta nos permitió corregir el rumbo rápidamente ante desafíos técnicos."</p>
+                    </div>
+                </div>
+                
+                <div class="relative h-full min-h-[400px]">
+                    <div class="absolute top-[10%] left-[20%] w-32 h-32 rounded-full bg-primary/10 border-2 border-primary flex items-center justify-center text-center p-4 font-semibold text-primary shadow-lg animate-float">Scrum Master</div>
+                    <div class="absolute top-[40%] right-[10%] w-32 h-32 rounded-full bg-accent/10 border-2 border-accent flex items-center justify-center text-center p-4 font-semibold text-accent shadow-lg animate-float-reverse animation-delay-200">Product Owner</div>
+                    <div class="absolute bottom-[20%] left-[30%] w-36 h-36 rounded-full bg-blue-500/10 border-2 border-blue-500 flex items-center justify-center text-center p-4 font-semibold text-blue-500 shadow-lg animate-float animation-delay-400">Development Team</div>
+                    
+                    <!-- Connection lines (SVG) -->
+                    <svg class="absolute inset-0 w-full h-full -z-10 opacity-20" style="pointer-events: none;">
+                        <path d="M120,100 Q200,150 280,200" stroke="currentColor" stroke-width="2" stroke-dasharray="5,5" fill="none" />
+                        <path d="M150,300 Q250,250 280,200" stroke="currentColor" stroke-width="2" stroke-dasharray="5,5" fill="none" />
+                        <path d="M120,100 Q100,200 150,300" stroke="currentColor" stroke-width="2" stroke-dasharray="5,5" fill="none" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 9: Lean Inception -->
+    <div class="slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Lean Inception</h2>
+                <p class="text-xl text-foreground/60 mt-2">Alineando el alcance del MVP antes de programar</p>
+            </div>
+            
+            <div class="grid grid-cols-4 gap-6 mt-4">
+                <div class="glass-card p-6 border-t-4 border-t-primary">
+                    <h3 class="font-bold text-xl mb-3">Visión</h3>
+                    <p class="text-foreground/70 text-sm">Definición clara del problema y el propósito del producto. ¿Para quién es y qué resuelve?</p>
+                </div>
+                <div class="glass-card p-6 border-t-4 border-t-accent">
+                    <h3 class="font-bold text-xl mb-3">Es / No Es</h3>
+                    <p class="text-foreground/70 text-sm">Mapeo fundamental para evitar el "scope creep". Definir límites claros del sistema.</p>
+                </div>
+                <div class="glass-card p-6 border-t-4 border-t-blue-400">
+                    <h3 class="font-bold text-xl mb-3">Personas</h3>
+                    <p class="text-foreground/70 text-sm">Arquetipos: Jugador, Dueño de Cancha, Organizador. Sus dolores y necesidades.</p>
+                </div>
+                <div class="glass-card p-6 border-t-4 border-t-yellow-400">
+                    <h3 class="font-bold text-xl mb-3">Story Mapping</h3>
+                    <p class="text-foreground/70 text-sm">Features priorizadas y flujos de usuario que definieron el esqueleto de nuestros 7 sprints.</p>
+                </div>
+            </div>
+            
+            <div class="mt-10 glass-card p-6 bg-primary/5 border-primary/20 flex items-center gap-6">
+                <i data-lucide="lightbulb" class="w-12 h-12 text-primary shrink-0"></i>
+                <p class="text-xl">La <span class="font-bold">Lean Inception</span> fue crítica: nos permitió fallar y debatir en papel antes de escribir una sola línea de código, garantizando que el equipo construyera lo correcto.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 10: Gestión de Riesgos -->
+    <div class="slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Gestión de Riesgos</h2>
+                <p class="text-xl text-foreground/60 mt-2">Identificación y mitigación durante el desarrollo</p>
+            </div>
+            
+            <div class="space-y-6 mt-4">
+                <!-- Riesgo 1 -->
+                <div class="glass-card p-6 flex gap-6 items-start">
+                    <div class="bg-red-100 text-red-600 p-3 rounded-xl shrink-0 mt-1">
+                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold mb-2">Abandono de usuarios en pago de seña</h3>
+                        <div class="flex items-center gap-2 text-foreground/70 mb-3 text-sm font-semibold uppercase tracking-wider">
+                            <span>Impacto: Alto</span> &bull; <span>Probabilidad: Media</span>
+                        </div>
+                        <p><span class="font-semibold text-accent">Mitigación:</span> Simplificamos la UX del checkout, redujimos la cantidad de clics y establecimos tiempos de expiración claros para generar sentido de urgencia (15 minutos).</p>
+                    </div>
+                </div>
+
+                <!-- Riesgo 2 -->
+                <div class="glass-card p-6 flex gap-6 items-start">
+                    <div class="bg-orange-100 text-orange-600 p-3 rounded-xl shrink-0 mt-1">
+                        <i data-lucide="users" class="w-6 h-6"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold mb-2">Adopción simultánea de los 3 perfiles</h3>
+                        <div class="flex items-center gap-2 text-foreground/70 mb-3 text-sm font-semibold uppercase tracking-wider">
+                            <span>Impacto: Crítico</span> &bull; <span>Probabilidad: Alta</span>
+                        </div>
+                        <p><span class="font-semibold text-accent">Mitigación:</span> Estrategia de onboarding por fases ("efecto red"). Primero focamos en atraer canchas (oferta), para luego atraer jugadores y organizadores (demanda).</p>
+                    </div>
+                </div>
+
+                <!-- Riesgo 3 -->
+                <div class="glass-card p-6 flex gap-6 items-start">
+                    <div class="bg-yellow-100 text-yellow-600 p-3 rounded-xl shrink-0 mt-1">
+                        <i data-lucide="git-merge" class="w-6 h-6"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-xl font-bold mb-2">Falta de experiencia previa del equipo</h3>
+                        <div class="flex items-center gap-2 text-foreground/70 mb-3 text-sm font-semibold uppercase tracking-wider">
+                            <span>Impacto: Medio</span> &bull; <span>Probabilidad: Alta</span>
+                        </div>
+                        <p><span class="font-semibold text-accent">Mitigación:</span> Pair programming en tareas complejas, revisiones de código (PRs) obligatorias, y uso de daily standups para destrabar bloqueos rápidamente.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 11: Burndown -->
+    <div class="slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Avance del Proyecto</h2>
+                <p class="text-xl text-foreground/60 mt-2">Burndown Chart: Planificado vs Realizado</p>
+            </div>
+            
+            <div class="glass-card p-8 h-[500px] flex items-center justify-center relative w-full">
+                <canvas id="burndownChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 12: Retrospectivas -->
+    <div class="slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <div class="w-20 h-20 rounded-full bg-accent/20 text-accent flex items-center justify-center mb-8">
+                <i data-lucide="message-square-heart" class="w-10 h-10"></i>
+            </div>
+            <h2 class="text-5xl font-bold mb-8">El valor de las Retrospectivas</h2>
+            
+            <div class="max-w-4xl glass-card p-12 relative">
+                <i data-lucide="quote" class="absolute top-6 left-6 w-12 h-12 text-muted-foreground/20"></i>
+                <p class="text-3xl leading-relaxed font-medium relative z-10">
+                    "Detenernos al final de cada sprint para evaluar <span class="text-primary font-bold">cómo</span> trabajamos fue tan importante como <span class="text-primary font-bold">qué</span> desarrollamos. Nos permitió ajustar nuestro proceso en tiempo real y mejorar la velocidad del equipo."
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 13: Lecciones Aprendidas -->
+    <div class="slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">Lecciones Aprendidas</h2>
+                <p class="text-xl text-foreground/60 mt-2">Mejora continua sprint a sprint</p>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-6 mt-4 h-full">
+                <!-- Keep Doing -->
+                <div class="glass-card p-8 flex flex-col border-t-4 border-t-accent">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-accent/20 text-accent p-2 rounded-lg">
+                            <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-accent">Keep Doing</h3>
+                    </div>
+                    <ul class="custom-list space-y-4 text-lg">
+                        <li>Desarrollo temprano de historias.</li>
+                        <li>Buena división y paralelización del trabajo.</li>
+                        <li>Agrupar historias por funcionalidad.</li>
+                    </ul>
+                </div>
+
+                <!-- Start Doing -->
+                <div class="glass-card p-8 flex flex-col border-t-4 border-t-blue-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-blue-500/20 text-blue-600 p-2 rounded-lg">
+                            <i data-lucide="play-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-blue-600">Start Doing</h3>
+                    </div>
+                    <ul class="custom-list space-y-4 text-lg" style="--tw-text-opacity: 1; color: inherit;">
+                        <style>.border-t-blue-500 ul.custom-list li::before { color: #3b82f6; }</style>
+                        <li>Análisis anticipado de Criterios de Aceptación.</li>
+                        <li>Validación técnica antes de comenzar a desarrollar.</li>
+                        <li>Deployar versiones a producción lo antes posible.</li>
+                    </ul>
+                </div>
+
+                <!-- Stop Doing -->
+                <div class="glass-card p-8 flex flex-col border-t-4 border-t-red-500">
+                    <div class="flex items-center gap-3 mb-6">
+                        <div class="bg-red-500/20 text-red-600 p-2 rounded-lg">
+                            <i data-lucide="x-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold text-red-600">Stop Doing</h3>
+                    </div>
+                    <ul class="custom-list space-y-4 text-lg" style="--tw-text-opacity: 1; color: inherit;">
+                        <style>.border-t-red-500 ul.custom-list li::before { color: #ef4444; }</style>
+                        <li>Subestimar tareas de configuración de entorno.</li>
+                        <li>Acumular code reviews para el último día del sprint.</li>
+                        <li>Falta de comunicación en dependencias cruzadas.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 14: Transición a IA -->
+    <div class="slide bg-primary-slide" data-block="2 - Gestión">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <i data-lucide="sparkles" class="w-20 h-20 mb-8 opacity-80"></i>
+            <h2 class="text-6xl font-bold mb-6">El rol de la Inteligencia Artificial</h2>
+            <p class="text-3xl font-light opacity-90">Herramientas modernas para acelerar el desarrollo</p>
+        </div>
+    </div>
+
+    <!-- ==============================================
+         BLOQUE 3: USO DE IA
+         ============================================== -->
+
+    <!-- Slide 15: ¿Para qué usamos IA? -->
+    <div class="slide" data-block="3 - IA">
+        <div class="bg-pattern"></div>
+        <div class="slide-content">
+            <div class="slide-header">
+                <h2 class="text-4xl font-bold">¿Para qué integramos IA?</h2>
+                <p class="text-xl text-foreground/60 mt-2">Casos de uso aplicados al proyecto</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
+                <div class="glass-card p-8 hover:-translate-y-1 transition-transform">
+                    <div class="w-14 h-14 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="file-text" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Artefactos Ágiles</h3>
+                    <p class="text-lg text-foreground/70">Asistencia en la corrección, refinamiento y redacción de Historias de Usuario y Criterios de Aceptación para que cumplan el formato INVEST.</p>
+                </div>
+                
+                <div class="glass-card p-8 hover:-translate-y-1 transition-transform">
+                    <div class="w-14 h-14 bg-accent/10 text-accent rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="code-2" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Desarrollo Frontend</h3>
+                    <p class="text-lg text-foreground/70">Generación de la base de componentes y aplicación del sistema de diseño (Tailwind) durante el proceso de rebranding a PartidoYa.</p>
+                </div>
+                
+                <div class="glass-card p-8 hover:-translate-y-1 transition-transform">
+                    <div class="w-14 h-14 bg-blue-500/10 text-blue-500 rounded-xl flex items-center justify-center mb-6">
+                        <i data-lucide="shield-alert" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Gestión y Planificación</h3>
+                    <p class="text-lg text-foreground/70">Apoyo analítico en la identificación de riesgos técnicos del proyecto y sugerencias para la estimación durante las plannings de sprint.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 16: Reflexión sobre IA -->
+    <div class="slide" data-block="3 - IA">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <h2 class="text-4xl font-bold text-primary mb-12 uppercase tracking-widest text-sm">Reflexión</h2>
+            
+            <div class="max-w-4xl relative">
+                <p class="text-4xl leading-tight font-medium">
+                    "La IA <span class="text-primary font-bold">aceleró drásticamente</span> nuestro flujo de trabajo como herramienta de apoyo, pero comprobamos que <span class="text-accent font-bold">jamás reemplaza</span> las decisiones críticas de arquitectura, diseño o negocio que hace el equipo."
+                </p>
+                <div class="mt-12 flex justify-center gap-4">
+                    <div class="w-3 h-3 rounded-full bg-primary animate-bounce"></div>
+                    <div class="w-3 h-3 rounded-full bg-primary animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-3 h-3 rounded-full bg-primary animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 17: Transición a Aprendizajes -->
+    <div class="slide bg-primary-slide" data-block="4 - Aprendizajes">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <i data-lucide="graduation-cap" class="w-20 h-20 mb-8 opacity-80"></i>
+            <h2 class="text-6xl font-bold mb-6">Aprendizajes Personales</h2>
+            <p class="text-3xl font-light opacity-90">La experiencia del equipo</p>
+        </div>
+    </div>
+
+    <!-- ==============================================
+         BLOQUE 4: APRENDIZAJES PERSONALES
+         ============================================== -->
+
+    <!-- Plantilla de Aprendizaje (Generada 6 veces) -->
+    <script>
+        // JS para inyectar los 6 slides de aprendizajes y no repetir código HTML masivamente
+        const miembros = [
+            { id: 1, nombre: "Nombre Integrante 1", rol: "Rol en el proyecto (ej. Scrum Master / Dev)" },
+            { id: 2, nombre: "Nombre Integrante 2", rol: "Rol en el proyecto" },
+            { id: 3, nombre: "Nombre Integrante 3", rol: "Rol en el proyecto" },
+            { id: 4, nombre: "Nombre Integrante 4", rol: "Rol en el proyecto" },
+            { id: 5, nombre: "Nombre Integrante 5", rol: "Rol en el proyecto" },
+            { id: 6, nombre: "Nombre Integrante 6", rol: "Rol en el proyecto" }
+        ];
+
+        let slidesHTML = '';
+        miembros.forEach(m => {
+            slidesHTML += `
+            <div class="slide" data-block="4 - Aprendizajes">
+                <div class="bg-pattern"></div>
+                <div class="slide-content">
+                    <div class="glass-card p-12 max-w-5xl mx-auto w-full relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-bl-full -z-10"></div>
+                        
+                        <div class="flex items-center gap-8 mb-10">
+                            <div class="w-32 h-32 rounded-full bg-muted flex items-center justify-center border-4 border-white shadow-xl overflow-hidden shrink-0">
+                                <i data-lucide="user" class="w-16 h-16 text-foreground/20"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-5xl font-bold mb-2 text-foreground">${m.nombre}</h2>
+                                <p class="text-2xl text-primary font-medium tracking-wide">${m.rol}</p>
+                            </div>
+                        </div>
+                        
+                        <div class="pl-40 pr-8">
+                            <h3 class="text-xl text-foreground/50 uppercase tracking-widest font-semibold mb-6">Mis principales aprendizajes</h3>
+                            <ul class="custom-list text-xl space-y-6">
+                                <li>[Placeholder] Comprendí la importancia de definir bien los Criterios de Aceptación antes de escribir código.</li>
+                                <li>[Placeholder] Aprendí a gestionar conflictos de merge y trabajar de forma fluida usando Git y repositorios compartidos.</li>
+                                <li>[Placeholder] Pude ver el valor real de las ceremonias ágiles para mantener al equipo sincronizado frente a bloqueos técnicos.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        });
+        document.write(slidesHTML);
+    </script>
+
+    <!-- Slide 24: Cierre -->
+    <div class="slide bg-primary-slide" data-block="Cierre">
+        <div class="bg-pattern"></div>
+        <div class="slide-content items-center text-center">
+            <h1 class="text-7xl font-extrabold mb-8">¡Muchas Gracias!</h1>
+            <p class="text-3xl font-light opacity-90 mb-16">Espacio para preguntas y respuestas</p>
+            <div class="flex items-center justify-center gap-4 text-white/80">
+                <i data-lucide="goal" class="w-8 h-8"></i>
+                <span class="text-2xl font-semibold">PartidoYa</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==============================================
+         LÓGICA JAVASCRIPT
+         ============================================== -->
+    <script>
+        // Inicializar íconos
+        lucide.createIcons();
+
+        // Lógica de Slides
+        const slides = document.querySelectorAll('.slide');
+        const totalSlides = slides.length;
+        const currentSlideEl = document.getElementById('current-slide');
+        const totalSlidesEl = document.getElementById('total-slides');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+        const blockIndicator = document.getElementById('block-indicator');
+        const blockName = document.getElementById('block-name');
+        
+        let currentSlide = 0;
+        totalSlidesEl.textContent = totalSlides;
+
+        function updateSlide(index) {
+            slides.forEach(s => s.classList.remove('active'));
+            slides[index].classList.add('active');
+            
+            // Actualizar UI
+            currentSlideEl.textContent = index + 1;
+            progressBar.style.width = ((index + 1) / totalSlides) * 100 + '%';
+            
+            // Actualizar indicador de bloque
+            const block = slides[index].getAttribute('data-block');
+            if(block && block !== "Cierre") {
+                blockIndicator.style.display = 'flex';
+                blockName.textContent = block;
+            } else {
+                blockIndicator.style.display = 'none';
+            }
+
+            // Render Chart si estamos en la slide de Burndown
+            if(index === 10 && !window.chartRendered) {
+                renderChart();
+                window.chartRendered = true;
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                currentSlide++;
+                updateSlide(currentSlide);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 0) {
+                currentSlide--;
+                updateSlide(currentSlide);
+            }
+        }
+
+        // Eventos Teclado
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight' || e.key === ' ') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft') {
+                prevSlide();
+            } else if (e.key === 'f' || e.key === 'F') {
+                toggleFullScreen();
+            }
+        });
+
+        // Eventos Botones
+        document.getElementById('btn-next').addEventListener('click', nextSlide);
+        document.getElementById('btn-prev').addEventListener('click', prevSlide);
+        document.getElementById('btn-fullscreen').addEventListener('click', toggleFullScreen);
+        
+        // Clic en la barra de progreso
+        progressContainer.addEventListener('click', (e) => {
+            const clickPosition = e.offsetX;
+            const totalWidth = progressContainer.clientWidth;
+            const percentage = clickPosition / totalWidth;
+            currentSlide = Math.floor(percentage * totalSlides);
+            updateSlide(currentSlide);
+        });
+
+        // Fullscreen
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Gráfico de Burndown (Chart.js)
+        function renderChart() {
+            const ctx = document.getElementById('burndownChart').getContext('2d');
+            
+            // Datos mockeados de Sprints
+            const labels = ['Sprint 1', 'Sprint 2', 'Sprint 3', 'Sprint 4', 'Sprint 5', 'Sprint 6', 'Sprint 7'];
+            const totalPoints = 140; // 20 puntos por sprint ideal
+            
+            const planificado = [140, 120, 100, 80, 60, 40, 20, 0];
+            const real = [140, 125, 105, 70, 55, 30, 15, 0];
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Inicio', ...labels],
+                    datasets: [
+                        {
+                            label: 'Esfuerzo Ideal',
+                            data: planificado,
+                            borderColor: '#cbd5e1', // Slate 300
+                            borderDash: [5, 5],
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0,
+                            pointRadius: 0
+                        },
+                        {
+                            label: 'Esfuerzo Real',
+                            data: real,
+                            borderColor: '#FF6B4A', // Primary
+                            backgroundColor: 'rgba(255, 107, 74, 0.1)',
+                            borderWidth: 4,
+                            fill: true,
+                            tension: 0.1,
+                            pointBackgroundColor: '#FF6B4A',
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 16,
+                                    weight: '500'
+                                },
+                                color: '#1A1614'
+                            }
+                        },
+                        tooltip: {
+                            titleFont: { size: 16 },
+                            bodyFont: { size: 14 },
+                            padding: 12
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Story Points',
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 16,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                font: {
+                                    family: "'Inter', sans-serif",
+                                    size: 14
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Iniciar
+        updateSlide(0);
+    </script>
+</body>
+</html>

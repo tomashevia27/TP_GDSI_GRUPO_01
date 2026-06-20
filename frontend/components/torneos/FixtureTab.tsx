@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Fragment } from "react"
 import {
   PartidoTorneoData,
   PartidoBracketData,
@@ -57,7 +57,7 @@ function PartidoCard({
   onResultado: (p: PartidoTorneoData) => void
   full?: boolean
 }) {
-  const p = partido as PartidoTorneoData // PartidoBracketData es compatible en los campos que usamos
+  const p = partido as PartidoTorneoData
   const estaProgramado = !!p.fecha && !!p.horario
   const esFinalizado = p.estado === "finalizado"
   const fechaPasada = p.fecha ? p.fecha <= hoy : false
@@ -67,34 +67,53 @@ function PartidoCard({
 
   const localNombre = equipoNombre(p.equipo_local)
   const visitanteNombre = equipoNombre(p.equipo_visitante)
+  
+  const localGoles = p.goles_local ?? 0
+  const visitanteGoles = p.goles_visitante ?? 0
+  const localGana = esFinalizado && localGoles > visitanteGoles
+  const visitanteGana = esFinalizado && visitanteGoles > localGoles
+
+  // Map group names to specific tailwind colors for badges
+  const groupColor = p.grupo ? {
+    'A': 'bg-primary/20 text-primary border-primary/30',
+    'B': 'bg-accent/20 text-accent border-accent/30',
+    'C': 'bg-chart-3/20 text-chart-3 border-chart-3/30',
+    'D': 'bg-chart-4/20 text-chart-4 border-chart-4/30',
+    'E': 'bg-chart-5/20 text-chart-5 border-chart-5/30',
+  }[p.grupo.toUpperCase()] || 'bg-secondary text-secondary-foreground border-border' : ''
 
   return (
-    <div className="border rounded-xl bg-card shadow-sm flex flex-col overflow-hidden">
-      {/* Header: estado + fecha/hora */}
-      <div className="px-4 py-2.5 border-b bg-muted/30 flex items-center justify-between gap-2">
+    <div className={`border rounded-xl bg-card shadow-sm hover:shadow-md transition-all hover:-translate-y-0.5 flex flex-col overflow-hidden relative group ${esFinalizado ? 'border-primary/20' : ''}`}>
+      {/* Accent Top Bar */}
+      {esFinalizado && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent" />}
+      {!esFinalizado && estaProgramado && <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-400 to-amber-500" />}
+
+      {/* Header: estado + fecha/hora + grupo */}
+      <div className="px-4 py-3 border-b bg-muted/20 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 flex-wrap">
-          {(p as any).grupo && (
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-              Grupo {(p as any).grupo}
-            </span>
-          )}
           {esFinalizado ? (
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
               Finalizado
             </span>
           ) : estaProgramado ? (
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-2.5 py-0.5 rounded-full">
               Programado
             </span>
           ) : (
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-              PRÓXIMAMENTE
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
+              Próximamente
+            </span>
+          )}
+          
+          {p.grupo && (
+            <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${groupColor}`}>
+              Grupo {p.grupo}
             </span>
           )}
         </div>
         {estaProgramado && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-            <Clock className="h-3 w-3" />
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground shrink-0 group-hover:text-foreground transition-colors">
+            <Clock className="h-3.5 w-3.5 text-primary/70" />
             <span>
               {new Date(p.fecha + "T00:00:00").toLocaleDateString("es-AR", {
                 day: "2-digit",
@@ -107,22 +126,34 @@ function PartidoCard({
       </div>
 
       {/* Equipos y resultado */}
-      <div className="px-4 py-4 flex items-center justify-between gap-2">
-        <span className="font-bold text-sm flex-1 truncate" title={localNombre}>
-          {localNombre}
-        </span>
-        <div className="flex-shrink-0 px-3 py-1.5 bg-muted rounded-lg text-center min-w-[60px]">
+      <div className="px-4 py-5 flex items-center justify-between gap-3 relative">
+        <div className={`flex-1 text-right min-w-0 ${localGana ? 'font-bold text-foreground scale-105' : 'font-medium text-foreground/80'} transition-transform origin-right`}>
+          <div className="truncate text-sm sm:text-base flex items-center justify-end gap-2" title={localNombre}>
+            {localGana && <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+            <span className="truncate">{localNombre}</span>
+          </div>
+        </div>
+        
+        <div className="flex-shrink-0 relative">
           {esFinalizado ? (
-            <span className="font-bold text-lg text-foreground">
-              {p.goles_local} – {p.goles_visitante}
-            </span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 rounded-lg border border-primary/10">
+              <span className={`text-lg sm:text-xl font-bold w-6 text-center text-foreground`}>{localGoles}</span>
+              <span className="text-muted-foreground/50 text-sm">-</span>
+              <span className={`text-lg sm:text-xl font-bold w-6 text-center text-foreground`}>{visitanteGoles}</span>
+            </div>
           ) : (
-            <span className="font-bold text-primary text-sm">vs</span>
+            <div className="px-3 py-1.5 bg-muted rounded-full">
+              <span className="font-bold text-muted-foreground text-xs uppercase tracking-widest">vs</span>
+            </div>
           )}
         </div>
-        <span className="font-bold text-sm flex-1 truncate text-right" title={visitanteNombre}>
-          {visitanteNombre}
-        </span>
+
+        <div className={`flex-1 text-left min-w-0 ${visitanteGana ? 'font-bold text-foreground scale-105' : 'font-medium text-foreground/80'} transition-transform origin-left`}>
+          <div className="truncate text-sm sm:text-base flex items-center justify-start gap-2" title={visitanteNombre}>
+            <span className="truncate">{visitanteNombre}</span>
+            {visitanteGana && <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+          </div>
+        </div>
       </div>
 
       {/* Botones organizador */}
@@ -316,7 +347,7 @@ function BracketView({
   // De más partidos (primera ronda) a menos (final)
   const rondasOrdenadas = [...rondas].reverse()
   const maxMatches = Math.max(...rondasOrdenadas.map(r => r.partidos.length), 1)
-  const CARD_SLOT = 110  // px por slot — totalHeight = espacio disponible para justify-around
+  const CARD_SLOT = 180  // px por slot — totalHeight = espacio disponible para justify-around
   const totalHeight = maxMatches * CARD_SLOT
 
   return (
@@ -327,15 +358,15 @@ function BracketView({
       </div>
 
       <div className="overflow-x-auto pb-6">
-        <div className="flex min-w-max items-stretch">
+        <div className="flex w-full min-w-max items-stretch">
           {rondasOrdenadas.map((ronda, ri) => {
             const rondaLabel = RONDA_LABEL[ronda.nombre.toLowerCase()] || ronda.nombre
             const isFinal = ri === rondasOrdenadas.length - 1
 
             return (
-              <div key={ronda.nombre} className="flex items-stretch">
+              <Fragment key={ronda.nombre}>
                 {/* Columna de ronda */}
-                <div className="flex flex-col" style={{ width: 220 }}>
+                <div className="flex flex-col flex-1 min-w-[220px]">
                   {/* Título de ronda */}
                   <div className={`
                     text-center text-[11px] font-bold uppercase tracking-widest mb-3 py-1.5 px-2 rounded-lg mx-1
@@ -425,11 +456,20 @@ function BracketView({
 
                 {/* Conector visual entre rondas */}
                 {!isFinal && (
-                  <div className="flex items-center justify-center" style={{ width: 16 }}>
-                    <div className="w-full h-px bg-border/70" />
+                  <div className="flex flex-col shrink-0" style={{ width: 40, margin: "0 8px" }}>
+                    <div className="mb-3 py-1.5 px-2 invisible">Title</div>
+                    <div className="flex-1 flex flex-col justify-around" style={{ minHeight: totalHeight }}>
+                      {Array.from({ length: Math.max(1, Math.floor(ronda.partidos.length / 2)) }).map((_, i) => (
+                        <div key={i} className="flex-1 flex w-full opacity-50">
+                          <svg width="40" height="100%" preserveAspectRatio="none" viewBox="0 0 40 100" className="text-border drop-shadow-sm">
+                            <path d="M 0 25 C 20 25, 20 50, 40 50 M 0 75 C 20 75, 20 50, 40 50" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="4 4" className="animate-pulse-glow" />
+                          </svg>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
+              </Fragment>
             )
           })}
         </div>

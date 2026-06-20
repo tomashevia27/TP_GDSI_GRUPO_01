@@ -22,12 +22,6 @@ export interface UserData {
 
 export interface UserProfile extends UserData {
   id: number
-  partidos_a_favor?: number
-}
-
-export interface PartidosAFavorData {
-  cantidad: number
-  tiene: boolean
 }
 
 function getAccessToken(): string {
@@ -134,20 +128,6 @@ export async function getUserProfile(): Promise<UserProfile> {
   return data
 }
 
-export async function getPartidosAFavor(): Promise<PartidosAFavorData> {
-  const response = await fetch(`${API_URL}/partidos/partidos-a-favor`, {
-    headers: {
-      Authorization: `Bearer ${getAccessToken()}`,
-    },
-  })
-  const data = await response.json()
-
-  if (!response.ok) {
-    throw new Error(data.detail || "Error al cargar los partidos a favor")
-  }
-
-  return data
-}
 
 export async function confirmEmail(email: string, code: string): Promise<{ mensaje: string }> {
   const response = await fetch(`${API_URL}/confirmar-email`, {
@@ -278,8 +258,6 @@ export interface PartidoCreateData {
   tipo: string;
   descripcion?: string;
   cupos_disponibles?: number;
-  use_partido_a_favor?: boolean;
-  partidos_a_favor_a_usar?: number;
 }
 
 export interface PartidoData {
@@ -386,10 +364,9 @@ export async function cancelarPartido(partidoId: string | number): Promise<Parti
 }
 
 export async function inscribirseAPartido(
-  partidoId: string | number,
-  usePartidoAFavor: boolean = false
+  partidoId: string | number
 ): Promise<PartidoData> {
-  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse?use_partido_a_favor=${usePartidoAFavor ? "true" : "false"}`, {
+  const response = await fetch(`${API_URL}/partidos/${partidoId}/inscribirse`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${getAccessToken()}`,
@@ -1007,7 +984,23 @@ export async function cancelarTorneo(torneoId: number): Promise<TorneoData> {
     },
   })
   const data = await response.json()
-  if (!response.ok) throw new Error(data.detail || "Error al cancelar el torneo")
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al cancelar el torneo")
+  }
+  return data
+}
+
+export async function bajarseDeTorneo(torneoId: number): Promise<TorneoData> {
+  const response = await fetch(`${API_URL}/api/torneos/${torneoId}/inscripciones`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${getAccessToken()}`,
+    },
+  })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.detail || "Error al darse de baja del torneo")
+  }
   return data
 }
 
@@ -1054,6 +1047,8 @@ export interface PartidoBracketData {
   estado: string
   fecha?: string
   horario?: string
+  fase?: string
+  grupo?: string
   partido_padre_local_id?: number
   partido_padre_visitante_id?: number
 }
@@ -1146,6 +1141,7 @@ export interface TablaPosicionData {
   gf: number
   gc: number
   dg: number
+  grupo?: string
 }
 
 export async function generarFixture(torneoId: number): Promise<PartidoTorneoData[]> {
@@ -1222,7 +1218,7 @@ export async function getTablaPosiciones(torneoId: number): Promise<TablaPosicio
 export interface VallaInvictaData {
   equipo_id: number
   equipo_nombre: string
-  partidos_invicto: number
+  goles_recibidos: number
 }
 
 export async function getVallasInvictas(torneoId: number, limit: number = 10): Promise<VallaInvictaData[]> {

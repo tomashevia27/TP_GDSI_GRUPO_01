@@ -147,6 +147,38 @@ def inscribir_equipo(db: Session, torneo_id: int, datos: InscripcionEquipoCreate
     return nuevo_equipo
 
 
+
+def bajar_equipo(db: Session, torneo_id: int, usuario_accion_id: int):
+    torneo = torneo_repository.obtener_por_id(db, torneo_id)
+    if not torneo:
+        raise DomainNotFoundError("El torneo especificado no existe.")
+
+    if torneo.estado == EstadoTorneo.en_curso:
+        raise DomainRuleError("No podés dar de baja a tu equipo de un torneo que ya está en curso.")
+    
+    if torneo.estado == EstadoTorneo.finalizado:
+        raise DomainRuleError("No podés dar de baja a tu equipo de un torneo finalizado.")
+
+    equipo_a_bajar = None
+    for equipo in torneo.equipos_inscriptos:
+        if any(j.id == usuario_accion_id for j in equipo.jugadores):
+            equipo_a_bajar = equipo
+            break
+
+    if not equipo_a_bajar:
+        raise DomainRuleError("No formás parte de ningún equipo inscripto en este torneo.")
+
+    torneo.equipos_inscriptos.remove(equipo_a_bajar)
+    torneo.inscriptos -= 1
+    
+    # Clean up the generic equipo object if it only belongs to this tournament
+    if len(equipo_a_bajar.torneos) == 0:
+        db.delete(equipo_a_bajar)
+
+    db.commit()
+    db.refresh(torneo)
+    return torneo
+
 def listar_torneos_abiertos(db: Session) -> List[Torneo]:
     """Devuelve una lista de torneos con estado 'abierto' incluyendo cupos_restantes.  
     """
