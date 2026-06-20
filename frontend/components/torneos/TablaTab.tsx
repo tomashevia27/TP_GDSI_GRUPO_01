@@ -71,7 +71,7 @@ export function TablaTab({ torneo }: Props) {
             <table className="w-full text-sm text-left">
               <thead className="bg-muted/50 text-[11px] uppercase font-semibold text-muted-foreground border-b tracking-wider">
                 <tr>
-                  <th className="px-4 py-3 w-10 text-center">#</th>
+                  <th className="px-4 py-3 w-12 text-center">Pos</th>
                   <th className="px-4 py-3">Equipo</th>
                   <th className="px-4 py-3 text-center">Pts</th>
                   <th className="px-4 py-3 text-center">PJ</th>
@@ -85,38 +85,40 @@ export function TablaTab({ torneo }: Props) {
               </thead>
               <tbody className="divide-y divide-border">
                 {porGrupo[g].map((fila, i) => {
-                  const isTop3 = i < 3
-                  const esLider = i === 0
+                  const clasifica = i < 2
+                  const maxPts = porGrupo[g][0]?.pts || 1
+                  const progressPct = maxPts > 0 ? (fila.pts / maxPts) * 100 : 0
 
                   return (
                     <tr
                       key={fila.equipo_id}
-                      className={`transition-colors ${
-                        esLider
-                          ? "bg-primary/5 hover:bg-primary/10"
-                          : "hover:bg-muted/40"
+                      className={`transition-colors relative group ${
+                        clasifica
+                          ? "bg-primary/5 hover:bg-primary/10 border-l-4 border-l-primary"
+                          : "hover:bg-muted/40 border-l-4 border-l-transparent"
                       }`}
                     >
                       <td className="px-4 py-3 text-center">
-                        {esLider ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                            {i + 1}
-                          </span>
-                        ) : isTop3 ? (
-                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-muted-foreground text-xs font-bold">
-                            {i + 1}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground font-medium text-xs">{i + 1}</span>
-                        )}
+                        <div className="flex items-center justify-center">
+                          <span className={clasifica ? "text-primary font-bold text-sm" : "text-muted-foreground font-medium text-xs"}>{i + 1}</span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`font-semibold ${esLider ? "text-primary" : "text-foreground"}`}>
-                          {fila.equipo_nombre}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span className={`font-semibold ${clasifica ? "text-primary text-base" : "text-foreground"}`}>
+                            {fila.equipo_nombre}
+                          </span>
+                          {/* Barra de progreso de puntos */}
+                          <div className="h-1 w-24 bg-muted overflow-hidden rounded-full mt-1">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-1000 ease-out ${clasifica ? 'bg-primary' : 'bg-primary/40 group-hover:bg-primary/60'}`} 
+                              style={{ width: `${progressPct}%` }}
+                            />
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <span className="font-bold text-base text-primary">{fila.pts}</span>
+                        <span className={`font-bold text-base ${clasifica ? 'text-primary' : 'text-foreground'}`}>{fila.pts}</span>
                       </td>
                       <td className="px-4 py-3 text-center text-muted-foreground">{fila.pj}</td>
                       <td className="px-4 py-3 text-center text-green-600 dark:text-green-400 font-medium">{fila.pg}</td>

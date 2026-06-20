@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from ..models.tabla_posicion import TablaPosiciones
 from ..models.cancha_model import Cancha, DIAS_SEMANA_MAP
-from ..models.torneo_model import Torneo, FormatoTorneo
+from ..models.torneo_model import Torneo, FormatoTorneo, EstadoTorneo
 from ..models.partido_torneo import EstadoPartidoTorneo, PartidoTorneo, FaseTorneo
 from ..models.partido_torneo import PartidoTorneo
 from ..models.estadistica_jugador_partido_torneo import EstadisticaJugadorPartidoTorneo
@@ -205,6 +205,10 @@ def cargar_resultado_partido(db: Session, partido_id: int, data: CargarResultado
     # Si es fase_grupos, verificar si terminó la fase de grupos para generar playoffs
     if partido.torneo.formato == FormatoTorneo.fase_grupos and partido.fase == FaseTorneo.grupos:
         _verificar_fin_fase_grupos(db, partido)
+
+    # Finalizar el torneo si se jugó la final
+    if partido.fase == FaseTorneo.final:
+        partido.torneo.estado = EstadoTorneo.finalizado
 
     db.commit()
     db.refresh(partido)
