@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { TorneoData, getTopJugadores, TopJugadorData, getVallasInvictas, VallaInvictaData } from "@/hooks/use-api"
-import { Loader2, Goal, ShieldCheck, Trophy, Medal } from "lucide-react"
+import { Loader2, Goal, ShieldCheck, Trophy, Medal, ChevronDown, ChevronUp } from "lucide-react"
 
 interface Props {
   torneo: TorneoData
@@ -12,6 +12,8 @@ export function EstadisticasTab({ torneo }: Props) {
   const [goleadores, setGoleadores] = useState<TopJugadorData[]>([])
   const [vallas, setVallas] = useState<VallaInvictaData[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [showAllGoleadores, setShowAllGoleadores] = useState(false)
+  const [showAllVallas, setShowAllVallas] = useState(false)
 
   useEffect(() => {
     const loadStats = async () => {
@@ -84,7 +86,7 @@ export function EstadisticasTab({ torneo }: Props) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {goleadores.map((jugador, i) => {
+                  {(showAllGoleadores ? goleadores : goleadores.slice(0, 10)).map((jugador, i) => {
                     return (
                       <tr
                         key={`${jugador.usuario_id}-${jugador.equipo_id}`}
@@ -112,6 +114,18 @@ export function EstadisticasTab({ torneo }: Props) {
                 </tbody>
               </table>
             </div>
+            {goleadores.length > 10 && (
+              <button
+                onClick={() => setShowAllGoleadores(!showAllGoleadores)}
+                className="w-full py-3 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors border-t border-border"
+              >
+                {showAllGoleadores ? (
+                  <>Ver menos <ChevronUp className="h-4 w-4" /></>
+                ) : (
+                  <>Ver más ({goleadores.length - 10}) <ChevronDown className="h-4 w-4" /></>
+                )}
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -155,7 +169,7 @@ export function EstadisticasTab({ torneo }: Props) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {vallas.map((v, i) => {
+                  {(showAllVallas ? vallas : vallas.slice(0, 10)).map((v, i) => {
                     return (
                       <tr key={v.equipo_id} className="hover:bg-muted/40 transition-colors">
                         <td className="px-4 py-3 text-center text-muted-foreground font-medium text-xs">{i + 1}</td>
@@ -167,6 +181,18 @@ export function EstadisticasTab({ torneo }: Props) {
                 </tbody>
               </table>
             </div>
+            {vallas.length > 10 && (
+              <button
+                onClick={() => setShowAllVallas(!showAllVallas)}
+                className="w-full py-3 flex items-center justify-center gap-2 text-sm font-medium text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors border-t border-border"
+              >
+                {showAllVallas ? (
+                  <>Ver menos <ChevronUp className="h-4 w-4" /></>
+                ) : (
+                  <>Ver más ({vallas.length - 10}) <ChevronDown className="h-4 w-4" /></>
+                )}
+              </button>
+            )}
           </div>
         )}
       </div>
