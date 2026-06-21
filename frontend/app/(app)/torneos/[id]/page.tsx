@@ -438,11 +438,11 @@ export default function TorneoDetallePage() {
             {/* Contenido */}
             <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
                 <Tabs defaultValue="informacion" className="w-full">
-                    <TabsList className="grid w-full grid-cols-5 mb-8">
+                    <TabsList className={`grid w-full mb-8 ${torneo.formato === 'eliminacion_directa' || torneo.formato === 'Eliminación directa' ? 'grid-cols-4' : 'grid-cols-5'}`}>
                         <TabsTrigger value="informacion">Información</TabsTrigger>
                         <TabsTrigger value="equipos">Equipos</TabsTrigger>
                         <TabsTrigger value="fixture">Fixture</TabsTrigger>
-                        <TabsTrigger value="tabla">Tabla</TabsTrigger>
+                        {torneo.formato !== 'eliminacion_directa' && torneo.formato !== 'Eliminación directa' && <TabsTrigger value="tabla">Tabla</TabsTrigger>}
                         <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
                     </TabsList>
 
@@ -552,9 +552,11 @@ export default function TorneoDetallePage() {
                         <FixtureTab torneo={torneo} isOrganizer={userId ? torneo.organizador_id === Number(userId) : false} />
                     </TabsContent>
 
-                    <TabsContent value="tabla">
-                        <TablaTab torneo={torneo} />
-                    </TabsContent>
+                    {torneo.formato !== 'eliminacion_directa' && torneo.formato !== 'Eliminación directa' && (
+                        <TabsContent value="tabla">
+                            <TablaTab torneo={torneo} />
+                        </TabsContent>
+                    )}
 
             <TabsContent value="estadisticas">
                 <EstadisticasTab torneo={torneo} />
