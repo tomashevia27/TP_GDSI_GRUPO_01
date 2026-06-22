@@ -131,10 +131,18 @@ export default function InscripcionTorneoPage() {
             await inscribirEquipo(torneo.id, payload)
 
             await Swal.fire({
-                title: "¡Equipo inscripto!",
-                text: `Tu equipo fue anotado exitosamente en ${torneo.nombre}.`,
+                title: "¡Reserva iniciada!",
+                text: "Serás redirigido a la pasarela de pago para abonar la inscripción del equipo.",
                 icon: "success",
-                timer: 2500,
+                confirmButtonColor: "#FF6B4A",
+                confirmButtonText: "Proceder al pago"
+            })
+
+            await Swal.fire({
+                title: "¡Pago exitoso!",
+                text: `Tu equipo fue inscripto exitosamente en ${torneo.nombre}.`,
+                icon: "success",
+                timer: 2000,
                 showConfirmButton: false
             })
 
@@ -324,7 +332,7 @@ export default function InscripcionTorneoPage() {
                                 </Button>
                             </Link>
                             <Button type="submit" disabled={isSubmitting || bloqueado} className="min-w-[150px]">
-                                {isSubmitting ? "Enviando..." : "Confirmar Inscripción"}
+                                {isSubmitting ? "Procesando..." : "Confirmar y Pagar Inscripción"}
                             </Button>
                         </div>
                     </fieldset>
