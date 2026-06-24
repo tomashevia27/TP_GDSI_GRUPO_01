@@ -637,7 +637,7 @@
         <button class="control-btn" id="btn-next" title="Siguiente (→)"><i data-lucide="chevron-right"></i></button>
     </div>
 
-    <div class="slide-number"><span id="current-slide">1</span> / <span id="total-slides">18</span></div>
+    <div class="slide-number"><span id="current-slide">1</span> / <span id="total-slides">19</span></div>
     <div class="block-indicator" id="block-indicator" style="display:none;">
         <i data-lucide="layout-grid" class="w-4 h-4"></i><span id="block-name">Bloque 1</span>
     </div>
@@ -706,7 +706,82 @@
     </div>
 
     <!-- ============================================================
-     SLIDE 2 - EL PROBLEMA  (Persona 1)
+     SLIDE 2 - EQUIPO
+============================================================ -->
+    <div class="slide" data-block="Apertura" data-speaker="">
+        <div class="bg-pattern"></div>
+        <div class="orb orb-primary" style="width:480px;height:480px; top:-120px; right:-140px;"></div>
+        <div class="orb orb-accent" style="width:360px;height:360px; bottom:-100px; left:-100px;"></div>
+
+        <div class="slide-content items-center text-center">
+            <div class="slide-header anim-slide-up delay-1">
+                <span class="badge-pill badge-coral mb-6">
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i> El equipo
+                </span>
+                <h2 class="headline text-5xl text-foreground">Conocé al equipo de <span
+                        class="text-primary">PartidoYa</span></h2>
+            </div>
+
+            <div class="grid grid-cols-3 gap-x-12 gap-y-10 mt-4 max-w-5xl mx-auto">
+                <div class="anim-slide-up delay-2">
+                    <div class="w-40 h-40 rounded-full flex items-center justify-center text-white text-5xl font-black border-4 border-background shadow-xl overflow-hidden mx-auto"
+                        style="background:#FF6B4A;">
+                        <img src="manuel.png" class="w-full h-full object-cover" alt="Manuel">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Manuel Campoliete</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-3">
+                    <div class="w-40 h-40 rounded-full flex items-center justify-center text-white text-5xl font-black border-4 border-background shadow-xl overflow-hidden mx-auto"
+                        style="background:#2DD4A3;">
+                        <img src="tomas.png" class="w-full h-full object-cover" alt="Tomás">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Tomás Hevia</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-4">
+                    <div class="w-40 h-40 rounded-full flex items-center justify-center text-white text-5xl font-black border-4 border-background shadow-xl overflow-hidden mx-auto"
+                        style="background:#FFB86B;">
+                        <img src="nicolas.png" class="w-full h-full object-cover" alt="Nicolás">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Nicolás Olivera</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-4">
+                    <div class="w-40 h-40 rounded-full flex items-center justify-center text-white text-5xl font-black border-4 border-background shadow-xl overflow-hidden mx-auto"
+                        style="background:#6C5CE7;">
+                        <img src="julian.png" class="w-full h-full object-cover" alt="Julián">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Julián Alvarez</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-5">
+                    <div class="w-40 h-40 rounded-full flex items-center justify-center text-white text-5xl font-black border-4 border-background shadow-xl overflow-hidden mx-auto"
+                        style="background:#FD79A8;">
+                        <img src="camila.png" class="w-full h-full object-cover" alt="Camila">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Camila Suarez</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-6">
+                    <div class="w-40 h-40 rounded-full flex items-center justify-center text-white text-5xl font-black border-4 border-background shadow-xl overflow-hidden mx-auto"
+                        style="background:#00B894;">
+                        <img src="milagros.png" class="w-full h-full object-cover" alt="Milagros">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Milagros Thome</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+     SLIDE 3 - EL PROBLEMA  (Persona 1)
 ============================================================ -->
     <div class="slide" data-block="1 · Producto" data-speaker="Manuel">
         <div class="bg-pattern"></div>
@@ -724,7 +799,9 @@
             <div class="grid grid-cols-2 gap-8 mt-4">
                 <div class="pcard pcard-accent p-7 anim-slide-up delay-2">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="avatar-circle" style="background:#FF6B4A;">M</div>
+                        <div class="avatar-circle" style="background:#FF6B4A; overflow:hidden;">
+                            <img src="martin.png" class="w-full h-full object-cover" alt="Martín">
+                        </div>
                         <div>
                             <p class="font-bold text-foreground">Martín, 40 años</p>
                             <p class="text-sm text-mutedforeground">Perdió su grupo fijo de fútbol</p>
@@ -736,7 +813,9 @@
 
                 <div class="pcard pcard-accent p-7 anim-slide-up delay-3">
                     <div class="flex items-center gap-3 mb-3">
-                        <div class="avatar-circle" style="background:#2DD4A3;">C</div>
+                        <div class="avatar-circle" style="background:#2DD4A3; overflow:hidden;">
+                            <img src="carlos.png" class="w-full h-full object-cover" alt="Carlos">
+                        </div>
                         <div>
                             <p class="font-bold text-foreground">Carlos, 42 años</p>
                             <p class="text-sm text-mutedforeground">Dueño de complejo de canchas</p>
@@ -754,7 +833,6 @@
             </p>
         </div>
     </div>
-
     <!-- ============================================================
      SLIDE 3 - VISIÓN DEL PRODUCTO (Persona 1)
 ============================================================ -->
@@ -1308,6 +1386,10 @@
             <div class="mt-10 anim-slide-up delay-3">
                 <span class="badge-pill badge-coral"><i data-lucide="message-square" class="w-3.5 h-3.5"></i>
                     ¿Preguntas?</span>
+            </div>
+            <div class="mt-10 anim-slide-up delay-4">
+                <p class="text-sm text-mutedforeground mb-3 font-semibold uppercase tracking-wider">Escaneá para ver el dossier</p>
+                <img src="dossierQR.png" class="w-56 h-56 mx-auto rounded-xl shadow-2xl border-4 border-white/10" alt="QR Dossier">
             </div>
         </div>
     </div>

@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PartidoYa - Equipo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#FDF8F4',
+                        foreground: '#1A1614',
+                        primary: '#FF6B4A',
+                        accent: '#2DD4A3',
+                        muted: '#F5EFEA',
+                        mutedforeground: '#6B5F58',
+                        border: '#E8DED6',
+                        card: '#FFFFFF',
+                        secondary: '#E8DED6',
+                        stadium: '#1A1614',
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    borderRadius: { xl2: '1.25rem' },
+                }
+            }
+        }
+    </script>
+    <style>
+        * {
+            box-sizing: border-box
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #FDF8F4;
+            color: #1A1614;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+
+        body {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .slide {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+            flex-direction: column;
+            background: #FDF8F4;
+            overflow: hidden;
+            animation: fadeInUp .5s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(18px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3.5rem 7rem;
+            max-width: 1680px;
+            margin: 0 auto;
+            width: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        .slide-header {
+            margin-bottom: 2rem;
+        }
+
+        .bg-pattern {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            background-image: radial-gradient(#FF6B4A 1.5px, transparent 1.5px);
+            background-size: 30px 30px;
+            opacity: .05;
+        }
+
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(110px);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .orb-primary {
+            background: rgba(255, 107, 74, 0.22);
+        }
+
+        .orb-accent {
+            background: rgba(45, 212, 163, 0.18);
+        }
+
+        .headline {
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            line-height: 1.05;
+        }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .4rem;
+            font-size: .75rem;
+            font-weight: 700;
+            padding: .3rem .8rem;
+            border-radius: 999px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .badge-coral {
+            background: rgba(255, 107, 74, .12);
+            color: #FF6B4A;
+        }
+
+        .avatar-circle {
+            width: 10rem;
+            height: 10rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            color: #fff;
+            font-size: 3rem;
+            border: 4px solid #FDF8F4;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        @keyframes slideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(28px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .anim-slide-up {
+            animation: slideUp .65s ease-out forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: .08s }
+        .delay-2 { animation-delay: .16s }
+        .delay-3 { animation-delay: .24s }
+        .delay-4 { animation-delay: .32s }
+        .delay-5 { animation-delay: .4s }
+        .delay-6 { animation-delay: .48s }
+    </style>
+</head>
+
+<body>
+
+    <div class="slide">
+        <div class="bg-pattern"></div>
+        <div class="orb orb-primary" style="width:480px;height:480px; top:-120px; right:-140px;"></div>
+        <div class="orb orb-accent" style="width:360px;height:360px; bottom:-100px; left:-100px;"></div>
+
+        <div class="slide-content items-center text-center">
+            <div class="slide-header anim-slide-up delay-1">
+                <span class="badge-pill badge-coral mb-6">
+                    <i data-lucide="users" class="w-3.5 h-3.5"></i> El equipo
+                </span>
+                <h2 class="headline text-5xl text-foreground">Conocé al equipo de <span class="text-primary">PartidoYa</span></h2>
+            </div>
+
+            <div class="grid grid-cols-3 gap-x-12 gap-y-10 mt-4 max-w-5xl mx-auto">
+                <div class="anim-slide-up delay-2">
+                    <div class="avatar-circle" style="background:#FF6B4A;">
+                        <img src="manuel.png" class="w-full h-full object-cover" alt="Manuel">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Manuel Campoliete</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-3">
+                    <div class="avatar-circle" style="background:#2DD4A3;">
+                        <img src="tomas.png" class="w-full h-full object-cover" alt="Tomás">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Tomás Hevia</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-4">
+                    <div class="avatar-circle" style="background:#FFB86B;">
+                        <img src="nicolas.png" class="w-full h-full object-cover" alt="Nicolás">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Nicolás Olivera</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-4">
+                    <div class="avatar-circle" style="background:#6C5CE7;">
+                        <img src="julian.png" class="w-full h-full object-cover" alt="Julián">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Julián Alvarez</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-5">
+                    <div class="avatar-circle" style="background:#FD79A8;">
+                        <img src="camila.png" class="w-full h-full object-cover" alt="Camila">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Camila Suarez</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+
+                <div class="anim-slide-up delay-6">
+                    <div class="avatar-circle" style="background:#00B894;">
+                        <img src="milagros.png" class="w-full h-full object-cover" alt="Milagros">
+                    </div>
+                    <p class="font-bold text-lg text-foreground mt-4">Milagros Thome</p>
+                    <p class="text-sm text-mutedforeground">Full Stack</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
