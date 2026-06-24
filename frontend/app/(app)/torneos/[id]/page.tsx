@@ -63,22 +63,61 @@ export default function TorneoDetallePage() {
         async function fetchChampionData() {
             if (torneo!.estado === "Finalizado") {
                 try {
-                    const [tabla, stats] = await Promise.all([
-                        fetch(`${API_URL}/api/torneos/${torneo!.id}/tabla-posiciones`).then(res => res.json()),
-                        fetch(`${API_URL}/api/torneos/${torneo!.id}/estadisticas`).then(res => res.json())
-                    ])
-                    
-                    if (tabla && tabla.length > 0) {
-                        setCampeon(tabla[0])
+                    const formato = (torneo!.formato || "").toLowerCase();
+                    const esTodosContraTodos = formato === "todos_contra_todos" || formato === "todos contra todos" || formato === "liga";
+
+                    const requests: Promise<any>[] = [
+                        fetch(`${API_URL}/api/torneos/${torneo!.id}/estadisticas`).then(res => res.json()),
+                        fetch(`${API_URL}/api/torneos/${torneo!.id}/top/vallas-invictas?limit=1`).then(res => res.ok ? res.json() : [])
+                    ];
+
+                    if (esTodosContraTodos) {
+                        requests.push(fetch(`${API_URL}/api/torneos/${torneo!.id}/tabla-posiciones`).then(res => res.json()));
+                    } else {
+                        requests.push(getFixtureTorneo(torneo!.id).catch(() => []));
                     }
+
+                    const results = await Promise.all(requests);
+                    const stats = results[0];
+                    const vallas = results[1];
+
+                    if (esTodosContraTodos) {
+                        const tabla = results[2];
+                        if (tabla && tabla.length > 0) {
+                            setCampeon(tabla[0]);
+                        }
+                    } else {
+                        const fixture = results[2];
+                        if (fixture && Array.isArray(fixture)) {
+                            const partidoFinal = fixture.find((p: any) => p.fase === "final" && p.estado === "finalizado");
+                            if (partidoFinal) {
+                                const golesLocal = partidoFinal.goles_local ?? 0;
+                                const golesVisitante = partidoFinal.goles_visitante ?? 0;
+                                let campeonData = null;
+                                if (golesLocal > golesVisitante) {
+                                    campeonData = {
+                                        equipo_nombre: partidoFinal.equipo_local?.nombre || partidoFinal.equipo_local?.nombre_equipo,
+                                        equipo_id: partidoFinal.equipo_local?.id
+                                    };
+                                } else if (golesVisitante > golesLocal) {
+                                    campeonData = {
+                                        equipo_nombre: partidoFinal.equipo_visitante?.nombre || partidoFinal.equipo_visitante?.nombre_equipo,
+                                        equipo_id: partidoFinal.equipo_visitante?.id
+                                    };
+                                }
+                                if (campeonData) {
+                                    setCampeon(campeonData);
+                                }
+                            }
+                        }
+                    }
+
                     if (stats && stats.jugadores && stats.jugadores.length > 0) {
                         const goleadores = [...stats.jugadores].sort((a, b) => b.goles - a.goles)
                         if (goleadores[0].goles > 0) {
                             setGoleador(goleadores[0])
                         }
                     }
-                    
-                    const vallas = await fetch(`${API_URL}/api/torneos/${torneo!.id}/top/vallas-invictas?limit=1`).then(res => res.ok ? res.json() : [])
                     if (vallas && vallas.length > 0) {
                         setVallaMenosVencida(vallas[0])
                     }

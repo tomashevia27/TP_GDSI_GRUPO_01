@@ -13,6 +13,7 @@ from app.models.usuario_model import Usuario
 from app.models.cancha_model import Cancha
 from app.models.partido_model import Partido
 from app.models.torneo_model import Torneo
+from app.models.partido_torneo import PartidoTorneo
 from app.models.equipo_model import Equipo
 from app.models.notificacion_model import Notificacion
 
@@ -23,23 +24,29 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def generar_datos():
     db = SessionLocal()
     try:
-        miguel = db.query(Usuario).filter(Usuario.email == "miguelgalvan@gmail.com").first()
-        if not miguel:
-            print("No se encontro a Miguel Galvan")
+        laura = db.query(Usuario).filter(Usuario.email == "lauraherrera@gmail.com").first()
+        if not laura:
+            print("No se encontró a Laura Herrera")
             return
             
-        canchas = db.query(Cancha).filter(Cancha.propietario_id == miguel.id).all()
+        canchas = db.query(Cancha).filter(Cancha.propietario_id == laura.id).all()
         if not canchas:
-            print("Miguel no tiene canchas")
+            print("Laura no tiene canchas")
             return
             
+        cancha_ids = [c.id for c in canchas]
+        
+        # Limpiar partidos anteriores para estas canchas (para evitar duplicados al correr varias veces)
+        db.query(Partido).filter(Partido.cancha_id.in_(cancha_ids)).delete(synchronize_session=False)
+        db.commit()
+        
         # Get some players to use as organizers
         jugadores = db.query(Usuario).filter(Usuario.rol == "jugador").all()
         
-        # Mayo y Junio 2026
+        # Mayo a 5 de Julio 2026
         fechas = []
         fecha_actual = date(2026, 5, 1)
-        fecha_fin = date(2026, 6, 30)
+        fecha_fin = date(2026, 7, 5)
         while fecha_actual <= fecha_fin:
             fechas.append(fecha_actual)
             fecha_actual += timedelta(days=1)
@@ -69,10 +76,10 @@ def generar_datos():
                         
                     if random.random() < prob:
                         # Crear partido
-                        organizador = random.choice(jugadores) if jugadores else miguel
+                        organizador = random.choice(jugadores) if jugadores else laura
                         
-                        # Tipos: mayormente cerrado
-                        tipo = random.choices(["abierto", "cerrado", "manual"], weights=[0.2, 0.6, 0.2])[0]
+                        # Tipos: todos cerrados (algunos manuales, otros por app)
+                        tipo = random.choices(["cerrado", "manual"], weights=[0.7, 0.3])[0]
                         reserva_manual = True if tipo == "manual" else False
                         if tipo == "manual": tipo = "cerrado"
                         
@@ -83,8 +90,19 @@ def generar_datos():
                         else:
                             estado = "confirmado"
                             
-                        # Modalidad F11 ya que sus canchas son F11
-                        modalidad = "Fútbol 11"
+                        # Modalidad F5 ya que sus canchas son F5
+                        modalidad = "Fútbol 5"
+                        
+                        nombres_manuales = ["Carlos", "Jose", "Martin", "Luis", "Roberto", "Alejandro", "Jorge", "Raul"]
+                        apellidos_manuales = ["Perez", "Gonzalez", "Rodriguez", "Fernandez", "Lopez", "Diaz", "Martinez", "Paz"]
+                        
+                        cliente_nombre = None
+                        cliente_apellido = None
+                        cliente_telefono = None
+                        if reserva_manual:
+                            cliente_nombre = random.choice(nombres_manuales)
+                            cliente_apellido = random.choice(apellidos_manuales)
+                            cliente_telefono = f"11{random.randint(20000000, 79999999)}"
                         
                         partido = Partido(
                             cancha_id=cancha.id,
@@ -95,8 +113,11 @@ def generar_datos():
                             modalidad=modalidad,
                             estado=estado,
                             reserva_manual=reserva_manual,
-                            cantidad_jugadores=22,
-                            cupos_disponibles=22 if tipo == "abierto" else 0,
+                            cliente_nombre=cliente_nombre,
+                            cliente_apellido=cliente_apellido,
+                            cliente_telefono=cliente_telefono,
+                            cantidad_jugadores=10,
+                            cupos_disponibles=10 if tipo == "abierto" else 0,
                             descripcion=f"Partido generado para stats en {cancha.nombre}"
                         )
                         db.add(partido)
